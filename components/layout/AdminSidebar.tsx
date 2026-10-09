@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState } from 'react'
-import { ChevronDown, ChevronLeft, ChevronRight, ClipboardList, Database, Factory, FlaskConical, PiggyBank, LayoutDashboard, ShoppingBag, Wallet, MapPin, Package, PackageCheck, Repeat, Settings, Timer, Truck, Users } from 'lucide-react'
+import { ChevronDown, ChevronLeft, ChevronRight, ClipboardList, Database, Factory, FlaskConical, PiggyBank, LayoutDashboard, ShoppingBag, Wallet, MapPin, Package, PackageCheck, Repeat, Settings, Tags, Timer, Truck, Users, Bell, CircleHelp, Image, LifeBuoy, Megaphone, Percent, SlidersHorizontal } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { Button as AdminButton } from '@/components/ui/button'
 
@@ -11,6 +11,7 @@ type NavEntry = { label: string; href: string; icon: LucideIcon }
 
 /** Reusable setup catalogs that products, customers and subscriptions read from. */
 const masterDataItems: NavEntry[] = [
+  { label: 'Categories', href: '/configuration/categories', icon: Tags },
   { label: 'Delivery Slots', href: '/operations/delivery-slots', icon: Truck },
   { label: 'Service Areas', href: '/operations/service-areas', icon: MapPin },
   { label: 'Cut-off Rules', href: '/operations/cutoff-rules', icon: Timer },
@@ -18,9 +19,18 @@ const masterDataItems: NavEntry[] = [
   { label: 'Trial Plans', href: '/configuration/trial-plans', icon: Package },
   { label: 'Subscription Rules', href: '/configuration/subscription-rules', icon: Settings },
 ]
+const contentItems: NavEntry[] = [
+  { label: 'Banners', href: '/content/banners', icon: Image },
+  { label: 'Offers', href: '/content/offers', icon: Percent },
+  { label: 'FAQs', href: '/content/faqs', icon: CircleHelp },
+  { label: 'Notification Templates', href: '/notifications/templates', icon: Bell },
+  { label: 'Broadcasts', href: '/notifications/broadcasts', icon: Megaphone },
+  { label: 'App Settings', href: '/content/app-settings', icon: SlidersHorizontal },
+]
 const operationsItems: NavEntry[] = [
   { label: 'Deliveries', href: '/deliveries', icon: PackageCheck },
   { label: 'Production Planning', href: '/production-planning', icon: Factory },
+  { label: 'Support Tickets', href: '/support', icon: LifeBuoy },
 ]
 const financeItems: NavEntry[] = [
   { label: 'Credit Accounts', href: '/credit-accounts', icon: Wallet },
@@ -68,6 +78,8 @@ export function AdminSidebar({ collapsed, mobileOpen, onToggleCollapse, onCloseM
       {operationsItems.map(item => <NavLink key={item.href} {...item} />)}
       <p className="nav-label">Finance</p>
       {financeItems.map(item => <NavLink key={item.href} {...item} />)}
+      <p className="nav-label">Content</p>
+      {contentItems.map(item => <NavLink key={item.href} {...item} />)}
       <p className="nav-label">Setup</p>
       <button type="button" className={`nav-item nav-group-toggle ${inMasterData && !showMaster ? 'active' : ''}`} aria-expanded={showMaster} aria-controls="master-data-group" onClick={() => setMasterOpen(value => !value)}>
         <Database size={17} /><span>Master Data</span><ChevronDown size={15} className={`nav-chevron ${showMaster ? 'open' : ''}`} aria-hidden="true" />

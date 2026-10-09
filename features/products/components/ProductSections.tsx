@@ -16,13 +16,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { formatINR, paiseToRupeeInput, parseRupeesToPaise } from '@/lib/money'
 
-export function BasicSection({ register, watch, setValue }: { register: UseFormRegister<ProductFormValues>; watch: UseFormWatch<ProductFormValues>; setValue: UseFormSetValue<ProductFormValues> }) {
+export function BasicSection({ register, watch, setValue, categories }: { register: UseFormRegister<ProductFormValues>; watch: UseFormWatch<ProductFormValues>; setValue: UseFormSetValue<ProductFormValues>; categories: Array<{ value: string; label: string }> }) {
   return <Section number="01" title="Basic information" description="Set the product name and how it appears in the catalog.">
     <div className="product-grid">
       <FormField label="Product name *"><Input {...register('name')} placeholder="Fresh Cow Milk" /></FormField>
-      <FormField label="Category *"><Input {...register('category')} placeholder="Milk" /></FormField>
+      <FormField label="Category *"><ProductSelect label="Category" value={watch('categoryId')} onChange={value => setValue('categoryId', value, { shouldDirty: true, shouldValidate: true })} placeholder="Select a category" options={categories} /></FormField>
       <FormField label="SKU"><Input {...register('sku')} placeholder="Optional" /></FormField>
+      <FormField label="Gujarati name"><Input {...register('nameGujarati')} placeholder="તાજું ગાયનું દૂધ" /></FormField>
       <FormField label="Short description"><Input {...register('shortDescription')} placeholder="A short description for staff and customers" /></FormField>
+      <FormField label="Gujarati short description"><Input {...register('shortDescriptionGujarati')} placeholder="ગુજરાતીમાં ટૂંકું વર્ણન" /></FormField>
       <FormField label="Status"><ProductSelect label="Status" value={watch('status')} onChange={value => setValue('status', value as ProductFormValues['status'], { shouldDirty: true })} placeholder="Select status" options={[{ value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }, { value: 'draft', label: 'Draft · Unpublished' }]} /></FormField>
     </div>
     <div className="product-image-placeholder">Primary image <span>No product image has been added.</span></div>
@@ -126,8 +128,8 @@ export function ProductionSection({ watch }: { watch: UseFormWatch<ProductFormVa
   return <Section number="07" title="Production planning" description="Conversion metadata supports future operational planning."><p className="product-hint">{profileId ? 'Production conversion is configured per variant above. Profile eligibility determines whether those quantities are used.' : 'Choose a fulfilment profile to review production eligibility.'}</p></Section>
 }
 
-export function ProductReviewSummary({ values, profileName, productionEnabled }: { values: ProductFormValues; profileName: string; productionEnabled: boolean }) {
-  const rows = [['Product', values.name || 'Not set'], ['Category', values.category || 'Not set'], ['Variants', values.variants.map(variant => variant.name || 'Unnamed variant').join(', ') || 'None'], ['Purchase methods', values.purchaseMethods.map(method => method === 'buy_once' ? 'Buy Once' : method === 'trial' ? 'Trial' : 'Subscription').join(', ') || 'None'], ['Trial plans', String(values.trialPlanIds.length)], ['Subscription rules', String(values.subscriptionRuleIds.length)], ['Fulfilment', profileName], ['Production planning', productionEnabled ? 'Enabled' : 'Disabled'], ['Status', values.status === 'draft' ? 'Draft · Unpublished' : values.status === 'active' ? 'Active' : 'Inactive']]
+export function ProductReviewSummary({ values, categoryName, profileName, productionEnabled }: { values: ProductFormValues; categoryName: string; profileName: string; productionEnabled: boolean }) {
+  const rows = [['Product', values.name || 'Not set'], ['Category', categoryName || 'Not set'], ['Variants', values.variants.map(variant => variant.name || 'Unnamed variant').join(', ') || 'None'], ['Purchase methods', values.purchaseMethods.map(method => method === 'buy_once' ? 'Buy Once' : method === 'trial' ? 'Trial' : 'Subscription').join(', ') || 'None'], ['Trial plans', String(values.trialPlanIds.length)], ['Subscription rules', String(values.subscriptionRuleIds.length)], ['Fulfilment', profileName], ['Production planning', productionEnabled ? 'Enabled' : 'Disabled'], ['Status', values.status === 'draft' ? 'Draft · Unpublished' : values.status === 'active' ? 'Active' : 'Inactive']]
   return <Section number="06" title="Review product" description="Confirm the complete product setup before saving or publishing."><div className="review-summary"><div className="review-summary-heading"><h3>Product configuration</h3><p>Review each value below. You can return to any step to make changes.</p></div><div className="product-review-grid">{rows.map(([label, value]) => <div key={label}><span>{label}</span><strong>{value}</strong></div>)}</div></div></Section>
 }
 

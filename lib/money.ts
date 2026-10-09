@@ -30,3 +30,8 @@ export function paiseToRupeeInput(paise: Paise): string {
   const remainder = Math.abs(paise % 100)
   return remainder === 0 ? String(rupees) : `${rupees}.${String(remainder).padStart(2, '0')}`
 }
+
+/** 7000 -> "70.00", -5050 -> "-50.50": plain decimal text for exports, without a symbol or separators. */
+export function formatPaiseDecimal(paise: Paise): string {
+  return `${paise < 0 ? '-' : ''}${Math.floor(Math.abs(paise) / 100)}.${String(Math.abs(paise) % 100).padStart(2, '0')}`
+}

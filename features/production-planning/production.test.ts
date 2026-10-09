@@ -13,7 +13,7 @@ const TODAY = '2026-10-09'
 const variant = (id: string, name: string, productionUnit: string, productionQuantity: number): ProductVariant =>
   ({ id, name, sku: '', pricePaise: 0, status: 'active', displayUnit: '', displayQuantity: 1, productionUnit, productionQuantity })
 const product = (id: string, name: string, variants: ProductVariant[], profileId = 'profile-local'): Product =>
-  ({ id, name, category: '', sku: '', shortDescription: '', imageUrl: '', status: 'active', variants, purchaseMethods: ['subscription'], trialPlanIds: [], subscriptionRuleIds: [], fulfilmentProfileId: profileId, updatedAt: '' })
+  ({ id, name, nameGujarati: '', categoryId: '', sku: '', shortDescription: '', shortDescriptionGujarati: '', imageUrl: '', status: 'active', variants, purchaseMethods: ['subscription'], trialPlanIds: [], subscriptionRuleIds: [], fulfilmentProfileId: profileId, updatedAt: '' })
 const profile = (id: string, includeInProductionPlanning: boolean): FulfilmentProfile =>
   ({ id, name: id, description: '', status: 'active', updatedAt: '', deliveryMethod: 'local_delivery', serviceAreaId: 'area-1', cutoffRuleId: '', includeInProductionPlanning })
 const slot = (id: string, name: string, startTime: string): DeliverySlot => ({ id, name, description: '', status: 'active', updatedAt: '', startTime, endTime: '' })

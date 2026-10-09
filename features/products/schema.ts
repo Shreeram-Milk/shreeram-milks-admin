@@ -7,8 +7,8 @@ const variantSchema = z.object({
   displayQuantity: z.number().positive('Display quantity must be greater than zero.'), productionUnit: z.string(), productionQuantity: z.number().nonnegative(),
 })
 export const productSchema = z.object({
-  name: z.string().trim().min(1, 'Product name is required.'), category: z.string().trim().min(1, 'Category is required.'),
-  sku: z.string(), shortDescription: z.string(), imageUrl: z.string(), status: z.enum(['draft', 'active', 'inactive']),
+  name: z.string().trim().min(1, 'Product name is required.'), nameGujarati: z.string().trim().max(80, 'Keep the Gujarati name under 80 characters.'), categoryId: z.string().min(1, 'Choose a category.'),
+  sku: z.string(), shortDescription: z.string(), shortDescriptionGujarati: z.string(), imageUrl: z.string(), status: z.enum(['draft', 'active', 'inactive']),
   variants: z.array(variantSchema), purchaseMethods: z.array(z.enum(['buy_once', 'trial', 'subscription'])),
   trialPlanIds: z.array(z.string()), subscriptionRuleIds: z.array(z.string()), fulfilmentProfileId: z.string(),
 }).superRefine((value, context) => {

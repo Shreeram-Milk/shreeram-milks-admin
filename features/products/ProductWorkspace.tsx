@@ -21,6 +21,7 @@ import { PageSkeleton } from '@/components/shared/PageSkeleton'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { TablePagination } from '@/components/shared/TablePagination'
 import { cutoffRuleService, fulfilmentProfileService, serviceAreaService, subscriptionRuleService, trialPlanService } from '../configuration/mock-store'
+import { categoryService } from '../categories/service'
 import { productService } from './service'
 import { productSchema, type ProductFormValues } from './schema'
 import type { Product } from './types'
@@ -60,8 +61,8 @@ function ProductList() {
   const pageSize = 8
   const products = useMemo(() => { void revision; try { return productService.list() } catch { return [] } }, [revision])
   const profiles = fulfilmentProfileService.list()
-  const categories = [...new Set(products.map(product => product.category).filter(Boolean))]
-  const filtered = products.filter(product => (!query || `${product.name} ${product.sku}`.toLowerCase().includes(query.toLowerCase())) && (!category || product.category === category) && (!status || product.status === status) && (!method || product.purchaseMethods.includes(method as Product['purchaseMethods'][number])) && (!profile || product.fulfilmentProfileId === profile))
+  const categories = categoryService.list()
+  const filtered = products.filter(product => (!query || `${product.name} ${product.sku}`.toLowerCase().includes(query.toLowerCase())) && (!category || product.categoryId === category) && (!status || product.status === status) && (!method || product.purchaseMethods.includes(method as Product['purchaseMethods'][number])) && (!profile || product.fulfilmentProfileId === profile))
   const rows = filtered.slice((page - 1) * pageSize, page * pageSize)
   const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize))
   const statusLabel = (value: Product['status']) => value === 'draft' ? 'Draft · Unpublished' : value === 'active' ? 'Active' : 'Inactive'
@@ -71,9 +72,9 @@ function ProductList() {
       <Link className="primary-button" href="/products/new"><Plus size={15} /> Add Product</Link>
     </header>
     <section className="product-list-section">
-      <label className="workspace-search"><Search size={17} aria-hidden="true" /><Input className="workspace-search-input" value={query} onChange={event => { setQuery(event.target.value); setPage(1) }} placeholder="Search by name, SKU, or category..." /></label>
+      <label className="workspace-search"><Search size={17} aria-hidden="true" /><Input className="workspace-search-input" value={query} onChange={event => { setQuery(event.target.value); setPage(1) }} placeholder="Search by name or SKU..." /></label>
       <div className="product-filter-row">
-        <SelectField label="Category" className="product-select-trigger" value={category} onChange={value => setCategory(value === '__all__' ? '' : value)} placeholder="All categories" options={[{ value: '__all__', label: 'All categories' }, ...categories.map(value => ({ value, label: value }))]} />
+        <SelectField label="Category" className="product-select-trigger" value={category} onChange={value => setCategory(value === '__all__' ? '' : value)} placeholder="All categories" options={[{ value: '__all__', label: 'All categories' }, ...categories.map(item => ({ value: item.id, label: item.name }))]} />
         <SelectField label="Status" className="product-select-trigger" value={status} onChange={value => setStatus(value === '__all__' ? '' : value)} placeholder="All statuses" options={[{ value: '__all__', label: 'All statuses' }, { value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }, { value: 'draft', label: 'Draft' }]} />
         <SelectField label="Purchase method" className="product-select-trigger" value={method} onChange={value => setMethod(value === '__all__' ? '' : value)} placeholder="All purchase methods" options={[{ value: '__all__', label: 'All purchase methods' }, { value: 'buy_once', label: 'Buy Once' }, { value: 'trial', label: 'Trial' }, { value: 'subscription', label: 'Subscription' }]} />
         <SelectField label="Fulfilment profile" className="product-select-trigger" value={profile} onChange={value => setProfile(value === '__all__' ? '' : value)} placeholder="All fulfilment" options={[{ value: '__all__', label: 'All fulfilment' }, ...profiles.map(item => ({ value: item.id, label: item.name }))]} />
@@ -88,7 +89,7 @@ function ProductList() {
                   const profileDetails = profiles.find(entry => entry.id === item.fulfilmentProfileId)
                   return <TableRow key={item.id}>
                     <TableCell><Link className="product-name-link" href={`/products/${item.id}`}>{item.name}</Link>{item.sku && <small>{item.sku}</small>}</TableCell>
-                    <TableCell>{item.category || '—'}</TableCell>
+                    <TableCell>{categoryService.name(item.categoryId) || '—'}</TableCell>
                     <TableCell className="product-wrap-cell">{item.variants.map(row => row.name).filter(Boolean).join(', ') || '—'}</TableCell>
                     <TableCell className="product-wrap-cell">{item.purchaseMethods.map(labelMethod).join(', ') || '—'}</TableCell>
                     <TableCell className="product-wrap-cell">{profileDetails?.name ?? 'Not set'}</TableCell>
@@ -160,12 +161,12 @@ function ProductForm({ id }: { id?: string }) {
     <form className="product-form" onSubmit={handleSubmit(requestSaveConfirmation)} noValidate>
       <div className="product-form-scroll">
         <ProductStepNavigation steps={productSteps} active={activeStep} onChange={setActiveStep} />
-        {activeStep === 'basics' && <BasicSection register={register} watch={watch} setValue={setValue} />}
+        {activeStep === 'basics' && <BasicSection register={register} watch={watch} setValue={setValue} categories={categoryService.options(existing?.categoryId)} />}
         {activeStep === 'variants' && <VariantsSection watch={watch} setValue={setValue} showProduction={Boolean(profileDetails?.includeInProductionPlanning)} />}
         {activeStep === 'selling' && <><PurchaseSection watch={watch} setValue={setValue} />{methods.includes('trial') && <TrialSection watch={watch} setValue={setValue} plans={trialPlans} />}{methods.includes('subscription') && <SubscriptionSection watch={watch} setValue={setValue} rules={subscriptionRules} />}</>}
         {activeStep === 'fulfilment' && <FulfilmentSection watch={watch} setValue={setValue} profiles={profiles} />}
         {activeStep === 'production' && <ProductionSection watch={watch} />}
-        {activeStep === 'review' && <ProductReviewSummary values={getValues()} profileName={profileDetails?.name ?? 'Not selected'} productionEnabled={Boolean(profileDetails?.includeInProductionPlanning)} />}
+        {activeStep === 'review' && <ProductReviewSummary values={getValues()} categoryName={categoryService.name(getValues('categoryId'))} profileName={profileDetails?.name ?? 'Not selected'} productionEnabled={Boolean(profileDetails?.includeInProductionPlanning)} />}
         {Object.keys(formState.errors).length > 0 && <p className="field-error">Please review the highlighted fields and required configuration before publishing.</p>}{submitError && <p className="field-error">{submitError}</p>}
       </div>
       <div className="product-save-bar"><div className="product-step-actions">{stepIndex === 0 ? <AdminButton type="button" variant="outline" className="secondary-button" onClick={() => leave()}>Cancel</AdminButton> : <AdminButton type="button" variant="outline" className="secondary-button" onClick={() => setActiveStep(productSteps[stepIndex - 1].id)}>Back</AdminButton>}<span>Step {stepIndex + 1} of {productSteps.length}</span></div><div className="product-step-actions"><AdminButton type="button" variant="outline" className="secondary-button" disabled={saving} onClick={() => setSaveConfirmation({ ...getValues(), status: 'draft' })}>{saving ? 'Saving…' : 'Save as Draft'}</AdminButton>{stepIndex < productSteps.length - 1 && <AdminButton type="button" className="primary-button" onClick={() => setActiveStep(productSteps[stepIndex + 1].id)}>Continue</AdminButton>}{(id || stepIndex === productSteps.length - 1) && <AdminButton type="submit" className="primary-button" disabled={saving}>{saving ? 'Saving…' : id ? 'Save Changes' : submitLabel}</AdminButton>}</div></div>
@@ -195,7 +196,7 @@ function ProductDetail({ id }: { id: string }) {
         </div>
       </header>
       <div className="product-detail-grid">
-        <section className="form-card"><h2>Product overview</h2><div className="product-detail-rows"><Summary label="Category" value={product.category || '—'} /><Summary label="SKU" value={product.sku || '—'} /><Summary label="Purchase methods" value={product.purchaseMethods.map(labelMethod).join(', ') || '—'} /><Summary label="Updated" value={formatTimestamp(product.updatedAt)} /></div></section>
+        <section className="form-card"><h2>Product overview</h2><div className="product-detail-rows"><Summary label="Category" value={categoryService.name(product.categoryId) || '—'} /><Summary label="Gujarati name" value={product.nameGujarati || '—'} /><Summary label="SKU" value={product.sku || '—'} /><Summary label="Purchase methods" value={product.purchaseMethods.map(labelMethod).join(', ') || '—'} /><Summary label="Updated" value={formatTimestamp(product.updatedAt)} /></div></section>
         <section className="form-card"><h2>Variants &amp; pricing</h2>{product.variants.length ? <div className="product-table-wrap"><Table className="config-table"><TableHeader><TableRow><TableHead>Variant</TableHead><TableHead>Price</TableHead><TableHead>Display</TableHead><TableHead>Production conversion</TableHead></TableRow></TableHeader><TableBody>{product.variants.map(variant => <TableRow key={variant.id}><TableCell>{variant.name}</TableCell><TableCell>{formatINR(variant.pricePaise)}</TableCell><TableCell>{variant.displayQuantity} {variant.displayUnit}</TableCell><TableCell>{variant.productionUnit ? `${variant.productionQuantity} ${variant.productionUnit}` : 'Disabled'}</TableCell></TableRow>)}</TableBody></Table></div> : <p className="product-hint">No variants saved.</p>}</section>
         {product.purchaseMethods.includes('trial') && <section className="form-card"><h2>Trial plans</h2><ReferenceNames ids={product.trialPlanIds} rows={references.trialPlans} /></section>}
         {product.purchaseMethods.includes('subscription') && <section className="form-card"><h2>Subscription schedules</h2><ReferenceNames ids={product.subscriptionRuleIds} rows={references.subscriptionRules} /></section>}
@@ -215,6 +216,6 @@ function useProductProfiles() {
 }
 function ReferenceNames<T extends { id: string; name: string; status: string }>({ ids, rows }: { ids: string[]; rows: T[] }) { return <ul className="product-reference-list">{ids.length ? ids.map(id => { const row = rows.find(item => item.id === id); return <li key={id}>{row?.name ?? 'Unavailable configuration'}{row?.status === 'inactive' && <em className="product-inactive">Inactive</em>}</li> }) : <li>None selected</li>}</ul> }
 function Summary({ label, value }: { label: string; value: string }) { return <div><span>{label}</span><strong>{value}</strong></div> }
-function emptyForm(): ProductFormValues { return { name: '', category: '', sku: '', shortDescription: '', imageUrl: '', status: 'active', variants: [], purchaseMethods: [], trialPlanIds: [], subscriptionRuleIds: [], fulfilmentProfileId: '' } }
+function emptyForm(): ProductFormValues { return { name: '', nameGujarati: '', categoryId: '', sku: '', shortDescription: '', shortDescriptionGujarati: '', imageUrl: '', status: 'active', variants: [], purchaseMethods: [], trialPlanIds: [], subscriptionRuleIds: [], fulfilmentProfileId: '' } }
 function toForm(product: Product): ProductFormValues { return { ...product, status: product.status === 'inactive' ? 'active' : product.status } }
 function labelMethod(value: string) { return value === 'buy_once' ? 'Buy Once' : value === 'trial' ? 'Trial' : 'Subscription' }

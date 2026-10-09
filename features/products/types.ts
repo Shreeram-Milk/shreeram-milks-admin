@@ -15,9 +15,11 @@ export type ProductVariant = {
 export type Product = {
   id: string
   name: string
-  category: string
+  nameGujarati: string
+  categoryId: string
   sku: string
   shortDescription: string
+  shortDescriptionGujarati: string
   imageUrl: string
   status: ProductStatus
   variants: ProductVariant[]

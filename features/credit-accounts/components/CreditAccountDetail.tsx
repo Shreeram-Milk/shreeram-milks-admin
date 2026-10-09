@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
-import { AlertTriangle, ArrowLeft, MoreHorizontal, Plus, Wallet } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, Download, MoreHorizontal, Plus, Wallet } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SelectField } from '@/components/ui/select-field'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
@@ -13,9 +13,11 @@ import { PageBreadcrumbs } from '@/components/shared/PageBreadcrumbs'
 import { TablePagination } from '@/components/shared/TablePagination'
 import { useUrlListState } from '@/hooks/useUrlListState'
 import { formatDisplayDate, formatMonthLabel, isIsoMonth, monthOfDate, shiftMonth, todayInBusinessZone } from '@/lib/business-time'
+import { downloadCsv } from '@/lib/csv'
 import { formatINR } from '@/lib/money'
 import { formatAreaAndPin, getPrimaryAddress } from '../../customers/address'
 import { creditAccountService, CreditRuleError } from '../service'
+import { statementCsv } from '../statement-csv'
 import { ACCOUNT_STATUS_LABELS, BILLING_CYCLE_LABELS, type CreditAccountStatus } from '../types'
 import { AccountSettingsDialog } from './AccountSettingsDialog'
 import { AccountStatusBadge } from './AccountStatusBadge'
@@ -102,7 +104,7 @@ export function CreditAccountDetail({ customerId }: { customerId: string }) {
 
     <section className="form-card" aria-labelledby="statement-title">
       <div className="section-title-row"><div><h2 id="statement-title">Statement</h2><p className="product-hint">Entries are grouped by their effective date, not by when they were recorded.</p></div>
-        <div className="statement-month"><SelectField label="Statement month" value={month} onChange={value => update({ month: value === currentMonth ? null : value })} placeholder="Month" options={monthOptions.map(option => ({ value: option, label: formatMonthLabel(option) }))} /></div></div>
+        <div className="statement-tools"><Button type="button" variant="outline" className="secondary-button" onClick={() => downloadCsv(`${customer.fullName.replace(/\s+/g, '-')}-statement-${month}.csv`, statementCsv(customer.fullName, month, summary, statement.rows))}><Download size={15} /> Download CSV</Button><div className="statement-month"><SelectField label="Statement month" value={month} onChange={value => update({ month: value === currentMonth ? null : value })} placeholder="Month" options={monthOptions.map(option => ({ value: option, label: formatMonthLabel(option) }))} /></div></div></div>
       <dl className="statement-summary" aria-label={`Statement for ${formatMonthLabel(month)}`}>
         <div><dt>Opening balance</dt><dd>{formatINR(summary.openingBalancePaise)}</dd></div>
         <div><dt>Delivery charges</dt><dd>{formatINR(summary.chargesPaise)}</dd></div>

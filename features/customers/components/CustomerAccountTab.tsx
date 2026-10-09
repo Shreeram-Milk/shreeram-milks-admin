@@ -1,8 +1,14 @@
+'use client'
+
 import Link from 'next/link'
+import { Download } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { DetailRows } from '@/components/shared/DetailRows'
 import { formatDisplayDate, formatMonthLabel, monthOfDate, todayInBusinessZone } from '@/lib/business-time'
+import { downloadCsv } from '@/lib/csv'
 import { formatINR } from '@/lib/money'
 import { adjustmentTypeLabel, adjustmentValue, AdjustmentStatusBadge } from '../../prepaid-adjustments/components/AdjustmentParts'
+import { passbookCsv } from '../../prepaid-adjustments/passbook-csv'
 import { prepaidAdjustmentService } from '../../prepaid-adjustments/service'
 import { LedgerTable } from '../../credit-accounts/components/LedgerTable'
 import { creditAccountService } from '../../credit-accounts/service'
@@ -29,10 +35,13 @@ export function CustomerAccountTab({ customer }: { customer: Customer }) {
 }
 
 /** Prepaid customers have no credit ledger; they see what they are owed for paid deliveries that weren't consumed. */
+/** Plenty for one customer; keeps the export bounded. */
+const EXPORT_LIMIT = 1000
+
 function PrepaidAccountView({ customer }: { customer: Customer }) {
   const summary = prepaidAdjustmentService.getCustomerSummary(customer.id)
   const recent = prepaidAdjustmentService.listForCustomer(customer.id, 5)
-  return <section className="form-card"><div className="section-title-row"><h2>Prepaid account</h2><Link className="secondary-button" href={`/prepaid-adjustments?customer=${customer.id}`}>View Prepaid Adjustments</Link></div>
+  return <section className="form-card"><div className="section-title-row"><h2>Prepaid account</h2><div className="header-actions"><Button type="button" variant="outline" className="secondary-button" onClick={() => downloadCsv(`${customer.fullName.replace(/\s+/g, '-')}-prepaid-passbook.csv`, passbookCsv(customer.fullName, prepaidAdjustmentService.listForCustomer(customer.id, EXPORT_LIMIT)))}><Download size={15} /> Download passbook (CSV)</Button><Link className="secondary-button" href={`/prepaid-adjustments?customer=${customer.id}`}>View Prepaid Adjustments</Link></div></div>
     <DetailRows rows={[
       { label: 'Account type', value: CUSTOMER_TYPE_LABELS[customer.customerType] },
       { label: 'Pending credit', value: <strong>{formatINR(summary.pendingCreditPaise)}</strong> },
