@@ -1,0 +1,51 @@
+
+name: Deploy ShreeRam Admin
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: shreeram-admin-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "${{ secrets.EC2_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Upload admin source
+        run: |
+          rsync -az \
+            --exclude='.env' \
+            --exclude='node_modules/' \
+            --exclude='.git/' \
+            -e "ssh -i ~/.ssh/deploy_key" \
+            ./ "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/var/www/html/shreeram-milks-admin/"
+
+      - name: Build and restart admin
+        run: |
+          ssh -i ~/.ssh/deploy_key \
+            "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}" \
+            'set -e
+             cd /var/www/html/shreeram-milks-admin
+             npm ci
+             npm run build
+             sudo systemctl restart shreeram-admin
+             sleep 3
+             sudo systemctl is-active --quiet shreeram-admin'
