@@ -3,16 +3,13 @@
 import { Suspense } from 'react'
 import Link from 'next/link'
 import { PageSkeleton } from '@/components/shared/PageSkeleton'
-import { useHydrated } from '@/hooks/useHydrated'
 import { TicketDetail } from './components/TicketDetail'
-import { TicketsList } from './components/TicketsList'
+import { TicketList } from './components/TicketList'
 
-/** Routes /support/** . Waits for the browser, where the mock data lives. */
+/** Routes /support/** . Tickets come from the backend; customers raise them in the app, so there is no "log ticket" page. */
 export function SupportWorkspace({ segments = [] }: { segments?: string[] }) {
-  const hydrated = useHydrated()
-  if (!hydrated) return <PageSkeleton />
   const [first] = segments
-  if (segments.length === 0) return <Suspense fallback={<PageSkeleton />}><TicketsList /></Suspense>
-  if (segments.length === 1) return <TicketDetail key={first} id={first} />
+  if (segments.length === 0) return <Suspense fallback={<PageSkeleton />}><TicketList /></Suspense>
+  if (first && segments.length === 1) return <TicketDetail key={first} id={first} />
   return <div className="product-state"><strong>Page not found</strong><Link className="secondary-button" href="/support">Back to tickets</Link></div>
 }

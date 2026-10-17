@@ -1,70 +1,97 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { ListSearchInput } from '@/components/shared/ListSearchInput'
 import { PageBreadcrumbs } from '@/components/shared/PageBreadcrumbs'
-import { DeactivateDialog, RecordListToolbar, RecordRowActions } from '@/components/shared/RecordListParts'
-import { StatusBadge } from '@/components/shared/StatusBadge'
-import { CategoryDialog } from './components/CategoryDialog'
-import { categoryService } from './service'
-import type { Category } from './types'
 import { PageSkeleton } from '@/components/shared/PageSkeleton'
-import { useHydrated } from '@/hooks/useHydrated'
+import { RecordRowActions } from '@/components/shared/RecordListParts'
+import { StatusBadge } from '@/components/shared/StatusBadge'
+import { TablePagination } from '@/components/shared/TablePagination'
+import { SelectField } from '@/components/ui/select-field'
+import { ApiError } from '@/lib/api-client'
+import { describeApiError } from '@/lib/api-errors'
+import { InfoTip } from '@/components/shared/InfoTip'
+import { SETUP_HELP } from '../configuration/help'
+import { readUsages } from '../configuration/format'
+import { DeleteRecordDialog } from '../configuration/components/DeleteRecordDialog'
+import { InUseDialog } from '../configuration/components/InUseDialog'
+import type { RecordStatus, Usage } from '../configuration/api'
+import { categoryApi, type CategoryRecord } from './api'
+import { CategoryDialog } from './components/CategoryDialog'
 
-function CategoryWorkspaceContent() {
-  const [revision, setRevision] = useState(0)
-  const [query, setQuery] = useState('')
-  const [status, setStatus] = useState('all')
+const PAGE_SIZE = 10
+const ALL = '__all__'
+
+type LoadState = { status: 'loading' } | { status: 'error'; message: string } | { status: 'ready'; rows: CategoryRecord[]; total: number }
+
+/** Categories, loaded a page at a time from the backend with search and the status filter applied there. */
+export function CategoryWorkspace() {
+  const [state, setState] = useState<LoadState>({ status: 'loading' })
+  const [search, setSearch] = useState('')
+  const [deleting, setDeleting] = useState<CategoryRecord | null>(null)
+  const [status, setStatus] = useState<RecordStatus | ''>('')
+  const [page, setPage] = useState(1)
   // `undefined` = editor closed, `null` = creating, a category = editing it.
-  const [editing, setEditing] = useState<Category | null | undefined>(undefined)
-  const [deactivating, setDeactivating] = useState<{ category: Category; dependencies: string[] } | null>(null)
-  const categories = useMemo(() => { void revision; return categoryService.list() }, [revision])
-  const counts = useMemo(() => { void revision; return categoryService.productCounts() }, [revision])
-  const filtered = categories.filter(item => (status === 'all' || item.status === status) && `${item.name} ${item.nameGujarati} ${item.description}`.toLowerCase().includes(query.trim().toLowerCase()))
-  const refresh = () => setRevision(value => value + 1)
-  const toggle = (category: Category) => {
-    if (category.status === 'inactive') { categoryService.setStatus(category.id, 'active'); toast.success(`${category.name} activated.`); refresh(); return }
-    setDeactivating({ category, dependencies: categoryService.dependencies(category.id) })
-  }
-  const confirmDeactivate = () => {
-    if (!deactivating) return
-    categoryService.setStatus(deactivating.category.id, 'inactive')
-    toast.success(`${deactivating.category.name} deactivated.`)
-    setDeactivating(null)
+  const [editing, setEditing] = useState<CategoryRecord | null | undefined>(undefined)
+  const [pending, setPending] = useState<{ category: CategoryRecord; usages: Usage[] } | null>(null)
+  const [reloadKey, setReloadKey] = useState(0)
+  const refresh = () => setReloadKey(count => count + 1)
+
+  useEffect(() => {
+    let cancelled = false
+    categoryApi.list({ search, status, page, pageSize: PAGE_SIZE }).then(
+      result => { if (!cancelled) setState({ status: 'ready', rows: result.rows, total: result.total }) },
+      failure => { if (!cancelled) setState({ status: 'error', message: describeApiError(failure) }) },
+    )
+    return () => { cancelled = true }
+  }, [reloadKey, search, status, page])
+
+  const switchStatus = async (category: CategoryRecord, next: RecordStatus, confirmInUse = false) => {
+    try {
+      await categoryApi.setStatus(category.id, next, confirmInUse)
+      toast.success(`${category.name} ${next === 'active' ? 'activated' : 'deactivated'}.`)
+      setPending(null)
+    } catch (failure) {
+      if (failure instanceof ApiError && failure.code === 'IN_USE') { setPending({ category, usages: readUsages(failure.details) }); return }
+      toast.error(describeApiError(failure))
+    }
     refresh()
   }
+
+  if (state.status === 'loading') return <PageSkeleton />
+  if (state.status === 'error') return <div className="product-state" role="alert"><strong>Categories could not be loaded</strong><span>{state.message}</span><Button className="secondary-button" onClick={() => { setState({ status: 'loading' }); refresh() }}>Try again</Button></div>
+
+  const pageCount = Math.max(1, Math.ceil(state.total / PAGE_SIZE))
+  const filtered = Boolean(search || status)
   return <div className="workspace-page">
     <header className="page-header">
-      <div><PageBreadcrumbs items={[{ label: 'Master Data' }, { label: 'Categories' }]} /><h1>Categories</h1><p className="page-description">Group products so staff and customers can find them quickly.</p></div>
+      <div><PageBreadcrumbs items={[{ label: 'Master Data' }, { label: 'Categories' }]} /><h1 className="title-with-tip">Categories<InfoTip label="Categories" text={SETUP_HELP.Categories} /></h1><p className="page-description">Group products so staff and customers can find them quickly.</p></div>
       <Button className="primary-button" onClick={() => setEditing(null)}><Plus size={16} /> Add Category</Button>
     </header>
     <section className="config-section">
-      <RecordListToolbar noun="categories" query={query} onQueryChange={setQuery} status={status} onStatusChange={setStatus} count={filtered.length} />
+      <ListSearchInput label="Search categories" value={search} onCommit={value => { setSearch(value); setPage(1) }} placeholder="Search categories..." />
+      <div className="config-filter-row"><SelectField label="Filter by status" className="config-select product-select-trigger" value={status || ALL} onChange={value => { setStatus(value === ALL ? '' : value as RecordStatus); setPage(1) }} placeholder="All statuses" options={[{ value: ALL, label: 'All statuses' }, { value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }]} /><span className="record-count">{state.total} categories</span></div>
       <div className="table-card"><div className="table-scroll"><Table>
-        <TableHeader><TableRow><TableHead>Category</TableHead><TableHead>Gujarati</TableHead><TableHead>Order</TableHead><TableHead>Products</TableHead><TableHead>Status</TableHead><TableHead scope="col" aria-label="Actions" /></TableRow></TableHeader>
+        <TableHeader><TableRow><TableHead>Category</TableHead><TableHead>Gujarati</TableHead><TableHead>Order</TableHead><TableHead>Status</TableHead><TableHead scope="col" aria-label="Actions" /></TableRow></TableHeader>
         <TableBody>
-          {filtered.map(item => <TableRow key={item.id}>
+          {state.rows.map(item => <TableRow key={item.id}>
             <TableCell><Button variant="ghost" className="table-link" onClick={() => setEditing(item)}>{item.name}</Button></TableCell>
-            <TableCell>{item.nameGujarati || '—'}</TableCell>
+            <TableCell>{item.nameGu || '—'}</TableCell>
             <TableCell>{item.sortOrder}</TableCell>
-            <TableCell>{counts.get(item.id) ?? 0}</TableCell>
             <TableCell><StatusBadge status={item.status}>{item.status === 'active' ? 'Active' : 'Inactive'}</StatusBadge></TableCell>
-            <TableCell><RecordRowActions name={item.name} active={item.status === 'active'} onEdit={() => setEditing(item)} onToggle={() => toggle(item)} /></TableCell>
+            <TableCell><RecordRowActions name={item.name} active={item.status === 'active'} onEdit={() => setEditing(item)} onToggle={() => void switchStatus(item, item.status === 'active' ? 'inactive' : 'active')} onDelete={() => setDeleting(item)} /></TableCell>
           </TableRow>)}
-          {filtered.length === 0 && <TableRow><TableCell colSpan={6}><div className="empty-table">{categories.length ? 'No categories match your search and filters.' : 'No categories yet.'}{categories.length === 0 && <Button variant="link" className="text-button" onClick={() => setEditing(null)}>Create the first category</Button>}</div></TableCell></TableRow>}
+          {state.rows.length === 0 && <TableRow><TableCell colSpan={5}><div className="empty-table">{filtered ? 'No categories match your search and filters.' : 'No categories yet.'}{!filtered && <Button variant="link" className="text-button" onClick={() => setEditing(null)}>Create the first category</Button>}</div></TableCell></TableRow>}
         </TableBody>
-      </Table></div></div>
+      </Table></div>
+      <div className="table-footer"><span>Showing {state.total ? (page - 1) * PAGE_SIZE + 1 : 0}–{Math.min(page * PAGE_SIZE, state.total)} of {state.total}</span><div><TablePagination page={Math.min(page, pageCount)} pageCount={pageCount} onPageChange={setPage} /></div></div></div>
     </section>
-    {editing !== undefined && <CategoryDialog key={editing?.id ?? 'new'} category={editing} nextSortOrder={Math.max(0, ...categories.map(item => item.sortOrder)) + 1} onClose={() => setEditing(undefined)} onDone={refresh} />}
-    <DeactivateDialog open={Boolean(deactivating)} noun="category" name={deactivating?.category.name ?? ''} onCancel={() => setDeactivating(null)} onConfirm={confirmDeactivate} consequence={deactivating?.dependencies.length ? `Used by ${deactivating.dependencies.join(', ')}. Those products keep this category and it shows as inactive, but it can no longer be chosen for new products.` : 'No products use this category. It can no longer be chosen for new products.'} />
+    {editing !== undefined && <CategoryDialog key={editing?.id ?? 'new'} category={editing} nextSortOrder={state.rows.length ? Math.max(...state.rows.map(item => item.sortOrder)) + 1 : 1} onClose={() => setEditing(undefined)} onDone={refresh} />}
+    {deleting && <DeleteRecordDialog target={deleting} noun="category" remove={id => categoryApi.remove(id)} deactivate={id => categoryApi.setStatus(id, 'inactive', true)} onClose={() => setDeleting(null)} onChanged={refresh} />}
+    <InUseDialog name={pending?.category.name ?? ''} usages={pending?.usages ?? []} open={Boolean(pending)} onCancel={() => setPending(null)} onConfirm={() => { if (pending) void switchStatus(pending.category, 'inactive', true) }} />
   </div>
-}
-
-/** Waits for the browser, where the mock data lives, so the first render matches the server's. */
-export function CategoryWorkspace() {
-  const hydrated = useHydrated()
-  return hydrated ? <CategoryWorkspaceContent /> : <PageSkeleton />
 }

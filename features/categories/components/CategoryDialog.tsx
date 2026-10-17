@@ -9,26 +9,27 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { FormField } from '@/components/configuration/FormField'
+import { describeApiError } from '@/lib/api-errors'
+import { categoryApi, type CategoryRecord } from '../api'
 import { categorySchema, type CategoryFormValues } from '../schema'
-import { categoryService } from '../service'
-import type { Category } from '../types'
 
 const blank = (sortOrder: number): CategoryFormValues => ({ name: '', nameGujarati: '', description: '', sortOrder, status: 'active' })
-const fromCategory = (category: Category): CategoryFormValues => ({ name: category.name, nameGujarati: category.nameGujarati, description: category.description, sortOrder: category.sortOrder, status: category.status })
+const fromCategory = (category: CategoryRecord): CategoryFormValues => ({ name: category.name, nameGujarati: category.nameGu, description: category.description, sortOrder: category.sortOrder, status: category.status })
 
-/** Mounted fresh for each create/edit, so the form always starts from the right record. */
-export function CategoryDialog({ category, nextSortOrder, onClose, onDone }: { category: Category | null; nextSortOrder: number; onClose: () => void; onDone: () => void }) {
+/** Mounted fresh for each create/edit, so the form always starts from the right record. The server checks the save again. */
+export function CategoryDialog({ category, nextSortOrder, onClose, onDone }: { category: CategoryRecord | null; nextSortOrder: number; onClose: () => void; onDone: () => void }) {
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<CategoryFormValues>({ resolver: zodResolver(categorySchema), defaultValues: category ? fromCategory(category) : blank(nextSortOrder) })
   const [error, setError] = useState('')
-  const submit = handleSubmit(values => {
+  const submit = handleSubmit(async values => {
     setError('')
     try {
-      categoryService.save({ ...values, id: category?.id })
+      const payload = { name: values.name, nameGu: values.nameGujarati, description: values.description, sortOrder: values.sortOrder, status: values.status }
+      if (category) await categoryApi.update(category.id, payload); else await categoryApi.create(payload)
       toast.success(category ? 'Category saved.' : 'Category created.')
       onClose()
       onDone()
     } catch (failure) {
-      setError(failure instanceof Error ? failure.message : 'Unable to save the category.')
+      setError(describeApiError(failure))
     }
   })
   return <Dialog open onOpenChange={next => { if (!next) onClose() }}>

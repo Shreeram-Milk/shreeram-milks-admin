@@ -1,39 +1,52 @@
 'use client'
 
 import Link from 'next/link'
-import { useMemo } from 'react'
-import { Plus, ShoppingBag } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Plus, RefreshCw } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { PageSkeleton } from '@/components/shared/PageSkeleton'
+import { describeApiError } from '@/lib/api-errors'
 import { formatWeekdayDate } from '@/lib/business-time'
-import { useMaterializedDeliveries } from '../deliveries/useMaterializedDeliveries'
-import { KpiRow, StatusBanner } from './DashboardCards'
-import { IssuesPanel, TodayDeliveriesPanel, TomorrowProductionPanel } from './DashboardPanels'
-import { dashboardService } from './service'
+import { dashboardApi, type DashboardData } from './api'
+import { attentionItems } from './attention'
+import { KpiRows, StatusBanner } from './DashboardCards'
+import { AttentionPanel, TodayPanel } from './DashboardPanels'
 
-/**
- * Standard admin layout: header, three KPIs, then the detail behind them: today's and tomorrow's tables beside the attention list. Waits for the browser and for deliveries to be materialised before reading aggregates.
- */
+type LoadState = { status: 'loading' } | { status: 'error'; message: string } | { status: 'ready'; data: DashboardData }
+
+/** The landing page: what needs doing today and tomorrow, the money, and anything that needs attention. All figures come from the server. */
 export function DashboardWorkspace() {
-  const ready = useMaterializedDeliveries()
-  if (!ready) return <PageSkeleton rows={4} />
-  return <DashboardContent />
-}
+  const [state, setState] = useState<LoadState>({ status: 'loading' })
+  const [reloadKey, setReloadKey] = useState(0)
 
-function DashboardContent() {
-  const summary = useMemo(() => dashboardService.getSummary(), [])
+  useEffect(() => {
+    let cancelled = false
+    dashboardApi.get().then(
+      data => { if (!cancelled) setState({ status: 'ready', data }) },
+      failure => { if (!cancelled) setState({ status: 'error', message: describeApiError(failure) }) },
+    )
+    return () => { cancelled = true }
+  }, [reloadKey])
+
+  const reload = () => { setState({ status: 'loading' }); setReloadKey(count => count + 1) }
+  if (state.status === 'loading') return <PageSkeleton rows={4} />
+  if (state.status === 'error') return <div className="product-state" role="alert"><strong>The dashboard could not be loaded</strong><span>{state.message}</span><Button className="secondary-button" variant="outline" onClick={reload}>Try again</Button></div>
+
+  const { data } = state
+  const items = attentionItems(data)
   return <div className="workspace-page dashboard-page">
     <header className="page-header">
-      <div><p className="eyebrow">{formatWeekdayDate(summary.today)}</p><h1>Dashboard</h1><p className="page-description">What needs doing today and tomorrow.</p></div>
+      <div><p className="eyebrow">{formatWeekdayDate(data.today)}</p><h1>Dashboard</h1><p className="page-description">What needs doing today and tomorrow.</p></div>
       <div className="header-actions">
-        <Link className="secondary-button" href="/orders/new"><ShoppingBag size={15} /> Create Order</Link>
-        <Link className="primary-button" href="/subscriptions/new"><Plus size={15} /> Create Subscription</Link>
+        <Button variant="outline" className="secondary-button" onClick={reload}><RefreshCw size={15} /> Refresh</Button>
+        <Link className="primary-button" href="/notifications/broadcasts"><Plus size={15} /> Send a message</Link>
       </div>
     </header>
-    <StatusBanner issueTotal={summary.issueTotal} />
-    <KpiRow summary={summary} />
+    <StatusBanner issueTotal={items.length} />
+    <KpiRows data={data} />
     <div className="dash-main">
-      <div className="dash-stack"><TodayDeliveriesPanel summary={summary} /><TomorrowProductionPanel summary={summary} /></div>
-      <IssuesPanel summary={summary} />
+      <div className="dash-stack"><TodayPanel data={data} /></div>
+      <AttentionPanel items={items} />
     </div>
   </div>
 }

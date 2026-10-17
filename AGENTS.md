@@ -17,7 +17,9 @@ The project is governed by these documents:
 1. **AGENTS.md** — engineering architecture, code quality, performance, security, frontend/backend boundaries, data integrity.
 2. **DESIGN.md** — visual design system, layout, spacing, forms, tables, dialogs, responsive behavior, interaction style.
 3. **specs.md** — business features, workflows, entities, domain behavior.
-4. Existing implementation.
+4. **PERFORMANCE-AND-AWS.md** — speed, compression, caching, pictures, AWS and scaling standards.
+5. **STORE-COMPLIANCE.md** — App Store and Google Play rules for what the admin lets staff publish (health claims, policies, deletion, privacy).
+6. Existing implementation.
 
 If there is a conflict:
 

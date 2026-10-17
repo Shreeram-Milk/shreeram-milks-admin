@@ -1,65 +1,55 @@
 import assert from 'node:assert/strict'
-import { beforeEach, describe, it } from 'node:test'
-import { broadcastService, isFuture, NotificationRuleError, renderPreview, templateService } from './service'
+import { describe, it } from 'node:test'
+import { blankBroadcast, broadcastSchema, describeAudience, parsePinCodes, readyAudience, templateSchema, toAudience } from './schema'
 
-declare const __resetStorage: () => void
+const valid = { ...blankBroadcast, title: 'Diwali', body: 'Happy Diwali!' }
 
-beforeEach(() => __resetStorage())
-
-const broadcast = { title: 'Happy Diwali', titleGujarati: '', body: 'Hi {{customerName}}, wishing you a bright Diwali.', bodyGujarati: '', audience: 'all' as const, channel: 'push' as const, status: 'draft' as const, scheduledDate: '' as const, scheduledTime: '' }
-const NOW = new Date('2026-10-09T06:00:00Z') // 11:30 AM in India
-
-describe('notification templates', () => {
-  it('has one template per system event, all active by default', () => {
-    const templates = templateService.list()
-    assert.equal(templates.length, 8)
-    assert.ok(templates.every(template => template.status === 'active'))
+describe('who a message goes to', () => {
+  it('reads PIN codes typed with commas, spaces or new lines, once each', () => {
+    assert.deepEqual(parsePinCodes('382010, 382011\n382010;382012'), ['382010', '382011', '382012'])
+    assert.deepEqual(parsePinCodes('   '), [])
   })
-  it('only accepts placeholders that event can fill in', () => {
-    const template = templateService.getById('out_for_delivery')
-    assert.ok(template)
-    assert.throws(() => templateService.save({ ...template, body: 'Your {{productName}} is on its way.' }), /Unknown placeholder: \{\{productName\}\}/)
-    assert.doesNotThrow(() => templateService.save({ ...template, body: 'Hi {{customerName}}, {{orderNumber}} is on its way.' }))
+
+  it('builds only the part of the audience that was chosen', () => {
+    assert.deepEqual(toAudience({ ...valid, audienceType: 'all', customerType: 'credit' }), { type: 'all' })
+    assert.deepEqual(toAudience({ ...valid, audienceType: 'filter', customerType: 'credit', pinCodes: '382010 382011', subscription: 'with' }), { type: 'filter', customerType: 'credit', pinCodes: ['382010', '382011'], hasActiveSubscription: true })
+    assert.deepEqual(toAudience({ ...valid, audienceType: 'filter', customerType: '', pinCodes: '', subscription: 'without' }), { type: 'filter', hasActiveSubscription: false })
+    assert.deepEqual(toAudience({ ...valid, audienceType: 'customers', customerIds: ['a', 'b'], customerType: 'credit' }), { type: 'customers', customerIds: ['a', 'b'] })
   })
-  it('keeps SMS short and needs a channel while active', () => {
-    const template = templateService.getById('delivered')
-    assert.ok(template)
-    assert.throws(() => templateService.save({ ...template, smsEnabled: true, body: 'x'.repeat(161) }), NotificationRuleError)
-    assert.throws(() => templateService.save({ ...template, pushEnabled: false, smsEnabled: false }), /at least one channel/)
-    assert.doesNotThrow(() => templateService.save({ ...template, pushEnabled: false, smsEnabled: false, status: 'inactive' }))
+
+  it('is ready to count only when the group is complete and valid', () => {
+    assert.ok(readyAudience({ ...valid, audienceType: 'all' }))
+    assert.equal(readyAudience({ ...valid, audienceType: 'filter' }), null)
+    assert.equal(readyAudience({ ...valid, audienceType: 'filter', pinCodes: '12345' }), null)
+    assert.ok(readyAudience({ ...valid, audienceType: 'filter', pinCodes: '382010' }))
+    assert.equal(readyAudience({ ...valid, audienceType: 'customers', customerIds: [] }), null)
+    assert.ok(readyAudience({ ...valid, audienceType: 'customers', customerIds: ['a'] }))
   })
-  it('fills sample details into a preview and leaves unknown tokens alone', () => {
-    assert.equal(renderPreview('Hi {{customerName}}, {{nope}}'), 'Hi Priya, {{nope}}')
+
+  it('describes the group in plain words', () => {
+    assert.equal(describeAudience({ type: 'all' }), 'Everyone')
+    assert.equal(describeAudience({ type: 'customers', customerIds: ['a'] }), '1 chosen customer')
+    assert.equal(describeAudience({ type: 'filter', customerType: 'credit', pinCodes: ['382010'], hasActiveSubscription: true }), 'Credit customers in 382010 with a subscription')
   })
 })
 
-describe('broadcasts', () => {
-  it('only lets a broadcast greet the customer by name', () => {
-    assert.throws(() => broadcastService.save({ ...broadcast, body: 'Order {{orderNumber}} is ready.' }), /Unknown placeholder/)
+describe('the forms', () => {
+  it('needs a title and a message, and keeps them short', () => {
+    assert.equal(broadcastSchema.safeParse(valid).success, true)
+    assert.equal(broadcastSchema.safeParse({ ...valid, title: '' }).success, false)
+    assert.equal(broadcastSchema.safeParse({ ...valid, title: 'x'.repeat(61) }).success, false)
+    assert.equal(broadcastSchema.safeParse({ ...valid, body: 'x'.repeat(241) }).success, false)
   })
-  it('counts only active customers in the audience', () => {
-    assert.ok(broadcastService.audienceCount('all') >= broadcastService.audienceCount('prepaid'))
-    assert.equal(broadcastService.audienceCount('prepaid') + broadcastService.audienceCount('credit'), broadcastService.audienceCount('all'))
+
+  it('refuses a group with nothing to narrow it, bad PIN codes, or no chosen customers', () => {
+    assert.equal(broadcastSchema.safeParse({ ...valid, audienceType: 'filter' }).success, false)
+    assert.equal(broadcastSchema.safeParse({ ...valid, audienceType: 'filter', pinCodes: '38201' }).success, false)
+    assert.equal(broadcastSchema.safeParse({ ...valid, audienceType: 'filter', customerType: 'prepaid' }).success, true)
+    assert.equal(broadcastSchema.safeParse({ ...valid, audienceType: 'customers' }).success, false)
   })
-  it('schedules only a draft, in the future, and unschedules back to draft', () => {
-    const draft = broadcastService.save(broadcast)
-    assert.throws(() => broadcastService.schedule(draft.id, '2026-10-09', '09:00', NOW), /future/)
-    assert.throws(() => broadcastService.schedule(draft.id, '2026-10-08', '18:00', NOW), /future/)
-    const scheduled = broadcastService.schedule(draft.id, '2026-10-09', '18:00', NOW)
-    assert.equal(scheduled.status, 'scheduled')
-    assert.throws(() => broadcastService.schedule(draft.id, '2026-10-10', '09:00', NOW), /draft/)
-    assert.throws(() => broadcastService.save({ ...broadcast, id: draft.id }), /back to draft/)
-    const back = broadcastService.changeStatus(draft.id, 'draft')
-    assert.deepEqual([back.status, back.scheduledDate, back.scheduledTime], ['draft', '', ''])
-  })
-  it('treats a cancelled broadcast as final', () => {
-    const draft = broadcastService.save(broadcast)
-    broadcastService.changeStatus(draft.id, 'cancelled')
-    assert.throws(() => broadcastService.changeStatus(draft.id, 'draft'), NotificationRuleError)
-    assert.throws(() => broadcastService.save({ ...broadcast, id: draft.id }), /cancelled/)
-  })
-  it('compares a business-zone time with the clock correctly', () => {
-    assert.equal(isFuture('2026-10-09', '11:31', NOW), true)
-    assert.equal(isFuture('2026-10-09', '11:29', NOW), false)
+
+  it('lets an automatic message keep an empty Gujarati wording', () => {
+    assert.equal(templateSchema.safeParse({ title: 'On its way', titleGujarati: '', body: 'Order {{order}} is out.', bodyGujarati: '', enabled: true }).success, true)
+    assert.equal(templateSchema.safeParse({ title: '', titleGujarati: '', body: 'x', bodyGujarati: '', enabled: true }).success, false)
   })
 })

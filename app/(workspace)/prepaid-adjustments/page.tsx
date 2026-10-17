@@ -1,5 +1,5 @@
-import { PrepaidAdjustmentsWorkspace } from '@/features/prepaid-adjustments/PrepaidAdjustmentsWorkspace'
+import { AdjustmentList } from '@/features/adjustment-admin/AdjustmentList'
 
 export default function PrepaidAdjustmentsPage() {
-  return <PrepaidAdjustmentsWorkspace />
+  return <AdjustmentList />
 }

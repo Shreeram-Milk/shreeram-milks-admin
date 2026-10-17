@@ -1,5 +1,5 @@
-import { ProductionPlanningWorkspace } from '@/features/production-planning/ProductionPlanningWorkspace'
+import { ProductionPlan } from '@/features/production-admin/ProductionPlan'
 
 export default function ProductionPlanningPage() {
-  return <ProductionPlanningWorkspace />
+  return <ProductionPlan />
 }

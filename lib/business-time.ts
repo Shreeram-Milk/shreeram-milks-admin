@@ -50,6 +50,11 @@ export function formatTimestamp(timestamp: string): string {
   const parsed = new Date(timestamp)
   return Number.isNaN(parsed.getTime()) ? '—' : formatShortDate(parsed)
 }
+/** "Sat 17 Oct, 9:00 pm": a moment in business time, for deadlines where the hour matters. */
+export function formatDateTime(timestamp: string): string {
+  const parsed = new Date(timestamp)
+  return Number.isNaN(parsed.getTime()) ? '—' : new Intl.DateTimeFormat('en-IN', { timeZone: BUSINESS_TIMEZONE, weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }).format(parsed)
+}
 const formatShortDate = (value: Date) => new Intl.DateTimeFormat('en-IN', { timeZone: BUSINESS_TIMEZONE, day: 'numeric', month: 'short', year: 'numeric' }).format(value)
 
 /** Bridge between the `yyyy-MM-dd` domain value and the Date objects react-day-picker works with. */

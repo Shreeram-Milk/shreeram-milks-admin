@@ -1,18 +1,27 @@
-export type FaqTopic = 'delivery' | 'subscription' | 'payments' | 'account' | 'other'
+import type { SupportCategory } from '../support-tickets/categories'
 
-export const FAQ_TOPIC_LABELS: Record<FaqTopic, string> = { delivery: 'Delivery', subscription: 'Subscriptions', payments: 'Payments & refunds', account: 'Account', other: 'Other' }
+export type FaqStatus = 'draft' | 'published' | 'inactive'
 
-/** A question and answer shown in the customer app's Help & Support screen. */
+export const FAQ_STATUS_LABELS: Record<FaqStatus, string> = { draft: 'Draft', published: 'Published', inactive: 'Inactive' }
+/** Most featured questions the app's Help screen can highlight. */
+export const MAX_FEATURED_FAQS = 5
+export const MAX_KEYWORDS = 10
+
+/** A Help Center article: a question and answer in English and Gujarati, filed under a support category. */
 export type Faq = {
   id: string
-  topic: FaqTopic
-  question: string
-  questionGujarati: string
-  answer: string
-  answerGujarati: string
+  /** One of the issue types the app's Help screen offers; shared with support tickets. */
+  topic: SupportCategory
+  questionEn: string
+  questionGu: string
+  answerEn: string
+  answerGu: string
+  /** Extra words people might search for, so "milk late" finds the delivery article. */
+  searchKeywords: string[]
+  featured: boolean
   /** Lower numbers appear first within the topic. */
   sortOrder: number
-  status: 'active' | 'inactive'
+  status: FaqStatus
   updatedAt: string
 }
 

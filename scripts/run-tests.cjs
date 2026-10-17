@@ -49,7 +49,7 @@ const target = process.argv[2]
 if (target) {
   runSingleFile(path.resolve(target))
 } else {
-  const files = findTests(path.join(root, 'features'))
+  const files = [...findTests(path.join(root, 'features')), ...findTests(path.join(root, 'lib'))]
   if (!files.length) { console.error('No test files found.'); process.exit(1) }
   const totals = { tests: 0, pass: 0, fail: 0 }
   let failedFiles = 0

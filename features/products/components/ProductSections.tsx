@@ -1,13 +1,19 @@
 'use client'
 
 import { useState, type ReactNode } from 'react'
-import type { UseFormRegister, UseFormSetValue, UseFormWatch } from 'react-hook-form'
+import { useWatch, type Control, type FieldErrors, type UseFormRegister, type UseFormSetValue, type UseFormWatch } from 'react-hook-form'
 import { Edit2, Plus, Trash2 } from 'lucide-react'
-import type { FulfilmentProfile, SubscriptionRule, TrialPlan } from '../../configuration/types'
-import type { ProductFormValues } from '../schema'
+import type { CutoffRule, DeliveryMethod, ServiceArea, SubscriptionRule, TrialPlan } from '../../configuration/api'
+import { newVariant, type FormVariant, type ProductFormValues } from '../schema'
+import type { ProductStatus } from '../api'
+import { MAX_HIGHLIGHT_LENGTH, MAX_HIGHLIGHTS, PRODUCT_BADGE_LABELS, type ProductBadge } from '../types'
+import { GalleryField } from './GalleryField'
 import { ProductSelect } from './ProductSelect'
+import { suggestedProduction, unitOptions } from '../units'
+import { ImageUploadField } from '@/components/shared/ImageUploadField'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { FormField } from '@/components/ui/form-field'
 import { Button as AdminButton } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -16,35 +22,63 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { formatINR, paiseToRupeeInput, parseRupeesToPaise } from '@/lib/money'
 
-export function BasicSection({ register, watch, setValue, categories }: { register: UseFormRegister<ProductFormValues>; watch: UseFormWatch<ProductFormValues>; setValue: UseFormSetValue<ProductFormValues>; categories: Array<{ value: string; label: string }> }) {
-  return <Section number="01" title="Basic information" description="Set the product name and how it appears in the catalog.">
+const STATUS_LABELS: Record<ProductStatus, string> = { draft: 'Draft · Unpublished', active: 'Active', inactive: 'Inactive' }
+
+/** "12 / 200" under a field, so the limit is visible while typing. */
+const counter = (text: string, max: number) => `${text.length} / ${max} characters`
+
+export function BasicSection({ register, watch, setValue, errors, categories, statuses }: { register: UseFormRegister<ProductFormValues>; errors: FieldErrors<ProductFormValues>; watch: UseFormWatch<ProductFormValues>; setValue: UseFormSetValue<ProductFormValues>; categories: Array<{ value: string; label: string }>; statuses: ProductStatus[] }) {
+  return <Section number="01" title="About the product" description="Its name, its shelf (category) in the app, and a short line about it.">
     <div className="product-grid">
-      <FormField label="Product name *"><Input {...register('name')} placeholder="Fresh Cow Milk" /></FormField>
-      <FormField label="Category *"><ProductSelect label="Category" value={watch('categoryId')} onChange={value => setValue('categoryId', value, { shouldDirty: true, shouldValidate: true })} placeholder="Select a category" options={categories} /></FormField>
+      <FormField label="Product name *" error={errors.name?.message}><Input {...register('name')} placeholder="Fresh Cow Milk" /></FormField>
+      <FormField label="Category *" error={errors.categoryId?.message}><ProductSelect label="Category" value={watch('categoryId')} onChange={value => setValue('categoryId', value, { shouldDirty: true, shouldValidate: true })} placeholder="Select a category" options={categories} /></FormField>
       <FormField label="SKU"><Input {...register('sku')} placeholder="Optional" /></FormField>
-      <FormField label="Gujarati name"><Input {...register('nameGujarati')} placeholder="તાજું ગાયનું દૂધ" /></FormField>
-      <FormField label="Short description"><Input {...register('shortDescription')} placeholder="A short description for staff and customers" /></FormField>
-      <FormField label="Gujarati short description"><Input {...register('shortDescriptionGujarati')} placeholder="ગુજરાતીમાં ટૂંકું વર્ણન" /></FormField>
-      <FormField label="Status"><ProductSelect label="Status" value={watch('status')} onChange={value => setValue('status', value as ProductFormValues['status'], { shouldDirty: true })} placeholder="Select status" options={[{ value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }, { value: 'draft', label: 'Draft · Unpublished' }]} /></FormField>
+      <FormField label="Gujarati name" helper={counter(watch('nameGu'), 80)}><Input maxLength={80} {...register('nameGu')} placeholder="તાજું ગાયનું દૂધ" /></FormField>
+      <FormField label="Short description" helper={counter(watch('shortDescriptionEn'), 200)}><Input maxLength={200} {...register('shortDescriptionEn')} placeholder="A short description for staff and customers" /></FormField>
+      <FormField label="Gujarati short description" helper={counter(watch('shortDescriptionGu'), 200)}><Input maxLength={200} {...register('shortDescriptionGu')} placeholder="ગુજરાતીમાં ટૂંકું વર્ણન" /></FormField>
+      <FormField label="Status"><ProductSelect label="Status" value={watch('status')} onChange={value => setValue('status', value as ProductFormValues['status'], { shouldDirty: true })} placeholder="Select status" options={statuses.map(value => ({ value, label: STATUS_LABELS[value] }))} /></FormField>
     </div>
-    <div className="product-image-placeholder">Primary image <span>No product image has been added.</span></div>
   </Section>
 }
 
-export function VariantsSection({ watch, setValue, showProduction }: { watch: UseFormWatch<ProductFormValues>; setValue: UseFormSetValue<ProductFormValues>; showProduction: boolean }) {
+/** Each size customers can buy and its price. A product made in the dairy also says how much each size uses up, for the daily plan. */
+export function VariantsSection({ watch, setValue }: { watch: UseFormWatch<ProductFormValues>; setValue: UseFormSetValue<ProductFormValues> }) {
   const variants = watch('variants')
-  type Variant = ProductFormValues['variants'][number]
-  const [editor, setEditor] = useState<{ index: number | null; value: Variant } | null>(null)
+  const showProduction = watch('includeInProductionPlanning')
+  const courier = watch('deliveryMethod') === 'shipping'
+  const [editor, setEditor] = useState<{ index: number | null; value: FormVariant } | null>(null)
   const [editorError, setEditorError] = useState('')
   const [deleteIndex, setDeleteIndex] = useState<number | null>(null)
   const openEditor = (index: number | null) => {
     setEditorError('')
-    setEditor({ index, value: index === null ? { id: crypto.randomUUID(), name: '', sku: '', pricePaise: 0, status: 'active', displayUnit: '', displayQuantity: 1, productionUnit: '', productionQuantity: 0 } : { ...variants[index] } })
+    setEditor({ index, value: index === null ? newVariant() : { ...variants[index] } })
+  }
+  /** Changes the size, and keeps the "uses for making" amount in step with it until the admin types their own. */
+  const changeSize = (patch: Pick<Partial<FormVariant>, 'displayUnit' | 'displayQuantity'>) => setEditor(current => {
+    if (!current) return current
+    const before = current.value
+    const next = { ...before, ...patch }
+    const suggestedBefore = suggestedProduction(before.displayUnit, before.displayQuantity)
+    const untouched = !before.productionUnit || (before.productionUnit === suggestedBefore.productionUnit && before.productionQuantity === suggestedBefore.productionQuantity)
+    return { ...current, value: showProduction && untouched && next.displayUnit ? { ...next, ...suggestedProduction(next.displayUnit, next.displayQuantity) } : next }
+  })
+  /** Ticking the daily plan fills in the amounts for sizes that have none yet. */
+  const toggleProduction = (on: boolean) => {
+    setValue('includeInProductionPlanning', on, { shouldDirty: true })
+    if (on) setValue('variants', variants.map(variant => (variant.productionUnit || !variant.displayUnit ? variant : { ...variant, ...suggestedProduction(variant.displayUnit, variant.displayQuantity) })), { shouldDirty: true })
   }
   const saveEditor = () => {
     if (!editor) return
     if (!editor.value.name.trim() || !editor.value.displayUnit.trim() || editor.value.pricePaise < 0 || editor.value.displayQuantity <= 0) {
-      setEditorError('Enter a variant name, a price, a display unit, and a quantity greater than zero.')
+      setEditorError('Enter a size name, a price, a unit, and an amount greater than zero.')
+      return
+    }
+    if (showProduction && (!editor.value.productionUnit.trim() || editor.value.productionQuantity <= 0)) {
+      setEditorError('This product is in the daily production plan, so say how much one item uses (a unit and an amount greater than zero).')
+      return
+    }
+    if (editor.value.compareAtPricePaise !== null && editor.value.compareAtPricePaise <= editor.value.pricePaise) {
+      setEditorError('The old price must be higher than the selling price, or left empty.')
       return
     }
     const next = editor.index === null ? [...variants, editor.value] : variants.map((variant, index) => index === editor.index ? editor.value : variant)
@@ -52,45 +86,54 @@ export function VariantsSection({ watch, setValue, showProduction }: { watch: Us
     setEditor(null)
   }
   const removeVariant = (index: number) => setValue('variants', variants.filter((_, rowIndex) => rowIndex !== index), { shouldDirty: true, shouldValidate: true })
+  const missingAmounts = showProduction ? variants.filter(variant => !variant.productionUnit || variant.productionQuantity <= 0).length : 0
 
-  return <Section number="02" title="Variants & pricing" description="Set a customer-facing price and production conversion for each variant." action={<AdminButton type="button" className="section-add-button" onClick={() => openEditor(null)}><Plus size={14} /> Add variant</AdminButton>}>
-    <div className="repeatable-table-shell"><Table className="variant-table"><TableHeader><TableRow><TableHead>Variant</TableHead><TableHead>SKU</TableHead><TableHead>Selling price</TableHead><TableHead>Customer display</TableHead>{showProduction && <TableHead>Production conversion</TableHead>}<TableHead className="table-actions-heading">Actions</TableHead></TableRow></TableHeader><TableBody>
-      {variants.map((variant, index) => <TableRow key={variant.id}>
-        <TableCell data-label="Variant" className="variant-name-cell">{variant.name || 'Unnamed variant'}</TableCell><TableCell data-label="SKU">{variant.sku || '—'}</TableCell><TableCell data-label="Selling price" className="value-emphasis">{formatINR(variant.pricePaise)}</TableCell><TableCell data-label="Customer display">{variant.displayQuantity} {variant.displayUnit || '—'}</TableCell>{showProduction && <TableCell data-label="Production conversion">{variant.productionUnit ? `${variant.productionQuantity} ${variant.productionUnit}` : '—'}</TableCell>}<TableCell data-label="Actions"><RowActions editLabel={`Edit ${variant.name || 'variant'}`} deleteLabel={`Delete ${variant.name || 'variant'}`} onEdit={() => openEditor(index)} onDelete={() => setDeleteIndex(index)} /></TableCell>
+  return <Section number="03" title="Sizes & prices" description="Each size customers can buy, like 500 ml or 1 litre, and its price." action={<AdminButton type="button" className="section-add-button" onClick={() => openEditor(null)}><Plus size={14} /> Add size</AdminButton>}>
+    {courier
+      ? <p className="product-hint">Courier products are not part of the daily production plan.</p>
+      : <label className={`production-choice${showProduction ? ' is-on' : ''}`}><Checkbox checked={showProduction} onCheckedChange={checked => toggleProduction(checked === true)} /><span><strong>We make this product: count it in the daily production plan</strong><small>{showProduction ? 'Each size then says how much it uses, for example 0.5 Litre for a 500 ml bottle. It is filled in for you from the size.' : 'Leave this off for products you buy ready-made.'}</small></span></label>}
+    {missingAmounts > 0 ? <p className="field-error" role="alert">{missingAmounts === 1 ? '1 size has' : `${missingAmounts} sizes have`} no &quot;uses for making&quot; amount yet. Edit {missingAmounts === 1 ? 'it' : 'them'} to add one.</p> : null}
+    <div className="repeatable-table-shell"><Table className="variant-table"><TableHeader><TableRow><TableHead>Size</TableHead><TableHead>Price</TableHead><TableHead>Customers see</TableHead>{showProduction && <TableHead>Uses for making</TableHead>}<TableHead className="table-actions-heading">Actions</TableHead></TableRow></TableHeader><TableBody>
+      {variants.map((variant, index) => <TableRow key={variant.clientKey}>
+        <TableCell data-label="Size" className="variant-name-cell">{variant.name || 'Unnamed size'}{variant.status === 'inactive' && <em className="product-inactive">Not sold</em>}{variant.sku ? <small className="cell-note">SKU {variant.sku}</small> : null}</TableCell><TableCell data-label="Price" className="value-emphasis">{formatINR(variant.pricePaise)}{variant.compareAtPricePaise !== null && <small className="cell-note">was {formatINR(variant.compareAtPricePaise)}</small>}</TableCell><TableCell data-label="Customers see">{variant.displayQuantity} {variant.displayUnit || '—'}</TableCell>{showProduction && <TableCell data-label="Uses for making">{variant.productionUnit ? `${variant.productionQuantity} ${variant.productionUnit}` : <span className="field-error">Missing</span>}</TableCell>}<TableCell data-label="Actions"><RowActions editLabel={`Edit ${variant.name || 'size'}`} deleteLabel={`Remove ${variant.name || 'size'}`} onEdit={() => openEditor(index)} onDelete={() => setDeleteIndex(index)} /></TableCell>
       </TableRow>)}
-      {variants.length === 0 && <TableRow><TableCell colSpan={showProduction ? 6 : 5}><EmptyRows>No variants added yet. Add a variant to set its price and customer display.</EmptyRows></TableCell></TableRow>}
+      {variants.length === 0 && <TableRow><TableCell colSpan={showProduction ? 5 : 4}><EmptyRows>No sizes yet. Press “Add size” to add the first one, like 500 ml.</EmptyRows></TableCell></TableRow>}
     </TableBody></Table></div>
     <Dialog open={editor !== null} onOpenChange={open => { if (!open) setEditor(null) }}>
-      {editor && <DialogContent className="record-editor-dialog"><DialogHeader><DialogTitle>{editor.index === null ? 'Add variant pricing' : 'Edit variant pricing'}</DialogTitle><DialogDescription>Update the variant details, selling price, and customer display.</DialogDescription></DialogHeader>
+      {editor && <DialogContent className="record-editor-dialog"><DialogHeader><DialogTitle>{editor.index === null ? 'Add a size' : 'Edit size'}</DialogTitle><DialogDescription>The size, its price, and what customers see.</DialogDescription></DialogHeader>
         <div className="record-editor-fields">
-          <FormField className="form-field" label="Variant name *"><Input autoFocus value={editor.value.name} onChange={event => setEditor(current => current ? { ...current, value: { ...current.value, name: event.target.value } } : current)} placeholder="500 ml" /></FormField>
-          <FormField className="form-field" label="SKU"><Input value={editor.value.sku} onChange={event => setEditor(current => current ? { ...current, value: { ...current.value, sku: event.target.value } } : current)} placeholder="Optional" /></FormField>
+          <FormField className="form-field" label="Size name *" helper="What customers pick, for example 500 ml."><Input autoFocus value={editor.value.name} onChange={event => setEditor(current => current ? { ...current, value: { ...current.value, name: event.target.value } } : current)} placeholder="500 ml" /></FormField>
           <FormField className="form-field" label="Selling price (₹) *"><Input type="number" min="0" step="0.01" value={paiseToRupeeInput(editor.value.pricePaise)} onChange={event => setEditor(current => current ? { ...current, value: { ...current.value, pricePaise: parseRupeesToPaise(event.target.value.replace(/\.$/, '')) ?? 0 } } : current)} /></FormField>
-          <FormField className="form-field" label="Display unit *"><Input value={editor.value.displayUnit} onChange={event => setEditor(current => current ? { ...current, value: { ...current.value, displayUnit: event.target.value } } : current)} placeholder="ml" /></FormField>
-          <FormField className="form-field" label="Display quantity *"><Input type="number" min="0.01" step="any" value={editor.value.displayQuantity} onChange={event => setEditor(current => current ? { ...current, value: { ...current.value, displayQuantity: Number(event.target.value || 0) } } : current)} /></FormField>
-          {showProduction && <><FormField className="form-field" label="Production unit"><Input value={editor.value.productionUnit} onChange={event => setEditor(current => current ? { ...current, value: { ...current.value, productionUnit: event.target.value } } : current)} placeholder="Litre" /></FormField><FormField className="form-field" label="Production quantity"><Input type="number" min="0" step="any" value={editor.value.productionQuantity} onChange={event => setEditor(current => current ? { ...current, value: { ...current.value, productionQuantity: Number(event.target.value || 0) } } : current)} /></FormField></>}
+          <FormField className="form-field" label="Unit *" helper="For example Millilitre."><ProductSelect label="Unit" value={editor.value.displayUnit} options={unitOptions(editor.value.displayUnit)} placeholder="Choose a unit" onChange={value => changeSize({ displayUnit: value })} /></FormField>
+          <FormField className="form-field" label="Amount *" helper="For example 500."><Input type="number" min="0.01" step="any" value={editor.value.displayQuantity} onChange={event => changeSize({ displayQuantity: Number(event.target.value || 0) })} /></FormField>
+          {showProduction && <><FormField className="form-field" label="Uses for making: unit *" helper="Filled in from the size. Change it only if it is different."><ProductSelect label="Uses for making: unit" value={editor.value.productionUnit} options={unitOptions(editor.value.productionUnit)} placeholder="Choose a unit" onChange={value => setEditor(current => current ? { ...current, value: { ...current.value, productionUnit: value } } : current)} /></FormField><FormField className="form-field" label="Uses for making: amount *" helper="For example 0.5 for a 500 ml bottle."><Input type="number" min="0" step="any" value={editor.value.productionQuantity} onChange={event => setEditor(current => current ? { ...current, value: { ...current.value, productionQuantity: Number(event.target.value || 0) } } : current)} /></FormField></>}
+          <FormField className="form-field" label="Old price (₹)" helper="Optional. Shown crossed out next to the selling price."><Input type="number" min="0" step="0.01" value={editor.value.compareAtPricePaise === null ? '' : paiseToRupeeInput(editor.value.compareAtPricePaise)} onChange={event => setEditor(current => current ? { ...current, value: { ...current.value, compareAtPricePaise: event.target.value.trim() === '' ? null : parseRupeesToPaise(event.target.value.replace(/\.$/, '')) } } : current)} /></FormField>
+          <FormField className="form-field" label="SKU" helper="Optional stock code."><Input value={editor.value.sku} onChange={event => setEditor(current => current ? { ...current, value: { ...current.value, sku: event.target.value } } : current)} placeholder="Optional" /></FormField>
+          <FormField className="form-field" label="Sold now?"><ProductSelect label="Sold now?" value={editor.value.status} onChange={value => setEditor(current => current ? { ...current, value: { ...current.value, status: value === 'inactive' ? 'inactive' : 'active' } } : current)} placeholder="Choose" options={[{ value: 'active', label: 'Yes, customers can buy it' }, { value: 'inactive', label: 'No, hide it for now' }]} /></FormField>
         </div>
         {editorError && <p className="field-error" role="alert">{editorError}</p>}
-        <DialogFooter><AdminButton type="button" variant="outline" onClick={() => setEditor(null)}>Cancel</AdminButton><AdminButton type="button" onClick={saveEditor}>Save changes</AdminButton></DialogFooter>
+        <DialogFooter><AdminButton type="button" variant="outline" onClick={() => setEditor(null)}>Cancel</AdminButton><AdminButton type="button" onClick={saveEditor}>Save size</AdminButton></DialogFooter>
       </DialogContent>}
     </Dialog>
     <AlertDialog open={deleteIndex !== null} onOpenChange={open => { if (!open) setDeleteIndex(null) }}>
-      {deleteIndex !== null && <AlertDialogContent className="confirm-dialog"><AlertDialogHeader><p className="eyebrow">Delete variant</p><AlertDialogTitle>Delete “{variants[deleteIndex]?.name || 'Unnamed variant'}”?</AlertDialogTitle><AlertDialogDescription>This variant and its pricing will be removed from the product when you save your changes.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter className="dialog-actions"><AlertDialogCancel asChild><AdminButton type="button" variant="outline" className="secondary-button">Cancel</AdminButton></AlertDialogCancel><AlertDialogAction asChild><AdminButton type="button" className="primary-button destructive-button" onClick={() => { removeVariant(deleteIndex); setDeleteIndex(null) }}>Delete variant</AdminButton></AlertDialogAction></AlertDialogFooter></AlertDialogContent>}
+      {deleteIndex !== null && <AlertDialogContent className="confirm-dialog"><AlertDialogHeader><p className="eyebrow">Remove size</p><AlertDialogTitle>Remove “{variants[deleteIndex]?.name || 'Unnamed size'}”?</AlertDialogTitle><AlertDialogDescription>When you save, this size is switched off and no longer sold. It is kept, not deleted, so past orders still show it. You can switch it on again by editing it.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter className="dialog-actions"><AlertDialogCancel asChild><AdminButton type="button" variant="outline" className="secondary-button">Cancel</AdminButton></AlertDialogCancel><AlertDialogAction asChild><AdminButton type="button" className="primary-button destructive-button" onClick={() => { removeVariant(deleteIndex); setDeleteIndex(null) }}>Remove size</AdminButton></AlertDialogAction></AlertDialogFooter></AlertDialogContent>}
     </AlertDialog>
   </Section>
 }
 
 export function PurchaseSection({ watch, setValue }: { watch: UseFormWatch<ProductFormValues>; setValue: UseFormSetValue<ProductFormValues> }) {
   const selected = watch('purchaseMethods')
-  return <Section number="03" title="Purchase methods" description="Choose the ways customers can purchase this product."><div className="product-methods">{([['buy_once', 'Buy Once'], ['trial', 'Trial'], ['subscription', 'Subscription']] as const).map(([value, label]) => <label className="product-check" key={value}><Checkbox checked={selected.includes(value)} onCheckedChange={checked => setValue('purchaseMethods', checked === true ? [...selected, value] : selected.filter(item => item !== value), { shouldDirty: true })} /><span>{label}</span></label>)}</div><p className="product-hint">At least one purchase method is required to publish.</p></Section>
+  // Trials and subscriptions need a delivery window every day, which a courier does not have.
+  const courier = watch('deliveryMethod') === 'shipping'
+  return <Section number="04" title="How it is sold" description="Tick every way customers can buy it."><div className="product-methods">{([['buy_once', 'Buy Once'], ['trial', 'Trial'], ['subscription', 'Subscription']] as const).map(([value, label]) => { const locked = courier && value !== 'buy_once'; return <label className={`product-check${locked ? ' is-disabled' : ''}`} key={value}><Checkbox disabled={locked} checked={!locked && selected.includes(value)} onCheckedChange={checked => setValue('purchaseMethods', checked === true ? [...selected, value] : selected.filter(item => item !== value), { shouldDirty: true })} /><span>{label}</span></label> })}</div><p className="product-hint">{courier ? 'Courier products can only be bought once. Trial and Subscription are for products you deliver yourself.' : 'At least one purchase method is required to publish.'}</p><label className="product-check product-check-row"><Checkbox checked={watch('excludedFromCredit')} onCheckedChange={checked => setValue('excludedFromCredit', checked === true, { shouldDirty: true })} /> Not available on credit</label><p className="product-hint">Tick this to stop credit customers buying this product on credit. They must pay for it when they order. Everyone else is unaffected.</p></Section>
 }
 
 export function TrialSection({ watch, setValue, plans }: { watch: UseFormWatch<ProductFormValues>; setValue: UseFormSetValue<ProductFormValues>; plans: TrialPlan[] }) {
-  return <AssignmentSection number="04" title="Trial configuration" description="Trial durations are managed centrally under Configuration → Trial Plans." itemLabel="trial plan" records={plans} selectedIds={watch('trialPlanIds')} onChange={ids => setValue('trialPlanIds', ids, { shouldDirty: true, shouldValidate: true })} detailHeading="Duration" detail={plan => `${plan.duration} days`} />
+  return <AssignmentSection number="4a" title="Trial packs offered" description="Which trial packs customers can pick. Packs are made in Setup → Trial Plans." itemLabel="trial plan" records={plans} selectedIds={watch('trialPlanIds')} onChange={ids => setValue('trialPlanIds', ids, { shouldDirty: true, shouldValidate: true })} detailHeading="Duration" detail={plan => `${plan.durationDays} days`} />
 }
 
 export function SubscriptionSection({ watch, setValue, rules }: { watch: UseFormWatch<ProductFormValues>; setValue: UseFormSetValue<ProductFormValues>; rules: SubscriptionRule[] }) {
-  return <AssignmentSection number="05" title="Subscription configuration" description="Schedules are managed centrally under Configuration → Subscription Rules." itemLabel="subscription rule" records={rules} selectedIds={watch('subscriptionRuleIds')} onChange={ids => setValue('subscriptionRuleIds', ids, { shouldDirty: true, shouldValidate: true })} detailHeading="Schedule" detail={rule => rule.systemType === 'alternate_days' ? 'Alternate days' : rule.systemType === 'custom_weekdays' ? 'Custom weekdays' : 'Daily'} />
+  return <AssignmentSection number="4b" title="Subscription plans offered" description="Which repeat plans customers can pick. Plans are made in Setup → Subscription Rules." itemLabel="subscription rule" records={rules} selectedIds={watch('subscriptionRuleIds')} onChange={ids => setValue('subscriptionRuleIds', ids, { shouldDirty: true, shouldValidate: true })} detailHeading="Schedule" detail={rule => rule.systemType === 'alternate_days' ? 'Alternate days' : rule.systemType === 'custom_weekdays' ? 'Custom weekdays' : 'Daily'} />
 }
 
 type AssignmentRecord = TrialPlan | SubscriptionRule
@@ -117,26 +160,78 @@ function AssignmentSection<T extends AssignmentRecord>({ number, title, descript
   </Section>
 }
 
-export function FulfilmentSection({ watch, setValue, profiles }: { watch: UseFormWatch<ProductFormValues>; setValue: UseFormSetValue<ProductFormValues>; profiles: Array<FulfilmentProfile & { serviceAreaName: string; cutoffRuleName: string }> }) {
-  const id = watch('fulfilmentProfileId')
-  const profile = profiles.find(item => item.id === id)
-  return <Section number="06" title="Fulfilment" description="Products inherit delivery coverage and cut-off behavior from this profile."><FormField label="Fulfilment profile *"><ProductSelect label="Fulfilment profile" value={id} onChange={value => setValue('fulfilmentProfileId', value, { shouldDirty: true })} placeholder="Select a profile" options={profiles.filter(item => item.status === 'active' || item.id === id).map(item => ({ value: item.id, label: `${item.name}${item.status === 'inactive' ? ' · Inactive' : ''}` }))} /></FormField>{profile && <div className="product-profile-summary"><strong>{profile.name}</strong><div><span>Delivery</span><b>{profile.deliveryMethod === 'local_delivery' ? 'Local Delivery' : 'Shipping'}</b></div><div><span>Coverage</span><b>{profile.serviceAreaName}</b></div><div><span>Slots</span><b>{profile.deliveryMethod === 'local_delivery' ? 'Based on customer PIN code' : 'Not applicable'}</b></div><div><span>Cut-off</span><b>{profile.cutoffRuleName}</b></div><div><span>Production planning</span><b>{profile.includeInProductionPlanning ? 'Enabled' : 'Disabled'}</b></div></div>}</Section>
-}
+const NO_CUTOFF = '__none__'
+const METHOD_OPTIONS = [{ value: 'local_delivery', label: 'Our own delivery (to PIN codes)' }, { value: 'shipping', label: 'Courier shipping (a state or all India)' }]
 
-export function ProductionSection({ watch }: { watch: UseFormWatch<ProductFormValues> }) {
-  const profileId = watch('fulfilmentProfileId')
-  return <Section number="07" title="Production planning" description="Conversion metadata supports future operational planning."><p className="product-hint">{profileId ? 'Production conversion is configured per variant above. Profile eligibility determines whether those quantities are used.' : 'Choose a fulfilment profile to review production eligibility.'}</p></Section>
-}
-
-export function ProductReviewSummary({ values, categoryName, profileName, productionEnabled }: { values: ProductFormValues; categoryName: string; profileName: string; productionEnabled: boolean }) {
-  const rows = [['Product', values.name || 'Not set'], ['Category', categoryName || 'Not set'], ['Variants', values.variants.map(variant => variant.name || 'Unnamed variant').join(', ') || 'None'], ['Purchase methods', values.purchaseMethods.map(method => method === 'buy_once' ? 'Buy Once' : method === 'trial' ? 'Trial' : 'Subscription').join(', ') || 'None'], ['Trial plans', String(values.trialPlanIds.length)], ['Subscription rules', String(values.subscriptionRuleIds.length)], ['Fulfilment', profileName], ['Production planning', productionEnabled ? 'Enabled' : 'Disabled'], ['Status', values.status === 'draft' ? 'Draft · Unpublished' : values.status === 'active' ? 'Active' : 'Inactive']]
-  return <Section number="06" title="Review product" description="Confirm the complete product setup before saving or publishing."><div className="review-summary"><div className="review-summary-heading"><h3>Product configuration</h3><p>Review each value below. You can return to any step to make changes.</p></div><div className="product-review-grid">{rows.map(([label, value]) => <div key={label}><span>{label}</span><strong>{value}</strong></div>)}</div></div></Section>
+export function DeliverySection({ watch, setValue, errors, areas, cutoffRules }: { errors: FieldErrors<ProductFormValues>; watch: UseFormWatch<ProductFormValues>; setValue: UseFormSetValue<ProductFormValues>; areas: ServiceArea[]; cutoffRules: CutoffRule[] }) {
+  const method = watch('deliveryMethod')
+  const areaId = watch('serviceAreaId')
+  const cutoffId = watch('cutoffRuleId')
+  const fits = (area: ServiceArea) => (method === 'local_delivery' ? area.coverageType === 'pin_code' : area.coverageType !== 'pin_code')
+  const areaOptions = areas.filter(area => fits(area) && (area.status === 'active' || area.id === areaId)).map(area => ({ value: area.id, label: `${area.name}${area.status === 'inactive' ? ' · Inactive' : ''}` }))
+  const cutoffOptions = [{ value: NO_CUTOFF, label: 'No limit: orders accepted any time' }, ...cutoffRules.filter(rule => rule.status === 'active' || rule.id === cutoffId).map(rule => ({ value: rule.id, label: `${rule.name}${rule.status === 'inactive' ? ' · Inactive' : ''}` }))]
+  const changeMethod = (value: string) => {
+    setValue('deliveryMethod', value as DeliveryMethod, { shouldDirty: true, shouldValidate: true })
+    // The area list changes with the method, so the old pick no longer applies; courier shipping has no cut-off or production plan.
+    setValue('serviceAreaId', '', { shouldDirty: true })
+    if (value === 'shipping') {
+      setValue('cutoffRuleId', '', { shouldDirty: true }); setValue('includeInProductionPlanning', false, { shouldDirty: true })
+      // A courier product is bought once only.
+      const kept = watch('purchaseMethods').filter(item => item === 'buy_once')
+      setValue('purchaseMethods', kept, { shouldDirty: true, shouldValidate: true })
+    }
+  }
+  return <Section number="02" title="Delivery" description="How it reaches customers, where, and by when they must order.">
+    <FormField label="How is it delivered? *" error={errors.deliveryMethod?.message}><ProductSelect label="Delivery method" value={method} onChange={changeMethod} placeholder="Choose how it is delivered" options={METHOD_OPTIONS} /></FormField>
+    {method && <FormField label="Delivery area *" error={errors.serviceAreaId?.message}><ProductSelect label="Delivery area" value={areaId} onChange={value => setValue('serviceAreaId', value, { shouldDirty: true, shouldValidate: true })} placeholder={areaOptions.length ? 'Choose a delivery area' : 'No matching delivery area yet'} options={areaOptions} /></FormField>}
+    {method === 'local_delivery' && <>
+      <p className="product-hint">The PIN codes served, and the Morning or Evening windows each PIN gets, are set inside the delivery area.</p>
+      <FormField label="Order-by time" helper="The last time customers can order for a delivery. Made in Setup → Order-by Times."><ProductSelect label="Order-by time" value={cutoffId || NO_CUTOFF} onChange={value => setValue('cutoffRuleId', value === NO_CUTOFF ? '' : value, { shouldDirty: true })} placeholder="Choose an order-by time" options={cutoffOptions} /></FormField>
+    </>}
+    {method === 'shipping' && <p className="product-hint">Courier shipping has no delivery windows, order-by time or production plan.</p>}
+  </Section>
 }
 
 function RowActions({ editLabel, deleteLabel, onEdit, onDelete }: { editLabel: string; deleteLabel: string; onEdit: () => void; onDelete: () => void }) {
   return <div className="variant-row-actions"><AdminButton type="button" variant="outline" className="variant-edit-button" onClick={onEdit} aria-label={editLabel}><Edit2 size={14} /> Edit</AdminButton><AdminButton type="button" variant="outline" className="variant-delete-button" onClick={onDelete} aria-label={deleteLabel}><Trash2 size={14} /> Delete</AdminButton></div>
 }
 function EmptyRows({ children }: { children: ReactNode }) { return <div className="empty-table">{children}</div> }
+const BADGES = Object.keys(PRODUCT_BADGE_LABELS) as ProductBadge[]
+const linesOf = (text: string) => text.split('\n')
+
+/** Under the highlights box: how many lines there are and how long the longest is, so the limits are visible while typing. */
+const highlightHelper = (lines: string[]) => `${lines.length} of ${MAX_HIGHLIGHTS} highlights · longest line ${Math.max(0, ...lines.map(line => line.length))} / ${MAX_HIGHLIGHT_LENGTH} characters`
+/** The first thing wrong with the highlights, in plain words, shown right under the box. */
+function highlightProblem(lines: string[]): string | undefined {
+  const tooLong = lines.findIndex(line => line.length > MAX_HIGHLIGHT_LENGTH)
+  if (tooLong >= 0) return `Line ${tooLong + 1} has ${lines[tooLong]?.length} characters. Keep each highlight to ${MAX_HIGHLIGHT_LENGTH} or fewer.`
+  if (lines.filter(line => line.trim()).length > MAX_HIGHLIGHTS) return `Add at most ${MAX_HIGHLIGHTS} highlights, one per line.`
+  return undefined
+}
+
+/** What customers read and see about the product. Price, variants and how it is sold live in their own steps. */
+export function ContentSection({ control, setValue, register, imageUrls, onImageUrl, onBusyChange }: { control: Control<ProductFormValues>; setValue: UseFormSetValue<ProductFormValues>; register: UseFormRegister<ProductFormValues>; imageUrls: Record<string, string>; onImageUrl: (assetId: string, url: string) => void; onBusyChange: (busy: boolean) => void }) {
+  const content = useWatch({ control, name: 'content' })
+  const set = <Key extends keyof ProductFormValues['content']>(key: Key, value: ProductFormValues['content'][Key]) => setValue('content', { ...content, [key]: value }, { shouldDirty: true, shouldValidate: true })
+  return <Section number="05" title="Photos & details" description="Pictures and the longer text on the product page, in English and Gujarati. You can fill this in later.">
+    <div className="product-grid">
+      <FormField label="Long description (English)" helper={counter(content.longDescriptionEn, 2000)}><Textarea rows={4} maxLength={2000} {...register('content.longDescriptionEn')} /></FormField>
+      <FormField label="Long description (Gujarati)" helper={counter(content.longDescriptionGu, 2000)}><Textarea rows={4} maxLength={2000} {...register('content.longDescriptionGu')} /></FormField>
+      <FormField label="Nutrition (English)" helper={counter(content.nutritionEn, 1000)}><Textarea rows={3} maxLength={1000} {...register('content.nutritionEn')} /></FormField>
+      <FormField label="Nutrition (Gujarati)" helper={counter(content.nutritionGu, 1000)}><Textarea rows={3} maxLength={1000} {...register('content.nutritionGu')} /></FormField>
+      <FormField label="Highlights (English)" helper={highlightHelper(content.highlightsEn)} error={highlightProblem(content.highlightsEn)}><Textarea rows={4} aria-describedby="highlights-hint" value={content.highlightsEn.join('\n')} onChange={event => set('highlightsEn', linesOf(event.target.value))} /></FormField>
+      <FormField label="Highlights (Gujarati)" helper={highlightHelper(content.highlightsGu)} error={highlightProblem(content.highlightsGu)}><Textarea rows={4} aria-describedby="highlights-hint" value={content.highlightsGu.join('\n')} onChange={event => set('highlightsGu', linesOf(event.target.value))} /></FormField>
+    </div>
+    <p id="highlights-hint" className="product-hint">One highlight per line, up to {MAX_HIGHLIGHTS}, each under {MAX_HIGHLIGHT_LENGTH} characters.</p>
+    <ImageUploadField purpose="product" label="Primary image" hint="JPEG, PNG or WebP, up to 2 MB. The first picture customers see." currentUrl={imageUrls[content.primaryImageAssetId] ?? null} hasImage={Boolean(content.primaryImageAssetId)} onBusyChange={onBusyChange}
+      onChange={assetId => set('primaryImageAssetId', assetId ?? '')} onPreview={onImageUrl} />
+    <GalleryField assetIds={content.galleryAssetIds} urls={imageUrls} onChange={ids => set('galleryAssetIds', ids)} onPreview={onImageUrl} onBusyChange={onBusyChange} />
+    <fieldset className="product-badges"><legend className="product-form-label">Badges</legend>
+      {BADGES.map(badge => <label key={badge}><Checkbox checked={content.badges.includes(badge)} onCheckedChange={checked => set('badges', checked ? [...content.badges, badge] : content.badges.filter(item => item !== badge))} /> {PRODUCT_BADGE_LABELS[badge]}</label>)}
+    </fieldset>
+  </Section>
+}
+
 function Section({ number, title, description, action, children }: { number: string; title: string; description: string; action?: ReactNode; children: ReactNode }) {
   return <section className="form-card"><div className="form-section-header"><div className="form-section-heading"><span>{number}</span><div><h2>{title}</h2><p>{description}</p></div></div>{action}</div>{children}</section>
 }

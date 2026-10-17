@@ -1,69 +1,72 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+import { Switch } from '@/components/ui/switch'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { PageBreadcrumbs } from '@/components/shared/PageBreadcrumbs'
-import { DeactivateDialog, RecordListToolbar, RecordRowActions } from '@/components/shared/RecordListParts'
-import { StatusBadge } from '@/components/shared/StatusBadge'
-import { TemplateDialog } from './components/TemplateDialog'
-import { eventById } from './events'
-import { templateService } from './service'
-import type { NotificationTemplate } from './types'
 import { PageSkeleton } from '@/components/shared/PageSkeleton'
-import { useHydrated } from '@/hooks/useHydrated'
+import { describeApiError } from '@/lib/api-errors'
+import { notificationApi, type MessageTemplate } from './api'
+import { TemplateDialog } from './components/TemplateDialog'
 
-const channels = (template: NotificationTemplate) => [template.pushEnabled && 'App', template.smsEnabled && 'SMS'].filter(Boolean).join(' + ') || 'None'
+type LoadState = { status: 'loading' } | { status: 'error'; message: string } | { status: 'ready'; templates: MessageTemplate[] }
 
-function TemplatesWorkspaceContent() {
-  const [revision, setRevision] = useState(0)
-  const [query, setQuery] = useState('')
-  const [status, setStatus] = useState('all')
-  const [editing, setEditing] = useState<NotificationTemplate | undefined>(undefined)
-  const [deactivating, setDeactivating] = useState<NotificationTemplate | null>(null)
-  const templates = useMemo(() => { void revision; return templateService.list() }, [revision])
-  const filtered = templates.filter(item => (status === 'all' || item.status === status) && `${eventById(item.id)?.label} ${item.title} ${item.body}`.toLowerCase().includes(query.trim().toLowerCase()))
-  const refresh = () => setRevision(value => value + 1)
-  const toggle = (template: NotificationTemplate) => {
-    if (template.status === 'active') { setDeactivating(template); return }
-    try { templateService.setStatus(template.id, 'active'); toast.success('Template activated.'); refresh() } catch (failure) { toast.error(failure instanceof Error ? failure.message : 'Unable to activate the template.') }
+/**
+ * The automatic messages customers receive. The six events are fixed by the system; staff change the wording (English and Gujarati)
+ * and can switch a message off. A message that is off sends nothing, neither to the phone nor to the bell.
+ */
+export function TemplatesWorkspace() {
+  const [state, setState] = useState<LoadState>({ status: 'loading' })
+  const [reloadKey, setReloadKey] = useState(0)
+  const [editing, setEditing] = useState<MessageTemplate | null>(null)
+  const [saving, setSaving] = useState<string | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    notificationApi.templates().then(
+      templates => { if (!cancelled) setState({ status: 'ready', templates }) },
+      failure => { if (!cancelled) setState({ status: 'error', message: describeApiError(failure) }) },
+    )
+    return () => { cancelled = true }
+  }, [reloadKey])
+
+  const replace = (updated: MessageTemplate) => setState(current => (current.status === 'ready' ? { status: 'ready', templates: current.templates.map(item => (item.key === updated.key ? updated : item)) } : current))
+  const toggle = async (template: MessageTemplate) => {
+    setSaving(template.key)
+    try {
+      const updated = await notificationApi.saveTemplate(template.key, { title: template.title, titleGujarati: template.titleGujarati, body: template.body, bodyGujarati: template.bodyGujarati, enabled: !template.enabled })
+      replace(updated)
+      toast.success(updated.enabled ? `"${template.label}" is on.` : `"${template.label}" is off. Customers will not receive it.`)
+    } catch (failure) {
+      toast.error(describeApiError(failure))
+    } finally {
+      setSaving(null)
+    }
   }
-  const confirmDeactivate = () => {
-    if (!deactivating) return
-    templateService.setStatus(deactivating.id, 'inactive')
-    toast.success('Template deactivated.')
-    setDeactivating(null)
-    refresh()
-  }
+
+  if (state.status === 'loading') return <PageSkeleton />
+  if (state.status === 'error') return <div className="product-state" role="alert"><strong>Messages could not be loaded</strong><span>{state.message}</span><Button className="secondary-button" variant="outline" onClick={() => { setState({ status: 'loading' }); setReloadKey(count => count + 1) }}>Try again</Button></div>
+
   return <div className="workspace-page">
     <header className="page-header">
-      <div><PageBreadcrumbs items={[{ label: 'Content' }, { label: 'Notification Templates' }]} /><h1>Notification Templates</h1><p className="page-description">The messages customers receive automatically. The events are fixed; you can change the wording and channels.</p></div>
+      <div><PageBreadcrumbs items={[{ label: 'Notifications' }, { label: 'Automatic messages' }]} /><h1>Automatic messages</h1><p className="page-description">What customers are told when something happens. You can change the words and switch a message off. Customers also see every message in the bell inside the app.</p></div>
     </header>
     <section className="config-section">
-      <RecordListToolbar noun="templates" query={query} onQueryChange={setQuery} status={status} onStatusChange={setStatus} count={filtered.length} />
       <div className="table-card"><div className="table-scroll"><Table>
-        <TableHeader><TableRow><TableHead>Event</TableHead><TableHead>Message</TableHead><TableHead>Sent by</TableHead><TableHead>Gujarati</TableHead><TableHead>Status</TableHead><TableHead scope="col" aria-label="Actions" /></TableRow></TableHeader>
+        <TableHeader><TableRow><TableHead>When it is sent</TableHead><TableHead>What customers read</TableHead><TableHead>Gujarati</TableHead><TableHead>On</TableHead><TableHead scope="col" aria-label="Actions" /></TableRow></TableHeader>
         <TableBody>
-          {filtered.map(item => <TableRow key={item.id}>
-            <TableCell><Button variant="ghost" className="table-link" onClick={() => setEditing(item)}>{eventById(item.id)?.label}</Button><small className="cell-note">{eventById(item.id)?.trigger}</small></TableCell>
+          {state.templates.map(item => <TableRow key={item.key}>
+            <TableCell><strong>{item.label}</strong><small className="cell-note">{item.trigger}</small></TableCell>
             <TableCell><strong>{item.title}</strong><small className="cell-note">{item.body}</small></TableCell>
-            <TableCell>{channels(item)}</TableCell>
-            <TableCell>{item.titleGujarati && item.bodyGujarati ? 'Added' : 'Missing'}</TableCell>
-            <TableCell><StatusBadge status={item.status}>{item.status === 'active' ? 'Active' : 'Inactive'}</StatusBadge></TableCell>
-            <TableCell><RecordRowActions name={eventById(item.id)?.label ?? 'template'} active={item.status === 'active'} onEdit={() => setEditing(item)} onToggle={() => toggle(item)} /></TableCell>
+            <TableCell>{item.titleGujarati && item.bodyGujarati ? 'Added' : 'English is used'}</TableCell>
+            <TableCell><Switch checked={item.enabled} disabled={saving === item.key} onCheckedChange={() => void toggle(item)} aria-label={`${item.label} is ${item.enabled ? 'on' : 'off'}`} /></TableCell>
+            <TableCell><Button variant="outline" className="secondary-button" onClick={() => setEditing(item)}>Edit words</Button></TableCell>
           </TableRow>)}
-          {filtered.length === 0 && <TableRow><TableCell colSpan={6}><div className="empty-table">No templates match your search and filters.</div></TableCell></TableRow>}
         </TableBody>
       </Table></div></div>
     </section>
-    {editing && <TemplateDialog key={editing.id} template={editing} onClose={() => setEditing(undefined)} onDone={refresh} />}
-    <DeactivateDialog open={Boolean(deactivating)} noun="template" name={deactivating ? eventById(deactivating.id)?.label ?? '' : ''} onCancel={() => setDeactivating(null)} onConfirm={confirmDeactivate} consequence="Customers stop receiving this message automatically. Nothing already sent is affected, and you can activate it again any time." />
+    {editing && <TemplateDialog key={editing.key} template={editing} onClose={() => setEditing(null)} onSaved={replace} />}
   </div>
-}
-
-/** Waits for the browser, where the mock data lives, so the first render matches the server's. */
-export function TemplatesWorkspace() {
-  const hydrated = useHydrated()
-  return hydrated ? <TemplatesWorkspaceContent /> : <PageSkeleton />
 }

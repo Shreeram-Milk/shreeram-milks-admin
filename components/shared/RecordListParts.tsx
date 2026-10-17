@@ -1,6 +1,6 @@
 'use client'
 
-import { CircleCheck, CircleOff, Edit2, MoreHorizontal, Search } from 'lucide-react'
+import { CircleCheck, CircleOff, Edit2, MoreHorizontal, Search, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { SelectField } from '@/components/ui/select-field'
@@ -17,12 +17,12 @@ export function RecordListToolbar({ noun, query, onQueryChange, status, onStatus
   </>
 }
 
-/** Edit button plus an overflow menu with Edit and Activate / Deactivate. */
-export function RecordRowActions({ name, active, onEdit, onToggle }: { name: string; active: boolean; onEdit: () => void; onToggle: () => void }) {
+/** Edit button plus an overflow menu with Edit, Activate / Deactivate and, where the record can be deleted, Delete. */
+export function RecordRowActions({ name, active, onEdit, onToggle, onDelete }: { name: string; active: boolean; onEdit: () => void; onToggle: () => void; onDelete?: () => void }) {
   return <div className="row-actions">
     <Button variant="ghost" size="icon" className="row-edit-action" aria-label={`Edit ${name}`} onClick={onEdit}><Edit2 size={15} /></Button>
     <DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="row-menu" aria-label={`Actions for ${name}`}><MoreHorizontal size={16} /></Button></DropdownMenuTrigger>
-      <DropdownMenuContent align="end"><DropdownMenuItem onSelect={onEdit}><Edit2 /> Edit</DropdownMenuItem><DropdownMenuItem onSelect={onToggle}>{active ? <CircleOff /> : <CircleCheck />}{active ? 'Deactivate' : 'Activate'}</DropdownMenuItem></DropdownMenuContent></DropdownMenu>
+      <DropdownMenuContent align="end"><DropdownMenuItem onSelect={onEdit}><Edit2 /> Edit</DropdownMenuItem><DropdownMenuItem onSelect={onToggle}>{active ? <CircleOff /> : <CircleCheck />}{active ? 'Deactivate' : 'Activate'}</DropdownMenuItem>{onDelete && <DropdownMenuItem onSelect={onDelete}><Trash2 /> Delete</DropdownMenuItem>}</DropdownMenuContent></DropdownMenu>
   </div>
 }
 

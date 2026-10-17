@@ -12,6 +12,27 @@ export type ProductVariant = {
   productionUnit: string
   productionQuantity: number
 }
+export type ProductBadge = 'bestseller' | 'new' | 'seasonal'
+export const PRODUCT_BADGE_LABELS: Record<ProductBadge, string> = { bestseller: 'Bestseller', new: 'New', seasonal: 'Seasonal' }
+/** How many gallery images and highlight lines a product page can show. */
+export const MAX_GALLERY_IMAGES = 10
+export const MAX_HIGHLIGHTS = 6
+export const MAX_HIGHLIGHT_LENGTH = 60
+
+/** Everything customers read and see about a product, apart from price and how it is sold. Images come from the Media Library. */
+export type ProductContent = {
+  longDescriptionEn: string
+  longDescriptionGu: string
+  primaryImageAssetId: string
+  galleryAssetIds: string[]
+  nutritionEn: string
+  nutritionGu: string
+  highlightsEn: string[]
+  highlightsGu: string[]
+  badges: ProductBadge[]
+}
+export const emptyProductContent = (): ProductContent => ({ longDescriptionEn: '', longDescriptionGu: '', primaryImageAssetId: '', galleryAssetIds: [], nutritionEn: '', nutritionGu: '', highlightsEn: [], highlightsGu: [], badges: [] })
+
 export type Product = {
   id: string
   name: string
@@ -20,7 +41,7 @@ export type Product = {
   sku: string
   shortDescription: string
   shortDescriptionGujarati: string
-  imageUrl: string
+  content: ProductContent
   status: ProductStatus
   variants: ProductVariant[]
   purchaseMethods: PurchaseMethod[]

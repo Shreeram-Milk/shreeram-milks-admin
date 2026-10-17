@@ -1,5 +1,7 @@
+import { Suspense } from 'react'
 import { BannerWorkspace } from '@/features/banners/BannerWorkspace'
 
 export default function BannersPage() {
-  return <BannerWorkspace />
+  // useSearchParams (the selected tab) needs a Suspense boundary.
+  return <Suspense><BannerWorkspace /></Suspense>
 }
