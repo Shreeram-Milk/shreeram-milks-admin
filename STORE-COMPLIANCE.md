@@ -12,13 +12,13 @@ Status: ✅ done · 🟡 planned/partly · ❌ missing · 📝 needs a decision 
 
 | # | Rule | What it means for us | Status |
 |---|---|---|---|
-| A1 | Apple 2.1 — no placeholder or demo content, no crashes, complete app | The app still shows made-up data: greeting "Priya", address "Greenwood Meadows, Villa 4B", fake "Next delivery: Tomorrow, 24 Oct", a dummy map picture, customer name "Priya Sharma". All must be real data (or hidden) before submission. | ❌ |
-| A2 | Apple 2.1(a) — **demo account for the reviewer**; backend must be live during review | Sign-in is by SMS code. A reviewer cannot receive our SMS. We need a **test phone number with a fixed code** (enabled only for reviewers), written in the Review Notes. Same for Google sign-in. | ❌ |
-| A3 | Apple 5.1.1(v) and Google Play — **in-app account deletion** | Required because customers can create accounts. A delete option must be easy to find in the app (Profile). Google also needs a **web page** for deletion requests, entered in Play Console. Deactivating or freezing does **not** count; user data tied to the account must be deleted. Anything we must keep (invoices, financial history) must be explained in the privacy policy. Our rule "never delete financial history" (AGENTS.md) fits: delete personal details, keep anonymised order and payment records. | ❌ (planned in `docs/01-screen-completion.md`) |
+| A1 | Apple 2.1 — no placeholder or demo content, no crashes, complete app | Screens show real data from the API. A release build refuses to start without an `https://` API address, so the bundled sample data can never reach customers. No "coming soon" buttons: the unfinished Chat option was removed from the app and its admin switch (Oct 2026). | ✅ |
+| A2 | Apple 2.1(a) — **demo account for the reviewer**; backend must be live during review | Sign-in is by email code. The backend has a fixed reviewer sign-in (`REVIEW_ACCOUNT_EMAIL` + `REVIEW_ACCOUNT_CODE`). Set both on the live server, write them in the Review Notes, and keep them set: every update is reviewed again. | 🟡 set on live server |
+| A3 | Apple 5.1.1(v) and Google Play — **in-app account deletion** | Profile → Settings → Delete my account. The backend erases name, email, phone, addresses, notes, support messages and push tokens, signs out every phone, and keeps anonymised order and payment records. Still needed: a **web page** for deletion requests, entered in Play Console. | 🟡 web page missing |
 | A4 | Apple 5.1.1(i), Google — **privacy policy link** in the app and in the store listing | Needs a public web page (Google: not a PDF, not editable, not geofenced). Must name the business, say what data we collect, who receives it, how long we keep it, how to delete it, and give a privacy contact. The admin's Policies module holds the text, and the backend serves each published policy as a public web page at `/legal/privacy` (also `/legal/terms` and so on, with `?lang=gu` for Gujarati). The app shows them under Profile → Legal & policies. Still to do: write and publish the real text, and host the API on HTTPS so the link works for the stores. | 🟡 |
 | A5 | Apple 4.8 — **Sign in with Apple (or an equivalent)** whenever Google sign-in is offered | Our plan is phone code **plus Google**. Google counts as a third-party login, so we must also offer an option that limits data collected to name and email, lets users hide their email, and does not track. A phone-number code may not meet all three. Easiest fix: add **Sign in with Apple** on iOS. | ✅ Decided: no Sign in with Apple. Google sign-in is shown on Android only; iPhone uses the phone code only (an app using only its own sign-in is exempt). If Google is ever added on iPhone, add Sign in with Apple first. |
-| A6 | Production API must use **HTTPS** | Apple blocks plain `http://` by default and so does release Android. The test address `http://192.168.x.x:4000` works in development only. | 🟡 (needs deployment) |
-| A7 | Google Play — **target API level** | From **31 Aug 2026**, new apps and updates must target **Android 16 (API 36)** or higher. Check the Expo SDK we use builds to API 36 before we build a release. | 🟡 verify at build time |
+| A6 | Production API must use **HTTPS** | Live at `https://api.shreerammilk.com` (health check passes). Release builds must set `EXPO_PUBLIC_API_URL` to it. | ✅ |
+| A7 | Google Play — **target API level** | From **31 Aug 2026**, new apps and updates must target **Android 16 (API 36)** or higher. Expo SDK 57 builds with target and compile SDK 36. | ✅ |
 
 ## B. Payments
 
@@ -37,7 +37,7 @@ Status: ✅ done · 🟡 planned/partly · ❌ missing · 📝 needs a decision 
 | Google **Data safety** form and Apple **App Privacy labels** | Both stores ask what we collect, why, and who gets it, including from SDKs. Must match the privacy policy. Expected data: name, phone, email, delivery address, order history, device/push token, crash logs if added. **Card details are handled by the gateway, never stored by us.** | ❌ (fill in at submission) |
 | Apple 5.1.1(iii–iv), 5.1.5 — ask only for data the feature needs | Ask for location only when choosing a delivery address. **Manual address entry must work if location is refused.** | 🟡 |
 | Apple 5.1.2 — permission, no forced consent | The app must work if the customer says no to notifications or location. No ad tracking is planned, so no tracking prompt is needed. If we ever add ad or analytics SDKs that track, we must add App Tracking Transparency. | ✅ plan |
-| Apple 4.5.4 — notifications | The app works without them. **Promotional** notifications need a separate opt-in and an in-app opt-out. Delivery updates are fine as service messages. Never put sensitive details in a notification. | 🟡 (when notifications are built) |
+| Apple 4.5.4 — notifications | The app works without them and only asks when the customer chooses to. Android has two channels, "deliveries" and "offers", so offers can be muted on their own. Never put sensitive details in a notification. | ✅ |
 | Apple 1.6 — security | Passwords hashed, TLS, least privilege, no secrets in the app. | ✅ backend design |
 | Permission texts | Each permission (location, notifications, camera if ever used) needs a clear one-line reason in both languages. | ❌ (when each is added) |
 
@@ -50,7 +50,17 @@ Status: ✅ done · 🟡 planned/partly · ❌ missing · 📝 needs a decision 
 | Apple 1.2 — user-generated content | Not triggered: support tickets are private between a customer and us. If we ever add public reviews or comments, we need reporting, blocking and moderation first. | ✅ |
 | Apple 2.3 — accurate listing | Screenshots show the real app. No other platforms' names. Name and keywords not stuffed. `supportsTablet` is `true` in `app.json`: if iPad screenshots would look broken, set it to `false` or test on tablet. | 🟡 |
 | Age rating / content rating questionnaires | Answer honestly. The app is not for children. | ❌ (at submission) |
-| Support URL and contact | Apple 1.5: easy, accurate way to reach us, in the app and the listing. App Settings already holds the support phone, WhatsApp and email. | 🟡 |
+| Support URL and contact | Apple 1.5: easy, accurate way to reach us, in the app and the listing. The Support screen shows Call, WhatsApp and Email only when filled in under admin App Settings, so fill in at least phone and email before review. | 🟡 fill in admin |
+
+## D2. Android release build
+
+| Item | Status |
+|---|---|
+| Signed with our own upload key, not the debug key. The key and its passwords live only on the build computer (`~/.gradle/gradle.properties`, `SHREERAM_UPLOAD_*`); `plugins/withReleaseSigning.js` applies them. Never commit the key. Back it up. | ✅ |
+| `android/` regenerated with `npx expo prebuild --platform android --clean` before every release, so `app.json` blocked permissions (overlay, storage) are removed. | ✅ |
+| `android.versionCode` in `app.json` goes up by 1 on **every** upload (Play refuses a reused number). Package `com.shreerammilks.app` never changes. | ✅ |
+| PhonePe UPI app lookups (`<queries>` for `upi://pay`, PhonePe packages) come from the PhonePe library itself. Test one real payment on the release build. | ✅ / test |
+| Sign-in screen links to Terms & Conditions and Privacy Policy. | ✅ |
 
 ## E. Business and legal items (outside the code)
 

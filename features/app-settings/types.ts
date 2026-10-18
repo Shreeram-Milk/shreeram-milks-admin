@@ -1,7 +1,7 @@
 /**
  * Switches for features the app already has. They show or hide an existing capability; they cannot add new
- * native functionality. Support chat and WhatsApp are controlled in the Support section (`chatEnabled`,
- * `whatsappEnabled`), so they are not repeated here.
+ * native functionality. WhatsApp is controlled in the Support section (`whatsappEnabled`), so it is not repeated here.
+ * `chatEnabled` is still stored but has no switch: the app has no live chat yet, and a "coming soon" button gets store review flagged.
  */
 export type FeatureFlags = {
   showTrials: boolean

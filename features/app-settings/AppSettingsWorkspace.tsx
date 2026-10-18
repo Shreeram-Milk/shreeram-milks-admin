@@ -87,7 +87,6 @@ function AppSettingsForm({ initial }: { initial: AppSettings }) {
         <div className="switch-list">
           <Controller control={control} name="callEnabled" render={({ field }) => <SwitchRow id="call-enabled" label="Call support" detail="Shows the Call button in Help." error={errors.supportPhone?.message} checked={field.value} onChange={field.onChange} />} />
           <Controller control={control} name="whatsappEnabled" render={({ field }) => <SwitchRow id="whatsapp-enabled" label="WhatsApp support" detail="Shows the WhatsApp button in Help." error={errors.supportWhatsApp?.message} checked={field.value} onChange={field.onChange} />} />
-          <Controller control={control} name="chatEnabled" render={({ field }) => <SwitchRow id="chat-enabled" label="Chat support" detail="Shows the Chat button. Live chat is connected later; until then customers see it as coming soon." checked={field.value} onChange={field.onChange} />} />
         </div>
       </section>
       <section className="form-card"><h2>Support hours</h2>
