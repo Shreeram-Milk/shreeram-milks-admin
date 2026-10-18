@@ -1,1 +1,1 @@
-{"version":"0.0.1","configurations":[{"name":"admin","runtimeExecutable":"npm","runtimeArgs":["run","dev"],"port":3000}]}
+{"version": "0.0.1", "configurations": [{"name": "admin", "runtimeExecutable": "npm", "runtimeArgs": ["run", "dev"], "port": 3000}, {"name": "website", "runtimeExecutable": "npm", "runtimeArgs": ["--prefix", "../website", "run", "dev", "--", "-p", "3005"], "port": 3005}]}
