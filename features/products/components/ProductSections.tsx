@@ -69,8 +69,8 @@ export function VariantsSection({ watch, setValue }: { watch: UseFormWatch<Produ
   }
   const saveEditor = () => {
     if (!editor) return
-    if (!editor.value.name.trim() || !editor.value.displayUnit.trim() || editor.value.pricePaise < 0 || editor.value.displayQuantity <= 0) {
-      setEditorError('Enter a size name, a price, a unit, and an amount greater than zero.')
+    if (!editor.value.name.trim() || !editor.value.displayUnit.trim() || editor.value.pricePaise <= 0 || editor.value.displayQuantity <= 0) {
+      setEditorError('Enter a size name, a price above ₹0, a unit, and an amount greater than zero.')
       return
     }
     if (showProduction && (!editor.value.productionUnit.trim() || editor.value.productionQuantity <= 0)) {

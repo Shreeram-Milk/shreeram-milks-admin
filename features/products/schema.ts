@@ -8,7 +8,7 @@ const variantSchema = z.object({
   /** The saved variant's id; empty for one that has not been saved yet. */
   id: z.string().optional(),
   name: z.string().trim().min(1, 'Variant name is required.'), sku: z.string(),
-  pricePaise: z.number().int().min(0, 'Price must be zero or greater.'), compareAtPricePaise: z.number().int().nullable(),
+  pricePaise: z.number().int().min(1, 'Price must be greater than zero.'), compareAtPricePaise: z.number().int().nullable(),
   status: z.enum(['active', 'inactive']), displayUnit: z.string().min(1, 'Display unit is required.'),
   displayQuantity: z.number().positive('Display quantity must be greater than zero.'), productionUnit: z.string(), productionQuantity: z.number().nonnegative(),
 }).refine(variant => variant.compareAtPricePaise === null || variant.compareAtPricePaise > variant.pricePaise, { path: ['compareAtPricePaise'], message: 'The old price must be higher than the price.' })

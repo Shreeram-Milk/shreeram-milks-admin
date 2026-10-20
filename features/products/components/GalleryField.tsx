@@ -111,7 +111,12 @@ export function GalleryField({ assetIds, urls, onChange, onPreview, onBusyChange
           <DialogTitle>Add image blocks</DialogTitle>
           <DialogDescription>How many pictures do you want to add? Each one becomes an empty block you click to upload. You can add up to {room} more.</DialogDescription>
         </DialogHeader>
-        <form onSubmit={event => { event.preventDefault(); createBlocks() }}>
+        <form onSubmit={event => {
+          event.preventDefault()
+          // The dialog is portalled, but React still bubbles its submit to the product form that wraps this field, which would save and leave the editor.
+          event.stopPropagation()
+          createBlocks()
+        }}>
           <label className="product-form-label" htmlFor="gallery-block-count">Number of blocks (1 to {room})</label>
           <Input id="gallery-block-count" type="number" inputMode="numeric" min={1} max={room} value={count} autoFocus onChange={event => { setCount(event.target.value); setCountError('') }} aria-invalid={Boolean(countError)} aria-describedby={countError ? 'gallery-block-count-error' : undefined} />
           {countError && <p id="gallery-block-count-error" className="field-error" role="alert">{countError}</p>}
