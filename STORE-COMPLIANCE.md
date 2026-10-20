@@ -46,7 +46,7 @@ Status: ✅ done · 🟡 planned/partly · ❌ missing · 📝 needs a decision 
 | Rule | What it means for us | Status |
 |---|---|---|
 | Apple 1.4.1, 2.3.1 — **health and quality claims must be accurate** | Do **not** write that A2 milk, ghee or any product cures, prevents or treats a disease, or make unproven nutrition claims, in FAQs, banners, product text, notifications or store listing. Quality reports must be real, current lab documents. Anyone editing content in the admin must follow this. | 📝 editorial rule |
-| Apple 2.5.2 — no downloaded code | The admin changes **text, pictures and on/off switches only**. App Settings feature flags only show or hide features already in the installed app. **Never add a way to download code or new features.** | ✅ |
+| Apple 2.5.2, Google Play Device and Network Abuse — downloaded code | The admin changes **text, pictures and on/off switches only**; feature flags only show or hide features already in the installed app, and the admin can never send code. **Over-the-air updates** (EAS Update, `expo-updates`) replace only the app's JavaScript (screens, layout, logic). Allowed by both stores as long as the app keeps its purpose and no native code or new permissions arrive this way. Only developers publish them, first to `preview` (tester), then `production` (customers). Native changes (libraries, permissions, icon, Expo upgrade) still go through a new store build with a higher `version`. | ✅ |
 | Apple 1.2 — user-generated content | Not triggered: support tickets are private between a customer and us. If we ever add public reviews or comments, we need reporting, blocking and moderation first. | ✅ |
 | Apple 2.3 — accurate listing | Screenshots show the real app. No other platforms' names. Name and keywords not stuffed. `supportsTablet` is `true` in `app.json`: if iPad screenshots would look broken, set it to `false` or test on tablet. | 🟡 |
 | Age rating / content rating questionnaires | Answer honestly. The app is not for children. | ❌ (at submission) |
@@ -61,6 +61,7 @@ Status: ✅ done · 🟡 planned/partly · ❌ missing · 📝 needs a decision 
 | `android.versionCode` in `app.json` goes up by 1 on **every** upload (Play refuses a reused number). Package `com.shreerammilks.app` never changes. | ✅ |
 | PhonePe UPI app lookups (`<queries>` for `upi://pay`, PhonePe packages) come from the PhonePe library itself. Test one real payment on the release build. | ✅ / test |
 | Sign-in screen links to Terms & Conditions and Privacy Policy. | ✅ |
+| Over-the-air updates: `runtimeVersion` follows `version` (1.0.0), so an update only reaches builds that can run it. The channel is chosen before prebuild with `$env:APP_CHANNEL` (`preview` for the tester APK, `production` or unset for the Play Store AAB); `app.config.js` refuses any other value. Publish: `npx eas-cli@latest update --channel preview`, check on the tester's phone (Settings shows the update id), then the same for `production`. | ✅ |
 
 ## E. Business and legal items (outside the code)
 
