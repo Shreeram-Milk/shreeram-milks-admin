@@ -48,6 +48,11 @@ describe('quick checks before saving', () => {
     assert.equal(payload.cutoffRuleId, null)
     assert.equal(payload.includeInProductionPlanning, false)
   })
+  it('sends the production plan choice only for our own delivery with an order-by time', () => {
+    assert.equal(toPayload(filled({ deliveryMethod: 'local_delivery', cutoffRuleId: '', includeInProductionPlanning: true })).includeInProductionPlanning, false)
+    assert.equal(toPayload(filled({ deliveryMethod: 'local_delivery', cutoffRuleId: 'rule-1', includeInProductionPlanning: true })).includeInProductionPlanning, true)
+    assert.equal(toPayload(filled({ deliveryMethod: 'local_delivery', cutoffRuleId: 'rule-1', includeInProductionPlanning: false })).includeInProductionPlanning, false)
+  })
   it('catches repeated variant names and an old price that is not higher', () => {
     assert.equal(productSchema.safeParse(filled({ variants: [variant(), variant({ name: '500 ML' })] })).success, false)
     assert.equal(productSchema.safeParse(filled({ variants: [variant({ compareAtPricePaise: 3000 })] })).success, false)

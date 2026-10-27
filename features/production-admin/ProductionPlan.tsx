@@ -11,7 +11,7 @@ import { PageSkeleton } from '@/components/shared/PageSkeleton'
 import { useUrlListState } from '@/hooks/useUrlListState'
 import { describeApiError } from '@/lib/api-errors'
 import { addDays, formatTime12h, formatTimestamp, formatWeekdayDate, todayInBusinessZone } from '@/lib/business-time'
-import { TYPE_PARTS, describeTotals, productionAdminApi, sumTotals, type PlannedSlot, type ProductionPlan as Plan, type TypeSplit } from './api'
+import { TYPE_PARTS, describeTotals, planToCsv, productionAdminApi, sumTotals, type PlannedSlot, type ProductionPlan as Plan, type TypeSplit } from './api'
 
 const FILTERS = { date: 'free', slotId: 'free', productId: 'free' } as const
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
@@ -26,6 +26,16 @@ function timeLeft(iso: string, now: number): string | null {
   if (minutes < 60) return `in ${minutes} min`
   const hours = Math.floor(minutes / 60)
   return hours >= 24 ? `in ${Math.floor(hours / 24)} d ${hours % 24} h` : `in ${hours} h ${minutes % 60} min`
+}
+
+/** Hands the browser a CSV file to save. The plan on screen (with the chosen filters) is what is saved. */
+function downloadCsv(name: string, text: string) {
+  const url = URL.createObjectURL(new Blob([`﻿${text}`], { type: 'text/csv;charset=utf-8' }))
+  const link = document.createElement('a')
+  link.href = url
+  link.download = name
+  link.click()
+  URL.revokeObjectURL(url)
 }
 
 const addSplit = (a: TypeSplit, b: TypeSplit): TypeSplit => ({ oneTime: a.oneTime + b.oneTime, trial: a.trial + b.trial, subscription: a.subscription + b.subscription })
@@ -57,7 +67,7 @@ function PlanView() {
 
   // The "closes in" times count down while the page is open.
   useEffect(() => {
-    const timer = setInterval(() => setNow(Date.now()), 60_000)
+    const timer = setInterval(() => { setNow(Date.now()); setReloadKey(count => count + 1) }, 60_000)
     return () => clearInterval(timer)
   }, [])
 
@@ -84,7 +94,8 @@ function PlanView() {
   return <div className="workspace-page products-page production-page">
     <header className="page-header">
       <div><PageBreadcrumbs items={[{ label: 'Operations' }, { label: 'Production Planning' }]} /><h1>Production Planning</h1><p className="page-description">What to make for {formatWeekdayDate(date)}, per delivery window. One-time orders, subscriptions and trials are counted together; cancelled and skipped deliveries are left out.</p></div>
-      <div className="header-actions"><Button variant="outline" className="secondary-button" onClick={reload}>Refresh</Button></div>
+      <div className="header-actions">{state.status === 'ready' && slots.length > 0 ? <Button variant="outline" className="secondary-button" onClick={() => downloadCsv(`production-plan-${date}.csv`, planToCsv(date, slots))}>Download CSV</Button> : null}
+        <Button variant="outline" className="secondary-button" onClick={reload}>Refresh</Button></div>
     </header>
 
     <div className="day-chip-row" role="group" aria-label="Delivery day">
@@ -94,6 +105,11 @@ function PlanView() {
       <label className="date-filter compact"><span className="sr-only">Delivery day</span><Input type="date" value={date} onChange={event => update({ date: event.target.value || null })} aria-label="Pick a delivery day" /></label>
       <button type="button" className="day-chip" onClick={() => update({ date: addDays(date, 1) })} aria-label="Next day">›</button>
     </div>
+
+    {state.status === 'ready' && state.plan.warnings.length > 0 && <div className="product-state tone-warning" role="alert">
+      <strong>Check before you produce</strong>
+      {state.plan.warnings.map(warning => <span key={warning.code}>{warning.message}</span>)}
+    </div>}
 
     {state.status === 'loading' && <PageSkeleton />}
     {state.status === 'error' && <div className="product-state" role="alert"><strong>The plan could not be loaded</strong><span>{state.message}</span><Button className="secondary-button" variant="outline" onClick={reload}>Try again</Button></div>}
@@ -130,7 +146,7 @@ function PlanView() {
               <TableCell colSpan={9}>
                 <strong>{slot.slotName}</strong> <span>{formatTime12h(slot.startTime)} – {formatTime12h(slot.endTime)}</span>
                 <span className={`lock-tag ${slot.status === 'final' ? 'is-locked' : 'is-open'}`}>{slot.status === 'final' ? 'Final' : 'Open'}</span>
-                <span className="window-row-note">{slot.status === 'final' ? `Closed ${slot.closesAt ? formatTimestamp(slot.closesAt) : ''}: make exactly this` : slot.closesAt ? `Can still change until ${formatTimestamp(slot.closesAt)}` : 'No cut-off: can still change'}</span>
+                <span className="window-row-note">{slot.status === 'final' ? (slot.closesAt ? `Closed ${formatTimestamp(slot.closesAt)}: make exactly this` : 'The delivery day has begun: make exactly this') : slot.closesAt ? `Can still change until ${formatTimestamp(slot.closesAt)}` : 'No cut-off: can still change'}</span>
                 <span className="window-row-total">{describeTotals(slot.products.flatMap(product => product.production).length ? sumTotals(slot.products.map(product => product.production)) : [], slot.quantity)}</span>
               </TableCell>
             </TableRow>

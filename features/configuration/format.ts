@@ -13,12 +13,29 @@ export const enumText = (value: string) => value.replaceAll('_', ' ').replace(/\
 export const formatTime = (time: string) => { const [hours = 0, minutes = 0] = time.split(':').map(Number); return `${(hours % 12) || 12}:${String(minutes).padStart(2, '0')} ${hours >= 12 ? 'PM' : 'AM'}` }
 export const humanWindow = (slot?: Pick<DeliverySlot, 'startTime' | 'endTime'>) => slot ? `${formatTime(slot.startTime)} – ${formatTime(slot.endTime)}` : 'Unavailable slot'
 
-export function cutoffPreview(condition: { dayRelation: string; cutoffTime: string; cancelDayRelation?: string | null; cancelTime?: string | null }, slot?: Pick<DeliverySlot, 'name'>) {
-  const day = condition.dayRelation === 'previous_day' ? 'tomorrow’s' : 'today’s'
-  const ordering = `Orders for ${day} ${slot?.name ?? 'delivery'} delivery must be placed before ${formatTime(condition.cutoffTime)} today.`
-  if (!condition.cancelDayRelation || !condition.cancelTime) return `${ordering} Customers can cancel or skip until the same time.`
-  const when = condition.cancelDayRelation === condition.dayRelation ? 'the same day' : condition.cancelDayRelation === 'previous_day' ? 'the day before delivery' : 'the delivery day'
-  return `${ordering} Customers can cancel or skip until ${formatTime(condition.cancelTime)} (${when}).`
+/** The part of the day a time falls in, so a list of times is easy to scan. */
+export const partOfDay = (time: string): string => {
+  const hours = Number(time.split(':')[0] ?? 0)
+  return hours >= 5 && hours < 12 ? 'Morning' : hours >= 12 && hours < 17 ? 'Afternoon' : hours >= 17 && hours < 21 ? 'Evening' : 'Night'
+}
+
+/** Every half hour of the day as "9:00 PM · Evening", so staff pick a time instead of typing one. `latest` hides times after it; a saved odd time stays in the list. */
+export function timeChoices(current: string, latest?: string): Array<{ value: string; label: string }> {
+  const times: string[] = []
+  for (let minutes = 0; minutes < 24 * 60; minutes += 30) times.push(`${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`)
+  if (current && !times.includes(current)) times.push(current)
+  return times.filter(time => !latest || time <= latest || time === current).sort().map(time => ({ value: time, label: `${formatTime(time)} · ${partOfDay(time)}` }))
+}
+
+/** "on the day before delivery" / "on the same day as delivery". */
+const dayPhrase = (dayRelation: string) => (dayRelation === 'previous_day' ? 'on the day before delivery' : 'on the same day as delivery')
+
+/** One plain sentence for staff: who can order until when, to get which delivery window. The window is named by its time, never only by its name. */
+export function cutoffPreview(condition: { dayRelation: string; cutoffTime: string; cancelDayRelation?: string | null; cancelTime?: string | null }, slot?: Partial<Pick<DeliverySlot, 'name' | 'startTime' | 'endTime'>>) {
+  const window = slot?.startTime && slot.endTime ? `delivery between ${humanWindow({ startTime: slot.startTime, endTime: slot.endTime })}` : `${slot?.name ?? 'the'} delivery`
+  const ordering = `To get ${window}, a customer must order before ${formatTime(condition.cutoffTime)} ${dayPhrase(condition.dayRelation)}.`
+  if (!condition.cancelDayRelation || !condition.cancelTime) return `${ordering} They can cancel or skip until that same time.`
+  return `${ordering} They can cancel or skip until ${formatTime(condition.cancelTime)} ${dayPhrase(condition.cancelDayRelation)}.`
 }
 
 /** "2 service areas: Gandhinagar, Surat" for the switch-off warning. */

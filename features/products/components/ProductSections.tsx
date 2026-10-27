@@ -44,8 +44,12 @@ export function BasicSection({ register, watch, setValue, errors, categories, st
 /** Each size customers can buy and its price. A product made in the dairy also says how much each size uses up, for the daily plan. */
 export function VariantsSection({ watch, setValue }: { watch: UseFormWatch<ProductFormValues>; setValue: UseFormSetValue<ProductFormValues> }) {
   const variants = watch('variants')
-  const showProduction = watch('includeInProductionPlanning')
-  const courier = watch('deliveryMethod') === 'shipping'
+  const deliveryMethod = watch('deliveryMethod')
+  const hasCutoff = Boolean(watch('cutoffRuleId'))
+  // The daily plan exists to know how much to make before orders close, so only products we deliver ourselves with an order-by time belong in it.
+  const canPlan = deliveryMethod === 'local_delivery' && hasCutoff
+  const showProduction = watch('includeInProductionPlanning') && canPlan
+  const courier = deliveryMethod === 'shipping'
   const [editor, setEditor] = useState<{ index: number | null; value: FormVariant } | null>(null)
   const [editorError, setEditorError] = useState('')
   const [deleteIndex, setDeleteIndex] = useState<number | null>(null)
@@ -89,8 +93,8 @@ export function VariantsSection({ watch, setValue }: { watch: UseFormWatch<Produ
   const missingAmounts = showProduction ? variants.filter(variant => !variant.productionUnit || variant.productionQuantity <= 0).length : 0
 
   return <Section number="03" title="Sizes & prices" description="Each size customers can buy, like 500 ml or 1 litre, and its price." action={<AdminButton type="button" className="section-add-button" onClick={() => openEditor(null)}><Plus size={14} /> Add size</AdminButton>}>
-    {courier
-      ? <p className="product-hint">Courier products are not part of the daily production plan.</p>
+    {!canPlan
+      ? <p className="product-hint">{courier ? 'Courier products are not part of the daily production plan.' : deliveryMethod === 'local_delivery' ? 'To count this product in the daily production plan, choose an order-by time in the Delivery step. The plan only covers products that have one.' : 'Choose how this product is delivered (Delivery step) to see if it can be counted in the daily production plan.'}</p>
       : <label className={`production-choice${showProduction ? ' is-on' : ''}`}><Checkbox checked={showProduction} onCheckedChange={checked => toggleProduction(checked === true)} /><span><strong>We make this product: count it in the daily production plan</strong><small>{showProduction ? 'Each size then says how much it uses, for example 0.5 Litre for a 500 ml bottle. It is filled in for you from the size.' : 'Leave this off for products you buy ready-made.'}</small></span></label>}
     {missingAmounts > 0 ? <p className="field-error" role="alert">{missingAmounts === 1 ? '1 size has' : `${missingAmounts} sizes have`} no &quot;uses for making&quot; amount yet. Edit {missingAmounts === 1 ? 'it' : 'them'} to add one.</p> : null}
     <div className="repeatable-table-shell"><Table className="variant-table"><TableHeader><TableRow><TableHead>Size</TableHead><TableHead>Price</TableHead><TableHead>Customers see</TableHead>{showProduction && <TableHead>Uses for making</TableHead>}<TableHead className="table-actions-heading">Actions</TableHead></TableRow></TableHeader><TableBody>
@@ -186,7 +190,7 @@ export function DeliverySection({ watch, setValue, errors, areas, cutoffRules }:
     {method && <FormField label="Delivery area *" error={errors.serviceAreaId?.message}><ProductSelect label="Delivery area" value={areaId} onChange={value => setValue('serviceAreaId', value, { shouldDirty: true, shouldValidate: true })} placeholder={areaOptions.length ? 'Choose a delivery area' : 'No matching delivery area yet'} options={areaOptions} /></FormField>}
     {method === 'local_delivery' && <>
       <p className="product-hint">The PIN codes served, and the Morning or Evening windows each PIN gets, are set inside the delivery area.</p>
-      <FormField label="Order-by time" helper="The last time customers can order for a delivery. Made in Setup → Order-by Times."><ProductSelect label="Order-by time" value={cutoffId || NO_CUTOFF} onChange={value => setValue('cutoffRuleId', value === NO_CUTOFF ? '' : value, { shouldDirty: true })} placeholder="Choose an order-by time" options={cutoffOptions} /></FormField>
+      <FormField label="Order-by time" helper="The last time customers can order for a delivery. Made in Setup → Order-by Times."><ProductSelect label="Order-by time" value={cutoffId || NO_CUTOFF} onChange={value => { setValue('cutoffRuleId', value === NO_CUTOFF ? '' : value, { shouldDirty: true }); if (value === NO_CUTOFF) setValue('includeInProductionPlanning', false, { shouldDirty: true }) }} placeholder="Choose an order-by time" options={cutoffOptions} /></FormField>
     </>}
     {method === 'shipping' && <p className="product-hint">Courier shipping has no delivery windows, order-by time or production plan.</p>}
   </Section>

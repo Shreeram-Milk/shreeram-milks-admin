@@ -31,7 +31,7 @@ describe('time wording', () => {
     assert.equal(formatTime('00:05'), '12:05 AM')
     assert.equal(formatTime('12:00'), '12:00 PM')
     assert.equal(formatTime('17:30'), '5:30 PM')
-    assert.match(cutoffPreview({ dayRelation: 'previous_day', cutoffTime: '15:00' }, { name: 'Morning' }), /tomorrow’s Morning delivery must be placed before 3:00 PM today/)
+    assert.match(cutoffPreview({ dayRelation: 'previous_day', cutoffTime: '15:00' }, { name: 'Morning', startTime: '06:00', endTime: '09:00' }), /delivery between 6:00 AM – 9:00 AM, a customer must order before 3:00 PM on the day before delivery/)
   })
 })
 

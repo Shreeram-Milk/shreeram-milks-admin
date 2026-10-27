@@ -83,7 +83,7 @@ export function toPayload(values: ProductFormValues): ProductPayload {
     primaryImageAssetId: content.primaryImageAssetId || null, galleryAssetIds: content.galleryAssetIds.filter(id => id !== content.primaryImageAssetId),
     purchaseMethods: values.purchaseMethods,
     deliveryMethod: values.deliveryMethod || null, serviceAreaId: values.serviceAreaId || null,
-    cutoffRuleId: values.deliveryMethod === 'local_delivery' ? values.cutoffRuleId || null : null, includeInProductionPlanning: values.deliveryMethod === 'local_delivery' && values.includeInProductionPlanning, excludedFromCredit: values.excludedFromCredit,
+    cutoffRuleId: values.deliveryMethod === 'local_delivery' ? values.cutoffRuleId || null : null, includeInProductionPlanning: values.deliveryMethod === 'local_delivery' && Boolean(values.cutoffRuleId) && values.includeInProductionPlanning, excludedFromCredit: values.excludedFromCredit,
     trialPlanIds: values.purchaseMethods.includes('trial') ? values.trialPlanIds : [], subscriptionRuleIds: values.purchaseMethods.includes('subscription') ? values.subscriptionRuleIds : [],
     status: values.status,
     variants: values.variants.map(variant => ({

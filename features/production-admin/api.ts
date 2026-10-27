@@ -14,7 +14,9 @@ export type PlannedSlot = {
   /** Orders still wanted in this window, each counted once. */
   orderCount: number
 }
-export type ProductionPlan = { date: string; slots: PlannedSlot[] }
+/** Something staff must know before trusting the numbers (for example subscriptions not created yet). */
+export type PlanWarning = { code: string; message: string }
+export type ProductionPlan = { date: string; slots: PlannedSlot[]; warnings: PlanWarning[] }
 
 export const productionAdminApi = {
   async plan(date: string): Promise<ProductionPlan> { return (await apiRequest<{ plan: ProductionPlan }>(`/admin/production-planning?date=${encodeURIComponent(date)}`)).plan },
@@ -35,3 +37,18 @@ export function sumTotals(lists: UnitTotal[][]): UnitTotal[] {
 }
 
 export const TYPE_PARTS: Array<{ key: keyof TypeSplit; label: string }> = [{ key: 'oneTime', label: 'One-time' }, { key: 'subscription', label: 'Subscription' }, { key: 'trial', label: 'Trial' }]
+
+/** One CSV cell, quoted when it holds a comma, quote or line break. A leading = + - @ is defused so a spreadsheet never runs it as a formula. */
+const cell = (value: string): string => {
+  const safe = /^[=+\-@]/.test(value) ? `'${value}` : value
+  return /[",\r\n]/.test(safe) ? `"${safe.replaceAll('"', '""')}"` : safe
+}
+
+/** The plan as CSV rows for the production floor: one line per product size in each delivery window. */
+export function planToCsv(date: string, slots: PlannedSlot[]): string {
+  const lines: string[][] = [['Date', 'Window', 'Start', 'End', 'Status', 'Product', 'Size', 'To make', 'Unit', 'Pieces', 'One-time', 'Subscription', 'Trial', 'Cancelled or skipped', 'Orders']]
+  for (const slot of slots) for (const product of slot.products) for (const variant of product.variants) {
+    lines.push([date, slot.slotName, slot.startTime, slot.endTime, slot.status === 'final' ? 'Final' : 'Open', product.productName, variant.variantName, variant.production?.quantity ?? '', variant.production?.unit ?? '', variant.quantity, variant.byType.oneTime, variant.byType.subscription, variant.byType.trial, variant.cancelledQuantity, variant.orderCount].map(String))
+  }
+  return lines.map(line => line.map(cell).join(',')).join('\r\n')
+}

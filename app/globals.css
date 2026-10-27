@@ -1509,7 +1509,17 @@ dl.product-detail-rows dd { margin: 0; color: #344256; font-weight: 600; text-al
 .cutoff-line { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin: 0; color: var(--foreground); font-size: 14px; line-height: 1.4; }
 .cutoff-line [data-slot="select-trigger"].cutoff-pick { width: auto; min-width: 150px; }
 .cutoff-time { width: 130px; }
-.cutoff-preview { margin: 0; padding: 8px 10px; border-radius: 8px; background: #eef6f1; color: #1f4d3b; font-size: 13px; }
+.cutoff-step { display: grid; grid-template-columns: 28px 1fr; gap: 12px; align-items: start; }
+.cutoff-num { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: #1f4d3b; color: #fff; font-size: 13px; font-weight: 700; }
+.cutoff-q { margin: 0 0 6px; font-size: 14px; font-weight: 600; }
+.cutoff-hint { margin: 6px 0 0; color: #5b6770; font-size: 13px; }
+.cutoff-days { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 8px; }
+.cutoff-day { display: grid; gap: 2px; text-align: left; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; background: #fff; cursor: pointer; }
+.cutoff-day span { color: #5b6770; font-size: 12px; }
+.cutoff-day.is-active { border-color: #1f4d3b; background: #eef6f1; box-shadow: 0 0 0 1px #1f4d3b; }
+.cutoff-sub { display: grid; gap: 8px; margin-top: 8px; }
+[data-slot="select-trigger"].cutoff-wide { width: 100%; max-width: 420px; }
+.cutoff-preview { margin: 0; padding: 12px 14px; border-radius: 8px; background: #eef6f1; color: #1f4d3b; font-size: 15px; line-height: 1.5; }
 .cutoff-remove { justify-self: start; }
 
 /* The "we make this product" choice on the sizes step. */
