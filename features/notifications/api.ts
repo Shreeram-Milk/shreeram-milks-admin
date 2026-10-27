@@ -1,7 +1,7 @@
 import { apiRequest } from '@/lib/api-client'
 import type { ListResult } from '../configuration/api'
 
-export type MessageKey = 'order_placed' | 'out_for_delivery' | 'delivered' | 'day_skipped' | 'credit_limit_reached' | 'payment_requested' | 'refund_sent'
+export type MessageKey = 'order_placed' | 'order_cancelled' | 'out_for_delivery' | 'delivered' | 'day_skipped' | 'credit_limit_reached' | 'payment_requested' | 'refund_sent'
 
 /** One automatic message: when it is sent, what it may mention, and its wording. The events are fixed; staff edit only the wording. */
 export type MessageTemplate = {
