@@ -5,7 +5,10 @@ import { CalendarIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { gu } from 'date-fns/locale'
 import { calendarDateToIso, formatDisplayDate, isoToCalendarDate, type IsoDate } from '@/lib/business-time'
+import { tc } from '@/lib/i18n/common'
+import { currentLanguage } from '@/lib/i18n/core'
 
 type DatePickerFieldProps = {
   id?: string
@@ -21,7 +24,7 @@ type DatePickerFieldProps = {
 }
 
 /** Date input backed by the shared Calendar; value is always a `yyyy-MM-dd` string. */
-export function DatePickerField({ id, label, value, onChange, minDate, disabled, placeholder = 'Select a date', invalid, describedBy }: DatePickerFieldProps) {
+export function DatePickerField({ id, label, value, onChange, minDate, disabled, placeholder = tc('selectDate'), invalid, describedBy }: DatePickerFieldProps) {
   const [open, setOpen] = useState(false)
   const selected = isoToCalendarDate(value)
   const earliest = minDate ? isoToCalendarDate(minDate) : undefined
@@ -33,7 +36,7 @@ export function DatePickerField({ id, label, value, onChange, minDate, disabled,
       </Button>
     </PopoverTrigger>
     <PopoverContent>
-      <Calendar mode="single" selected={selected} defaultMonth={selected ?? earliest} disabled={earliest ? { before: earliest } : undefined} onSelect={date => { if (date) { onChange(calendarDateToIso(date)); setOpen(false) } }} autoFocus />
+      <Calendar locale={currentLanguage() === 'gu' ? gu : undefined} mode="single" selected={selected} defaultMonth={selected ?? earliest} disabled={earliest ? { before: earliest } : undefined} onSelect={date => { if (date) { onChange(calendarDateToIso(date)); setOpen(false) } }} autoFocus />
     </PopoverContent>
   </Popover>
 }

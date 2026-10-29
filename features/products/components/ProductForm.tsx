@@ -17,13 +17,15 @@ import { productApi, type Product } from '../api'
 import { emptyForm, productSchema, statusChoices, toForm, toPayload, type ProductFormValues } from '../schema'
 import { BasicSection, ContentSection, DeliverySection, PurchaseSection, SubscriptionSection, TrialSection, VariantsSection } from './ProductSections'
 import { ProductStepNavigation, type ProductStep, type ProductStepId } from './ProductStepNavigation'
+import { t } from '../messages'
+import { tc } from '@/lib/i18n/common'
 
-const productSteps: ProductStep[] = [
-  { id: 'basics', label: 'About', description: 'Name, category and a short line.' },
-  { id: 'delivery', label: 'Delivery', description: 'How, where, and order-by time.' },
-  { id: 'variants', label: 'Sizes & prices', description: 'Sizes, prices, production plan.' },
-  { id: 'selling', label: 'How it is sold', description: 'Buy once, trial, subscription.' },
-  { id: 'content', label: 'Photos & details', description: 'Pictures and longer text.' },
+const steps = (): ProductStep[] => [
+  { id: 'basics', label: t('stepAbout'), description: t('stepAboutHint') },
+  { id: 'delivery', label: t('stepDelivery'), description: t('stepDeliveryHint') },
+  { id: 'variants', label: t('stepSizes'), description: t('stepSizesHint') },
+  { id: 'selling', label: t('stepSelling'), description: t('stepSellingHint') },
+  { id: 'content', label: t('stepContent'), description: t('stepContentHint') },
 ]
 
 export type ProductReferences = { categories: CategoryRecord[]; areas: ServiceArea[]; cutoffRules: CutoffRule[]; trialPlans: TrialPlan[]; rules: SubscriptionRule[] }
@@ -34,6 +36,7 @@ export type ProductReferences = { categories: CategoryRecord[]; areas: ServiceAr
  */
 export function ProductForm({ existing, refs }: { existing?: Product; refs: ProductReferences }) {
   const router = useRouter()
+  const productSteps = steps()
   const id = existing?.id
   const [guardOpen, setGuardOpen] = useState(false)
   const [pendingDestination, setPendingDestination] = useState('/products')
@@ -52,7 +55,7 @@ export function ProductForm({ existing, refs }: { existing?: Product; refs: Prod
   const { register, handleSubmit, formState, watch, setValue, getValues } = form
   const methods = watch('purchaseMethods')
   const isDirty = formState.isDirty
-  const categoryOptions = refs.categories.filter(item => item.status === 'active' || item.id === existing?.categoryId).map(item => ({ value: item.id, label: item.status === 'active' ? item.name : `${item.name} (inactive)` }))
+  const categoryOptions = refs.categories.filter(item => item.status === 'active' || item.id === existing?.categoryId).map(item => ({ value: item.id, label: item.status === 'active' ? item.name : t('inactiveSuffix', { name: item.name }) }))
 
   const leave = (destination = '/products') => {
     if (isDirty) { setPendingDestination(destination); setGuardOpen(true) }
@@ -88,7 +91,7 @@ export function ProductForm({ existing, refs }: { existing?: Product; refs: Prod
       const payload = toPayload(values)
       const saved = id ? await productApi.update(id, payload) : await productApi.create(payload)
       form.reset(values)
-      toast.success(values.status === 'draft' ? `"${saved.name}" saved as a draft.` : `"${saved.name}" saved.`)
+      toast.success(t(values.status === 'draft' ? 'savedDraft' : 'saved', { name: saved.name }))
       router.push('/products')
     } catch (failure) { setSubmitError(describeApiError(failure)) }
     finally { setSaving(false) }
@@ -96,9 +99,9 @@ export function ProductForm({ existing, refs }: { existing?: Product; refs: Prod
 
   const stepIndex = productSteps.findIndex(step => step.id === activeStep)
   const status = watch('status')
-  const submitLabel = status === 'draft' ? 'Save Draft' : status === 'inactive' ? 'Save Inactive Product' : id ? 'Save Changes' : 'Publish Product'
+  const submitLabel = t(status === 'draft' ? 'saveDraft' : status === 'inactive' ? 'saveInactive' : id ? 'saveChanges' : 'publishProduct')
   const busy = saving || imageBusy
-  return <div className="workspace-page products-page product-edit-page"><header className="page-header page-header-form"><div className="page-title-row"><Button variant="outline" className="title-back-button" type="button" aria-label="Back to products" onClick={() => leave()}><ArrowLeft size={19} /></Button><div><PageBreadcrumbs items={[{ label: 'Products', href: '/products' }, { label: id ? 'Edit' : 'New product' }]} /><h1>{existing ? `Edit ${existing.name}` : 'Add Product'}</h1><p className="page-description">{id ? 'Change anything and press Save. You go back to the product list.' : 'Five short steps. Photos and longer text can be added later.'}</p></div></div></header>
+  return <div className="workspace-page products-page product-edit-page"><header className="page-header page-header-form"><div className="page-title-row"><Button variant="outline" className="title-back-button" type="button" aria-label={t('backToProducts')} onClick={() => leave()}><ArrowLeft size={19} /></Button><div><PageBreadcrumbs items={[{ label: t('products'), href: '/products' }, { label: t(id ? 'edit' : 'newProduct') }]} /><h1>{existing ? t('editTitle', { name: existing.name }) : t('addProduct')}</h1><p className="page-description">{t(id ? 'editDescription' : 'newDescription')}</p></div></div></header>
     <form className="product-form" onSubmit={handleSubmit(values => { setProblems([]); void save(values) }, showProblems)} noValidate>
       <div className="product-form-scroll">
         <ProductStepNavigation steps={productSteps} active={activeStep} onChange={setActiveStep} />
@@ -107,11 +110,11 @@ export function ProductForm({ existing, refs }: { existing?: Product; refs: Prod
         {activeStep === 'variants' && <VariantsSection watch={watch} setValue={setValue} />}
         {activeStep === 'selling' && <><PurchaseSection watch={watch} setValue={setValue} />{methods.includes('trial') && <TrialSection watch={watch} setValue={setValue} plans={refs.trialPlans} />}{methods.includes('subscription') && <SubscriptionSection watch={watch} setValue={setValue} rules={refs.rules} />}</>}
         {activeStep === 'delivery' && <DeliverySection watch={watch} setValue={setValue} errors={formState.errors} areas={refs.areas} cutoffRules={refs.cutoffRules} />}
-        {problems.length > 0 && <div className="field-error" role="alert"><strong>Fix these before publishing:</strong><ul>{problems.map(problem => <li key={`${problem.path}-${problem.message}`}><button type="button" className="text-button" onClick={() => setActiveStep(problem.step)}>{productSteps.find(step => step.id === problem.step)?.label}</button>: {problem.message}</li>)}</ul></div>}{submitError && <p className="field-error" role="alert">{submitError}</p>}
+        {problems.length > 0 && <div className="field-error" role="alert"><strong>{t('fixBeforePublishing')}</strong><ul>{problems.map(problem => <li key={`${problem.path}-${problem.message}`}><button type="button" className="text-button" onClick={() => setActiveStep(problem.step)}>{productSteps.find(step => step.id === problem.step)?.label}</button>: {problem.message}</li>)}</ul></div>}{submitError && <p className="field-error" role="alert">{submitError}</p>}
       </div>
-      <div className="product-save-bar"><div className="product-step-actions">{stepIndex === 0 ? <Button type="button" variant="outline" className="secondary-button" onClick={() => leave()}>Cancel</Button> : <Button type="button" variant="outline" className="secondary-button" onClick={() => setActiveStep(productSteps[stepIndex - 1].id)}>Back</Button>}<span>Step {stepIndex + 1} of {productSteps.length}</span></div>
-        <div className="product-step-actions">{(!existing || existing.status === 'draft') && <Button type="button" variant="outline" className="secondary-button" disabled={busy} onClick={() => { setProblems([]); void save({ ...getValues(), status: 'draft' }) }}>{saving ? 'Saving…' : 'Save as Draft'}</Button>}{stepIndex < productSteps.length - 1 && <Button type="button" className="primary-button" onClick={() => setActiveStep(productSteps[stepIndex + 1].id)}>Continue</Button>}{(id || stepIndex === productSteps.length - 1) && <Button type="submit" className="primary-button" disabled={busy}>{saving ? 'Saving…' : imageBusy ? 'Uploading picture…' : id ? 'Save Changes' : submitLabel}</Button>}</div></div>
+      <div className="product-save-bar"><div className="product-step-actions">{stepIndex === 0 ? <Button type="button" variant="outline" className="secondary-button" onClick={() => leave()}>{tc('cancel')}</Button> : <Button type="button" variant="outline" className="secondary-button" onClick={() => setActiveStep(productSteps[stepIndex - 1].id)}>{t('back')}</Button>}<span>{t('stepOf', { step: stepIndex + 1, count: productSteps.length })}</span></div>
+        <div className="product-step-actions">{(!existing || existing.status === 'draft') && <Button type="button" variant="outline" className="secondary-button" disabled={busy} onClick={() => { setProblems([]); void save({ ...getValues(), status: 'draft' }) }}>{t(saving ? 'saving' : 'saveAsDraft')}</Button>}{stepIndex < productSteps.length - 1 && <Button type="button" className="primary-button" onClick={() => setActiveStep(productSteps[stepIndex + 1].id)}>{t('continue')}</Button>}{(id || stepIndex === productSteps.length - 1) && <Button type="submit" className="primary-button" disabled={busy}>{saving ? t('saving') : imageBusy ? t('uploadingPicture') : id ? t('saveChanges') : submitLabel}</Button>}</div></div>
     </form>
-    <AlertDialog open={guardOpen} onOpenChange={setGuardOpen}>{guardOpen && <AlertDialogContent className="confirm-dialog"><AlertDialogHeader><p className="eyebrow">Unsaved changes</p><AlertDialogTitle>Discard unsaved product changes?</AlertDialogTitle><AlertDialogDescription>Your unsaved changes will be lost.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter className="dialog-actions"><AlertDialogCancel asChild><Button variant="outline" className="secondary-button">Stay</Button></AlertDialogCancel><AlertDialogAction asChild><Button className="primary-button" onClick={() => router.push(pendingDestination)}>Discard Changes</Button></AlertDialogAction></AlertDialogFooter></AlertDialogContent>}</AlertDialog>
+    <AlertDialog open={guardOpen} onOpenChange={setGuardOpen}>{guardOpen && <AlertDialogContent className="confirm-dialog"><AlertDialogHeader><p className="eyebrow">{t('unsavedEyebrow')}</p><AlertDialogTitle>{t('discardTitle')}</AlertDialogTitle><AlertDialogDescription>{t('discardBody')}</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter className="dialog-actions"><AlertDialogCancel asChild><Button variant="outline" className="secondary-button">{t('stay')}</Button></AlertDialogCancel><AlertDialogAction asChild><Button className="primary-button" onClick={() => router.push(pendingDestination)}>{t('discardChanges')}</Button></AlertDialogAction></AlertDialogFooter></AlertDialogContent>}</AlertDialog>
   </div>
 }

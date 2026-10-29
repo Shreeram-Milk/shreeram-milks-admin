@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
+import { tc } from '@/lib/i18n/common'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 
 /**
@@ -40,10 +41,10 @@ export function useUnsavedChangesGuard(isDirty: boolean, fallbackPath: string) {
 
   const dialog = <AlertDialog open={pending !== null} onOpenChange={open => { if (!open) setPending(null) }}>
     {pending !== null && <AlertDialogContent className="confirm-dialog">
-      <AlertDialogHeader><p className="eyebrow">Unsaved changes</p><AlertDialogTitle>Discard unsaved changes?</AlertDialogTitle><AlertDialogDescription>Your unsaved changes will be lost.</AlertDialogDescription></AlertDialogHeader>
+      <AlertDialogHeader><p className="eyebrow">{tc('unsavedChanges')}</p><AlertDialogTitle>{tc('discardTitle')}</AlertDialogTitle><AlertDialogDescription>{tc('discardBody')}</AlertDialogDescription></AlertDialogHeader>
       <AlertDialogFooter className="dialog-actions">
-        <AlertDialogCancel asChild><Button variant="outline" className="secondary-button">Stay</Button></AlertDialogCancel>
-        <AlertDialogAction asChild><Button className="primary-button" onClick={() => { dirty.current = false; router.push(pending) }}>Discard Changes</Button></AlertDialogAction>
+        <AlertDialogCancel asChild><Button variant="outline" className="secondary-button">{tc('stay')}</Button></AlertDialogCancel>
+        <AlertDialogAction asChild><Button className="primary-button" onClick={() => { dirty.current = false; router.push(pending) }}>{tc('discardChanges')}</Button></AlertDialogAction>
       </AlertDialogFooter>
     </AlertDialogContent>}
   </AlertDialog>

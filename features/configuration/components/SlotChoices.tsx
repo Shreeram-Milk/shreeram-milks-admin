@@ -3,6 +3,7 @@
 import { Check } from 'lucide-react'
 import type { DeliverySlot } from '../api'
 import { humanWindow } from '../format'
+import { t } from '../messages'
 
 type Props = { slots: DeliverySlot[]; value: string[]; onChange: (ids: string[]) => void; label: string }
 
@@ -17,7 +18,7 @@ export function SlotChoices({ slots, value, onChange, label }: Props) {
         const disabled = slot.status === 'inactive' && !checked
         return <button key={slot.id} type="button" role="checkbox" aria-checked={checked} disabled={disabled} className="slot-choice" onClick={() => toggle(slot.id)}>
           <span className="slot-choice-mark" aria-hidden="true">{checked && <Check size={12} strokeWidth={3} />}</span>
-          <span className="slot-choice-copy"><strong>{slot.name}</strong><small>{humanWindow(slot)}{slot.status === 'inactive' ? ' · Inactive' : ''}</small></span>
+          <span className="slot-choice-copy"><strong>{slot.name}</strong><small>{humanWindow(slot)}{slot.status === 'inactive' ? t('inactiveSuffix') : ''}</small></span>
         </button>
       })}
     </div>

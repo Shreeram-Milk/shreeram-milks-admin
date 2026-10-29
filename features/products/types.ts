@@ -12,8 +12,11 @@ export type ProductVariant = {
   productionUnit: string
   productionQuantity: number
 }
+import { liveLabels } from '@/lib/i18n/core'
+import { t } from './messages'
+
 export type ProductBadge = 'bestseller' | 'new' | 'seasonal'
-export const PRODUCT_BADGE_LABELS: Record<ProductBadge, string> = { bestseller: 'Bestseller', new: 'New', seasonal: 'Seasonal' }
+export const PRODUCT_BADGE_LABELS = liveLabels<ProductBadge, 'badgeBestseller' | 'badgeNew' | 'badgeSeasonal'>(t, { bestseller: 'badgeBestseller', new: 'badgeNew', seasonal: 'badgeSeasonal' })
 /** How many gallery images and highlight lines a product page can show. */
 export const MAX_GALLERY_IMAGES = 10
 export const MAX_HIGHLIGHTS = 6

@@ -7,13 +7,14 @@ import { PageBreadcrumbs } from '@/components/shared/PageBreadcrumbs'
 import { PageTabs } from '@/components/shared/PageTabs'
 import { adjustmentAdminApi } from '../adjustment-admin/api'
 import { creditAdminApi } from '../credit-admin/api'
+import { t } from './messages'
 
 export type MoneyTab = 'owed' | 'credit' | 'payments'
 
-const TABS: Array<{ id: MoneyTab; href: string; label: string; title: string }> = [
-  { id: 'owed', href: '/prepaid-adjustments', label: 'Owed to customers', title: 'Owed to prepaid customers' },
-  { id: 'credit', href: '/credit-accounts', label: 'Pay-later customers', title: 'Pay-later (credit) customers' },
-  { id: 'payments', href: '/online-payments', label: 'Online payments', title: 'Online payments (PhonePe)' },
+const TABS: Array<{ id: MoneyTab; href: string; label: 'tabOwed' | 'tabCredit' | 'tabPayments' }> = [
+  { id: 'owed', href: '/prepaid-adjustments', label: 'tabOwed' },
+  { id: 'credit', href: '/credit-accounts', label: 'tabCredit' },
+  { id: 'payments', href: '/online-payments', label: 'tabPayments' },
 ]
 
 type ToDo = { refunds: number | null; owing: number | null }
@@ -40,17 +41,17 @@ export function MoneyHeader({ tab, description, actions }: { tab: MoneyTab; desc
 
   return <>
     <header className="page-header">
-      <div><PageBreadcrumbs items={[{ label: 'Money' }, { label: current.label }]} /><h1>Money</h1><p className="page-description">{description}</p></div>
+      <div><PageBreadcrumbs items={[{ label: t('money') }, { label: t(current.label) }]} /><h1>{t('money')}</h1><p className="page-description">{description}</p></div>
       {actions ? <div className="header-actions">{actions}</div> : null}
     </header>
-    <div className="money-todo" aria-label="Money to do">
+    <div className="money-todo" aria-label={t('moneyToDo')}>
       <Link className={`money-todo-card${todo.refunds ? ' is-due' : ''}`} href="/prepaid-adjustments?type=refund_pending">
-        <span>Refunds to send in PhonePe</span><strong>{todo.refunds ?? '—'}</strong><small>{todo.refunds ? 'Send in PhonePe, then press “Record refund”' : 'Nothing to send'}</small><ArrowRight size={16} aria-hidden="true" />
+        <span>{t('refundsToSend')}</span><strong>{todo.refunds ?? '—'}</strong><small>{todo.refunds ? t('refundsHint') : t('nothingToSend')}</small><ArrowRight size={16} aria-hidden="true" />
       </Link>
       <Link className={`money-todo-card${todo.owing ? ' is-due' : ''}`} href="/credit-accounts?show=owing">
-        <span>Pay-later customers who owe</span><strong>{todo.owing ?? '—'}</strong><small>{todo.owing ? 'Ask for payment, or record cash or UPI received' : 'Nobody owes money'}</small><ArrowRight size={16} aria-hidden="true" />
+        <span>{t('customersOwe')}</span><strong>{todo.owing ?? '—'}</strong><small>{todo.owing ? t('oweHint') : t('nobodyOwes')}</small><ArrowRight size={16} aria-hidden="true" />
       </Link>
     </div>
-    <PageTabs label="Money" tabs={TABS.map(item => ({ href: item.href, label: item.label, active: item.id === tab }))} />
+    <PageTabs label={t('money')} tabs={TABS.map(item => ({ href: item.href, label: t(item.label), active: item.id === tab }))} />
   </>
 }

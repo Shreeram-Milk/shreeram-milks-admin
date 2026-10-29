@@ -1,22 +1,26 @@
 import { z } from 'zod'
 import type { ProductPayload, Product, ProductStatus } from './api'
 import { MAX_GALLERY_IMAGES, MAX_HIGHLIGHT_LENGTH, MAX_HIGHLIGHTS } from './types'
+import { t, type ProductKey } from './messages'
+
+/** A check message looked up when the check runs, so it is in the admin's current language. */
+const say = (key: ProductKey, vars?: Record<string, number>) => ({ error: () => t(key, vars) })
 
 const variantSchema = z.object({
   /** Only for the form's own list keys; never sent. */
   clientKey: z.string(),
   /** The saved variant's id; empty for one that has not been saved yet. */
   id: z.string().optional(),
-  name: z.string().trim().min(1, 'Variant name is required.'), sku: z.string(),
-  pricePaise: z.number().int().min(1, 'Price must be greater than zero.'), compareAtPricePaise: z.number().int().nullable(),
-  status: z.enum(['active', 'inactive']), displayUnit: z.string().min(1, 'Display unit is required.'),
-  displayQuantity: z.number().positive('Display quantity must be greater than zero.'), productionUnit: z.string(), productionQuantity: z.number().nonnegative(),
-}).refine(variant => variant.compareAtPricePaise === null || variant.compareAtPricePaise > variant.pricePaise, { path: ['compareAtPricePaise'], message: 'The old price must be higher than the price.' })
-const highlightLines = z.array(z.string().max(MAX_HIGHLIGHT_LENGTH, `Keep each highlight under ${MAX_HIGHLIGHT_LENGTH} characters.`)).refine(lines => lines.filter(line => line.trim()).length <= MAX_HIGHLIGHTS, `Add at most ${MAX_HIGHLIGHTS} highlights.`)
+  name: z.string().trim().min(1, say('vVariantName')), sku: z.string(),
+  pricePaise: z.number().int().min(1, say('vPrice')), compareAtPricePaise: z.number().int().nullable(),
+  status: z.enum(['active', 'inactive']), displayUnit: z.string().min(1, say('vDisplayUnit')),
+  displayQuantity: z.number().positive(say('vDisplayQuantity')), productionUnit: z.string(), productionQuantity: z.number().nonnegative(),
+}).refine(variant => variant.compareAtPricePaise === null || variant.compareAtPricePaise > variant.pricePaise, { path: ['compareAtPricePaise'], ...say('vOldPrice') })
+const highlightLines = z.array(z.string().max(MAX_HIGHLIGHT_LENGTH, say('vHighlightLength', { limit: MAX_HIGHLIGHT_LENGTH }))).refine(lines => lines.filter(line => line.trim()).length <= MAX_HIGHLIGHTS, say('vHighlightCount', { max: MAX_HIGHLIGHTS }))
 const contentSchema = z.object({
-  longDescriptionEn: z.string().max(2000, 'Keep the description under 2000 characters.'), longDescriptionGu: z.string().max(2000, 'Keep the description under 2000 characters.'),
-  primaryImageAssetId: z.string(), galleryAssetIds: z.array(z.string()).max(MAX_GALLERY_IMAGES, `Add at most ${MAX_GALLERY_IMAGES} gallery images.`),
-  nutritionEn: z.string().max(1000, 'Keep the nutrition information under 1000 characters.'), nutritionGu: z.string().max(1000, 'Keep the nutrition information under 1000 characters.'),
+  longDescriptionEn: z.string().max(2000, say('vDescription')), longDescriptionGu: z.string().max(2000, say('vDescription')),
+  primaryImageAssetId: z.string(), galleryAssetIds: z.array(z.string()).max(MAX_GALLERY_IMAGES, say('vGallery', { max: MAX_GALLERY_IMAGES })),
+  nutritionEn: z.string().max(1000, say('vNutrition')), nutritionGu: z.string().max(1000, say('vNutrition')),
   highlightsEn: highlightLines, highlightsGu: highlightLines, badges: z.array(z.enum(['bestseller', 'new', 'seasonal'])),
 })
 
@@ -24,23 +28,23 @@ const contentSchema = z.object({
  * Quick checks so staff see a mistake before the round trip. The server checks everything again and is the only authority.
  */
 export const productSchema = z.object({
-  name: z.string().trim().min(1, 'Product name is required.'), nameGu: z.string().trim().max(80, 'Keep the Gujarati name under 80 characters.'), categoryId: z.string().min(1, 'Choose a category.'),
-  sku: z.string(), shortDescriptionEn: z.string().max(200, 'Keep it under 200 characters.'), shortDescriptionGu: z.string().max(200, 'Keep it under 200 characters.'), content: contentSchema,
+  name: z.string().trim().min(1, say('vName')), nameGu: z.string().trim().max(80, say('vNameGu')), categoryId: z.string().min(1, say('vCategory')),
+  sku: z.string(), shortDescriptionEn: z.string().max(200, say('vShort')), shortDescriptionGu: z.string().max(200, say('vShort')), content: contentSchema,
   status: z.enum(['draft', 'active', 'inactive']), variants: z.array(variantSchema), purchaseMethods: z.array(z.enum(['buy_once', 'trial', 'subscription'])),
   trialPlanIds: z.array(z.string()), subscriptionRuleIds: z.array(z.string()),
   deliveryMethod: z.enum(['', 'local_delivery', 'shipping']), serviceAreaId: z.string(), cutoffRuleId: z.string(), includeInProductionPlanning: z.boolean(), excludedFromCredit: z.boolean(),
 }).superRefine((value, context) => {
   const names = value.variants.map(variant => variant.name.trim().toLowerCase())
-  if (new Set(names).size !== names.length) context.addIssue({ code: 'custom', path: ['variants'], message: 'Variant names must be unique.' })
-  if (value.deliveryMethod === 'shipping' && (value.cutoffRuleId || value.includeInProductionPlanning)) context.addIssue({ code: 'custom', path: ['deliveryMethod'], message: 'Shipping cannot use a cut-off rule or production planning.' })
+  if (new Set(names).size !== names.length) context.addIssue({ code: 'custom', path: ['variants'], message: t('vUniqueVariants') })
+  if (value.deliveryMethod === 'shipping' && (value.cutoffRuleId || value.includeInProductionPlanning)) context.addIssue({ code: 'custom', path: ['deliveryMethod'], message: t('vShippingNoCutoff') })
   if (value.status === 'draft') return
-  if (!value.variants.some(variant => variant.status === 'active')) context.addIssue({ code: 'custom', path: ['variants'], message: 'Add at least one active variant before publishing.' })
-  if (!value.purchaseMethods.length) context.addIssue({ code: 'custom', path: ['purchaseMethods'], message: 'Select at least one purchase method.' })
-  if (value.deliveryMethod === 'shipping' && value.purchaseMethods.some(method => method !== 'buy_once')) context.addIssue({ code: 'custom', path: ['purchaseMethods'], message: 'Courier products can only be bought once (no trial or subscription).' })
-  if (!value.deliveryMethod) context.addIssue({ code: 'custom', path: ['deliveryMethod'], message: 'Choose how this product is delivered.' })
-  if (!value.serviceAreaId) context.addIssue({ code: 'custom', path: ['serviceAreaId'], message: 'Choose a delivery area.' })
-  if (value.purchaseMethods.includes('trial') && value.trialPlanIds.length === 0) context.addIssue({ code: 'custom', path: ['trialPlanIds'], message: 'Select at least one trial plan.' })
-  if (value.purchaseMethods.includes('subscription') && value.subscriptionRuleIds.length === 0) context.addIssue({ code: 'custom', path: ['subscriptionRuleIds'], message: 'Select at least one subscription schedule.' })
+  if (!value.variants.some(variant => variant.status === 'active')) context.addIssue({ code: 'custom', path: ['variants'], message: t('vActiveVariant') })
+  if (!value.purchaseMethods.length) context.addIssue({ code: 'custom', path: ['purchaseMethods'], message: t('vMethod') })
+  if (value.deliveryMethod === 'shipping' && value.purchaseMethods.some(method => method !== 'buy_once')) context.addIssue({ code: 'custom', path: ['purchaseMethods'], message: t('vCourierBuyOnce') })
+  if (!value.deliveryMethod) context.addIssue({ code: 'custom', path: ['deliveryMethod'], message: t('vDeliveryMethod') })
+  if (!value.serviceAreaId) context.addIssue({ code: 'custom', path: ['serviceAreaId'], message: t('vArea') })
+  if (value.purchaseMethods.includes('trial') && value.trialPlanIds.length === 0) context.addIssue({ code: 'custom', path: ['trialPlanIds'], message: t('vTrialPlan') })
+  if (value.purchaseMethods.includes('subscription') && value.subscriptionRuleIds.length === 0) context.addIssue({ code: 'custom', path: ['subscriptionRuleIds'], message: t('vSchedule') })
 })
 export type ProductFormValues = z.infer<typeof productSchema>
 export type FormVariant = ProductFormValues['variants'][number]

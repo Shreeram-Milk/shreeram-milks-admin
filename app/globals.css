@@ -1533,3 +1533,84 @@ dl.product-detail-rows dd { margin: 0; color: #344256; font-weight: 600; text-al
 .customer-picker-results { display: grid; gap: 6px; margin: 0; padding: 8px 10px; list-style: none; border: 1px solid var(--border, #e5e7eb); border-radius: 10px; background: var(--surface, #fff); }
 .customer-picker-results label { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px; }
 .customer-picker-chosen { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* Rider sheet: plan on screen, one printed sheet per rider. */
+.rider-plan { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(260px, 1fr); gap: 16px; align-items: start; }
+.rider-move { display: flex; gap: 4px; }
+.rider-list { display: grid; gap: 10px; }
+.rider-card { display: grid; gap: 8px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface, #fff); }
+.rider-card p { margin: 0; color: var(--muted); font-size: 12px; }
+.rider-name { display: grid; gap: 4px; font-size: 12px; font-weight: 600; }
+.rider-card-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.rider-preview { display: grid; gap: 16px; margin-top: 24px; }
+.rider-preview > h2 { margin: 0; font-size: 15px; font-weight: 600; }
+.rider-sheet { padding: 18px 20px; border: 1px solid var(--border); border-radius: 10px; background: #fff; color: #111827; font-size: 13px; }
+.rider-sheet-head { display: flex; justify-content: space-between; gap: 16px; padding-bottom: 8px; border-bottom: 2px solid #111827; }
+.rider-sheet-head h2 { margin: 0; font-size: 18px; font-weight: 700; }
+.rider-sheet-head p { margin: 2px 0 0; color: #4b5563; }
+.rider-sheet-state { align-self: flex-start; padding: 3px 8px; border: 1px solid #b45309; border-radius: 6px; color: #92400e; font-weight: 700; white-space: nowrap; }
+.rider-sheet-state.is-final { border-color: #15803d; color: #166534; }
+.rider-load { margin: 10px 0 4px; padding: 8px 10px; border-radius: 8px; background: #f3f4f6; }
+.rider-load-list { display: flex; flex-wrap: wrap; gap: 4px 18px; margin: 4px 0 0; padding: 0; list-style: none; }
+.rider-load strong, .rider-load-list strong { font-weight: 700; }
+.rider-area { margin-top: 14px; }
+.rider-area-head { display: flex; justify-content: space-between; gap: 12px; padding: 6px 10px; border-radius: 6px; background: #e1f5ee; color: #085041; font-size: 14px; break-after: avoid; }
+.rider-area-load { padding: 4px 10px 2px; color: #4b5563; font-size: 12px; }
+.rider-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.rider-table th { padding: 6px 4px; border-bottom: 1px solid #9ca3af; color: #4b5563; font-size: 11px; font-weight: 600; text-align: left; }
+.rider-table td { padding: 7px 4px; border-bottom: 1px solid #e5e7eb; vertical-align: top; overflow-wrap: anywhere; }
+.rider-table tr { break-inside: avoid; }
+.rider-col-number { width: 32px; }
+.rider-col-done { width: 66px; white-space: nowrap; }
+.rider-give { font-size: 14px; font-weight: 700; }
+.rider-muted { color: #4b5563; }
+.rider-note { color: #92400e; font-weight: 600; }
+.rider-kind { margin-left: 6px; padding: 0 5px; border: 1px solid #b45309; border-radius: 4px; color: #92400e; font-size: 10px; font-weight: 700; }
+.rider-box { display: inline-flex; width: 20px; height: 20px; align-items: center; justify-content: center; border: 1px solid #6b7280; border-radius: 3px; color: #9ca3af; font-size: 11px; }
+.rider-sheet-foot { margin-top: 10px; color: #4b5563; font-size: 11px; }
+@media (max-width: 900px) { .rider-plan { grid-template-columns: minmax(0, 1fr); } }
+
+@media print {
+  @page { size: A4; margin: 10mm; }
+  .sidebar, .topbar, .mobile-scrim, .no-print, .print-skip, [data-sonner-toaster] { display: none !important; }
+  .app-shell, .content-area, .content-inner, .workspace-page { display: block !important; height: auto !important; width: auto !important; margin: 0 !important; padding: 0 !important; overflow: visible !important; border-radius: 0 !important; background: #fff !important; }
+  .rider-preview { display: block; margin: 0; }
+  .rider-sheet { padding: 0; border: 0; border-radius: 0; break-after: page; }
+  .rider-sheet:last-child { break-after: auto; }
+  .rider-area-head, .rider-load { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+
+/* Production planning: a plain banner per delivery window, and the printed kitchen sheet. */
+.window-banners { display: grid; gap: 8px; margin: 0 0 16px; }
+.window-banner { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border: 1px solid; border-radius: 10px; font-size: 13px; }
+.window-banner > div { display: grid; gap: 2px; min-width: 0; }
+.window-banner strong { font-size: 15px; font-weight: 700; }
+.window-banner.is-final { border-color: #9fd3b6; background: #f0faf4; color: #14532d; }
+.window-banner.is-open { border-color: #e0b84d; background: #fff9e8; color: #713f12; }
+.window-banner-link { flex: none; }
+.print-only { display: none; }
+.kitchen-window { margin-bottom: 18px; color: #111827; font-size: 14px; }
+.kitchen-head { display: flex; justify-content: space-between; gap: 16px; padding-bottom: 8px; border-bottom: 2px solid #111827; }
+.kitchen-head h2 { margin: 0; font-size: 20px; font-weight: 700; }
+.kitchen-head p { margin: 2px 0 0; color: #4b5563; }
+.kitchen-table { width: 100%; margin-top: 8px; border-collapse: collapse; }
+.kitchen-table th { padding: 6px; border-bottom: 1px solid #9ca3af; color: #4b5563; font-size: 12px; text-align: left; }
+.kitchen-table td { padding: 8px 6px; border-bottom: 1px solid #e5e7eb; }
+.kitchen-table .num { text-align: right; }
+.kitchen-table tr { break-inside: avoid; }
+.kitchen-count { font-size: 24px; font-weight: 800; }
+.kitchen-done { width: 56px; text-align: center; }
+.kitchen-total { margin: 10px 0 0; font-size: 15px; }
+.kitchen-sign { margin: 18px 0 0; color: #4b5563; }
+@media print {
+  .production-page > *:not(.kitchen-sheet) { display: none !important; }
+  .print-only { display: block !important; }
+  .kitchen-window { break-after: page; }
+  .kitchen-window:last-child { break-after: auto; }
+}
+
+/* The English / ગુજરાતી switch in the top bar. */
+.language-switch { display: inline-flex; padding: 3px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface, #fff); }
+.language-option { min-height: 30px; padding: 0 12px; border: 0; border-radius: 999px; background: transparent; color: var(--muted); font-size: 13px; font-weight: 600; cursor: pointer; }
+.language-option.is-active { background: var(--foreground, #111827); color: #fff; }
+.language-option:focus-visible { outline: 2px solid var(--ring, #2563eb); outline-offset: 2px; }

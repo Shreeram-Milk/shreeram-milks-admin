@@ -14,6 +14,8 @@ import { describeApiError } from '@/lib/api-errors'
 import { formatTimestamp } from '@/lib/business-time'
 import { formatINR } from '@/lib/money'
 import { MoneyHeader } from '../money/MoneyHeader'
+import { tc } from '@/lib/i18n/common'
+import { t } from './messages'
 import { PURPOSE_LABELS, STATUS_LABELS, STATUS_TONE, describeMethod, paymentAdminApi, type OnlinePayment } from './api'
 
 const PAGE_SIZE = 20
@@ -38,32 +40,32 @@ export function PaymentList() {
   }, [search, filters.status, filters.purpose, page, reloadKey])
 
   if (state.status === 'loading') return <PageSkeleton />
-  if (state.status === 'error') return <div className="product-state" role="alert"><strong>Online payments could not be loaded</strong><span>{state.message}</span><Button className="secondary-button" variant="outline" onClick={() => { setState({ status: 'loading' }); setReloadKey(count => count + 1) }}>Try again</Button></div>
+  if (state.status === 'error') return <div className="product-state" role="alert"><strong>{t('listFailed')}</strong><span>{state.message}</span><Button className="secondary-button" variant="outline" onClick={() => { setState({ status: 'loading' }); setReloadKey(count => count + 1) }}>{tc('tryAgain')}</Button></div>
 
   const pageCount = Math.max(1, Math.ceil(state.total / PAGE_SIZE))
   return <div className="workspace-page products-page">
-    <MoneyHeader tab="payments" description="Every PhonePe payment, newest first. An order is placed only after PhonePe confirms the payment. Waiting payments are checked with PhonePe every few minutes." />
+    <MoneyHeader tab="payments" description={t('listDescription')} />
     <section className="product-list-section">
-      <ListSearchInput label="Search payments" value={search} onCommit={value => update({ search: value })} placeholder="Search by name, phone or payment reference..." />
+      <ListSearchInput label={t('searchPayments')} value={search} onCommit={value => update({ search: value })} placeholder={t('searchPlaceholder')} />
       <div className="product-filter-row">
-        <SelectField label="Status" className="product-select-trigger" value={filters.status || ALL} onChange={value => update({ status: value === ALL ? null : value })} placeholder="All statuses" options={[{ value: ALL, label: 'All statuses' }, ...FILTERS.status.map(value => ({ value, label: STATUS_LABELS[value] }))]} />
-        <SelectField label="For" className="product-select-trigger" value={filters.purpose || ALL} onChange={value => update({ purpose: value === ALL ? null : value })} placeholder="Everything" options={[{ value: ALL, label: 'Everything' }, ...FILTERS.purpose.map(value => ({ value, label: PURPOSE_LABELS[value] }))]} />
+        <SelectField label={t('status')} className="product-select-trigger" value={filters.status || ALL} onChange={value => update({ status: value === ALL ? null : value })} placeholder={t('allStatuses')} options={[{ value: ALL, label: t('allStatuses') }, ...FILTERS.status.map(value => ({ value, label: STATUS_LABELS[value] }))]} />
+        <SelectField label={t('for')} className="product-select-trigger" value={filters.purpose || ALL} onChange={value => update({ purpose: value === ALL ? null : value })} placeholder={t('everything')} options={[{ value: ALL, label: t('everything') }, ...FILTERS.purpose.map(value => ({ value, label: PURPOSE_LABELS[value] }))]} />
       </div>
       {state.total === 0
-        ? <div className="product-state"><strong>{hasActiveFilters ? 'No payments match' : 'No online payments yet'}</strong><span>{hasActiveFilters ? 'Try changing your search or filters.' : 'Payments appear here as soon as a customer starts paying with PhonePe.'}</span>{hasActiveFilters ? <Button className="secondary-button" variant="outline" onClick={clear}>Clear filters</Button> : null}</div>
+        ? <div className="product-state"><strong>{hasActiveFilters ? t('noMatch') : t('noneYet')}</strong><span>{hasActiveFilters ? t('tryChanging') : t('appearHere')}</span>{hasActiveFilters ? <Button className="secondary-button" variant="outline" onClick={clear}>{tc('clearFilters')}</Button> : null}</div>
         : <>
           <div className="table-card product-list-table-card"><Table className="config-table">
-            <TableHeader><TableRow><TableHead>Started</TableHead><TableHead>Customer</TableHead><TableHead>For</TableHead><TableHead>Amount</TableHead><TableHead>Paid with</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
+            <TableHeader><TableRow><TableHead>{t('started')}</TableHead><TableHead>{t('customer')}</TableHead><TableHead>{t('for')}</TableHead><TableHead>{t('amount')}</TableHead><TableHead>{t('paidWith')}</TableHead><TableHead>{t('status')}</TableHead></TableRow></TableHeader>
             <TableBody>{state.rows.map(payment => <TableRow key={payment.id}>
               <TableCell><Link className="product-name-link" href={`/online-payments/${payment.id}`}>{formatTimestamp(payment.createdAt)}</Link><br /><small>{payment.merchantOrderId}</small></TableCell>
-              <TableCell>{payment.customerName.trim() || 'No name'}<br /><small>{payment.customerPhone}</small></TableCell>
+              <TableCell>{payment.customerName.trim() || t('noName')}<br /><small>{payment.customerPhone}</small></TableCell>
               <TableCell>{PURPOSE_LABELS[payment.purpose]}</TableCell>
               <TableCell>{formatINR(payment.amountPaise)}</TableCell>
               <TableCell>{payment.method ? describeMethod(payment.method.mode, payment.method.instrument, payment.method.bank) : '—'}</TableCell>
-              <TableCell><StatusBadge status={STATUS_TONE[payment.status]}>{STATUS_LABELS[payment.status]}</StatusBadge>{payment.fulfilment === 'refund_due' ? <><br /><strong className="field-error">Refund needed</strong></> : null}</TableCell>
+              <TableCell><StatusBadge status={STATUS_TONE[payment.status]}>{STATUS_LABELS[payment.status]}</StatusBadge>{payment.fulfilment === 'refund_due' ? <><br /><strong className="field-error">{t('refundNeeded')}</strong></> : null}</TableCell>
             </TableRow>)}</TableBody>
           </Table></div>
-          <div className="product-pagination"><span>{state.total} {state.total === 1 ? 'payment' : 'payments'} · Page {page} of {pageCount}</span><TablePagination page={Math.min(page, pageCount)} pageCount={pageCount} onPageChange={next => update({ page: next })} /></div>
+          <div className="product-pagination"><span>{t(state.total === 1 ? 'paymentOne' : 'paymentMany', { count: state.total })}{t('pageOf', { page, count: pageCount })}</span><TablePagination page={Math.min(page, pageCount)} pageCount={pageCount} onPageChange={next => update({ page: next })} /></div>
         </>}
     </section>
   </div>

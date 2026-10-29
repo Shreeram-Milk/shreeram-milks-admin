@@ -18,6 +18,8 @@ import { PolicyViewDialog } from './components/PolicyViewDialog'
 import { policyApi } from './api'
 import { nextVersion } from './version'
 import { POLICY_STATUS_LABELS, POLICY_TYPE_LABELS, type PolicyDocument, type PolicyStatus, type PolicyType } from './types'
+import { tc } from '@/lib/i18n/common'
+import { t } from './messages'
 
 const ALL = '__all__'
 const TYPES = Object.keys(POLICY_TYPE_LABELS) as PolicyType[]
@@ -55,13 +57,13 @@ export function PolicyWorkspace() {
     if (!pending) return
     const { action, policy } = pending
     setPending(null)
-    if (action === 'publish') void run(() => policyApi.publish(policy.id), `Version ${policy.version} published.`)
-    else if (action === 'archive') void run(() => policyApi.archive(policy.id), `Version ${policy.version} archived.`)
-    else void run(() => policyApi.discard(policy.id), 'Draft discarded.')
+    if (action === 'publish') void run(() => policyApi.publish(policy.id), t('publishedVersion', { version: policy.version }))
+    else if (action === 'archive') void run(() => policyApi.archive(policy.id), t('archivedVersion', { version: policy.version }))
+    else void run(() => policyApi.discard(policy.id), t('draftDiscarded'))
   }
 
   if (state.status === 'loading') return <PageSkeleton />
-  if (state.status === 'error') return <div className="product-state" role="alert"><strong>Policies could not be loaded</strong><span>{state.message}</span><Button className="secondary-button" onClick={() => { setState({ status: 'loading' }); refresh() }}>Try again</Button></div>
+  if (state.status === 'error') return <div className="product-state" role="alert"><strong>{t('loadFailed')}</strong><span>{state.message}</span><Button className="secondary-button" onClick={() => { setState({ status: 'loading' }); refresh() }}>{tc('tryAgain')}</Button></div>
 
   const { policies } = state
   const currentPublished = (policyType: PolicyType) => policies.find(policy => policy.type === policyType && policy.status === 'published')
@@ -70,39 +72,39 @@ export function PolicyWorkspace() {
   const replaced = pending?.action === 'publish' ? currentPublished(pending.policy.type) : undefined
   return <div className="workspace-page products-page">
     <header className="page-header">
-      <div><PageBreadcrumbs items={[{ label: 'Content' }, { label: 'Legal & Policies' }]} /><h1>Legal &amp; Policies</h1><p className="page-description">Each policy has one published version that customers read. Older versions are kept for the record.</p></div>
-      <Button className="primary-button" onClick={() => setEditor({ policy: null, presetType: 'privacy' })}><Plus size={15} /> New Draft</Button>
+      <div><PageBreadcrumbs items={[{ label: t('content') }, { label: t('title') }]} /><h1>{t('title')}</h1><p className="page-description">{t('description')}</p></div>
+      <Button className="primary-button" onClick={() => setEditor({ policy: null, presetType: 'privacy' })}><Plus size={15} /> {t('newDraft')}</Button>
     </header>
-    <section className="policy-summary" aria-label="Published versions">
+    <section className="policy-summary" aria-label={t('publishedVersions')}>
       {TYPES.map(item => { const current = currentPublished(item); return <div key={item} className="policy-summary-card" data-published={Boolean(current)}>
         <strong>{POLICY_TYPE_LABELS[item]}</strong>
-        <span>{current ? `Version ${current.version} · from ${formatDisplayDate(current.effectiveDate)}` : 'No published version'}</span>
+        <span>{current ? t('versionFrom', { version: current.version, date: formatDisplayDate(current.effectiveDate) }) : t('noPublished')}</span>
       </div> })}
     </section>
     <section className="product-list-section">
       <div className="product-filter-row">
-        <SelectField label="Policy" className="product-select-trigger" value={type} onChange={value => setType(value === ALL ? '' : value as PolicyType)} placeholder="All policies" options={[{ value: ALL, label: 'All policies' }, ...TYPES.map(value => ({ value, label: POLICY_TYPE_LABELS[value] }))]} />
-        <SelectField label="Status" className="product-select-trigger" value={status} onChange={value => setStatus(value === ALL ? '' : value as PolicyStatus)} placeholder="All statuses" options={[{ value: ALL, label: 'All statuses' }, ...(Object.keys(POLICY_STATUS_LABELS) as PolicyStatus[]).map(value => ({ value, label: POLICY_STATUS_LABELS[value] }))]} />
+        <SelectField label={t('policy')} className="product-select-trigger" value={type} onChange={value => setType(value === ALL ? '' : value as PolicyType)} placeholder={t('allPolicies')} options={[{ value: ALL, label: t('allPolicies') }, ...TYPES.map(value => ({ value, label: POLICY_TYPE_LABELS[value] }))]} />
+        <SelectField label={t('status')} className="product-select-trigger" value={status} onChange={value => setStatus(value === ALL ? '' : value as PolicyStatus)} placeholder={t('allStatuses')} options={[{ value: ALL, label: t('allStatuses') }, ...(Object.keys(POLICY_STATUS_LABELS) as PolicyStatus[]).map(value => ({ value, label: POLICY_STATUS_LABELS[value] }))]} />
       </div>
       {filtered.length === 0
-        ? <div className="product-state"><strong>{policies.length ? 'No versions match these filters' : 'No policies yet'}</strong><span>{policies.length ? 'Try changing a filter.' : 'Write the first draft, then publish it when it has been approved.'}</span></div>
+        ? <div className="product-state"><strong>{policies.length ? t('noMatch') : t('noneYet')}</strong><span>{policies.length ? t('tryFilter') : t('writeFirst')}</span></div>
         : <div className="table-card product-list-table-card"><Table className="config-table">
-          <TableHeader><TableRow><TableHead>Policy</TableHead><TableHead>Version</TableHead><TableHead>Status</TableHead><TableHead>Effective from</TableHead><TableHead>Published</TableHead><TableHead>Gujarati</TableHead><TableHead scope="col" aria-label="Actions" /></TableRow></TableHeader>
+          <TableHeader><TableRow><TableHead>{t('policy')}</TableHead><TableHead>{t('version')}</TableHead><TableHead>{t('status')}</TableHead><TableHead>{t('effectiveFrom')}</TableHead><TableHead>{t('published')}</TableHead><TableHead>{t('gujarati')}</TableHead><TableHead scope="col" aria-label={t('actions')} /></TableRow></TableHeader>
           <TableBody>{filtered.map(policy => <TableRow key={policy.id}>
             <TableCell><Button variant="ghost" className="table-link" onClick={() => setViewing(policy)}>{POLICY_TYPE_LABELS[policy.type]}</Button></TableCell>
             <TableCell>{policy.version}</TableCell>
             <TableCell><StatusBadge status={BADGE_STATUS[policy.status]}>{POLICY_STATUS_LABELS[policy.status]}</StatusBadge></TableCell>
             <TableCell>{formatDisplayDate(policy.effectiveDate)}</TableCell>
             <TableCell>{policy.publishedAt ? formatTimestamp(policy.publishedAt) : '—'}</TableCell>
-            <TableCell>{policy.titleGu && policy.bodyGu ? 'Added' : 'Missing'}</TableCell>
-            <TableCell><div className="row-actions"><DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="row-menu" aria-label={`Actions for ${POLICY_TYPE_LABELS[policy.type]} version ${policy.version}`}><MoreHorizontal size={16} /></Button></DropdownMenuTrigger>
+            <TableCell>{policy.titleGu && policy.bodyGu ? t('added') : t('missing')}</TableCell>
+            <TableCell><div className="row-actions"><DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="row-menu" aria-label={t('actionsFor', { policy: POLICY_TYPE_LABELS[policy.type], version: policy.version })}><MoreHorizontal size={16} /></Button></DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onSelect={() => setViewing(policy)}><Eye /> View</DropdownMenuItem>
-                {policy.status === 'draft' && <DropdownMenuItem onSelect={() => setEditor({ policy, presetType: policy.type })}><Edit2 /> Edit draft</DropdownMenuItem>}
-                {policy.status === 'draft' && <DropdownMenuItem onSelect={() => setPending({ action: 'publish', policy })}><Send /> Publish</DropdownMenuItem>}
-                <DropdownMenuItem onSelect={() => void run(() => policyApi.newVersion(policy.id), 'New draft version created.')}><CopyPlus /> New version from this</DropdownMenuItem>
-                {policy.status === 'published' && <DropdownMenuItem onSelect={() => setPending({ action: 'archive', policy })}><Archive /> Archive</DropdownMenuItem>}
-                {policy.status === 'draft' && <DropdownMenuItem onSelect={() => setPending({ action: 'discard', policy })}><Trash2 /> Discard draft</DropdownMenuItem>}
+                <DropdownMenuItem onSelect={() => setViewing(policy)}><Eye /> {t('view')}</DropdownMenuItem>
+                {policy.status === 'draft' && <DropdownMenuItem onSelect={() => setEditor({ policy, presetType: policy.type })}><Edit2 /> {t('editDraft')}</DropdownMenuItem>}
+                {policy.status === 'draft' && <DropdownMenuItem onSelect={() => setPending({ action: 'publish', policy })}><Send /> {t('publish')}</DropdownMenuItem>}
+                <DropdownMenuItem onSelect={() => void run(() => policyApi.newVersion(policy.id), t('newVersionCreated'))}><CopyPlus /> {t('newVersionFrom')}</DropdownMenuItem>
+                {policy.status === 'published' && <DropdownMenuItem onSelect={() => setPending({ action: 'archive', policy })}><Archive /> {t('archive')}</DropdownMenuItem>}
+                {policy.status === 'draft' && <DropdownMenuItem onSelect={() => setPending({ action: 'discard', policy })}><Trash2 /> {t('discardDraft')}</DropdownMenuItem>}
               </DropdownMenuContent></DropdownMenu></div></TableCell>
           </TableRow>)}</TableBody>
         </Table></div>}
@@ -113,13 +115,13 @@ export function PolicyWorkspace() {
       <AlertDialogContent className="confirm-dialog">
         {pending && <>
           <AlertDialogHeader>
-            <p className="eyebrow">{pending.action === 'publish' ? 'Publish version' : pending.action === 'archive' ? 'Archive version' : 'Discard draft'}</p>
-            <AlertDialogTitle>{pending.action === 'publish' ? 'Publish' : pending.action === 'archive' ? 'Archive' : 'Discard'} {POLICY_TYPE_LABELS[pending.policy.type]} version {pending.policy.version}?</AlertDialogTitle>
+            <p className="eyebrow">{pending.action === 'publish' ? t('publishVersion') : pending.action === 'archive' ? t('archiveVersion') : t('discardDraft')}</p>
+            <AlertDialogTitle>{t(pending.action === 'publish' ? 'confirmPublish' : pending.action === 'archive' ? 'confirmArchive' : 'confirmDiscard', { policy: POLICY_TYPE_LABELS[pending.policy.type], version: pending.policy.version })}</AlertDialogTitle>
             <AlertDialogDescription>{pending.action === 'publish'
-              ? `Customers will read this version from ${formatDisplayDate(pending.policy.effectiveDate)}. It can’t be edited afterwards.${replaced ? ` Version ${replaced.version} is archived and kept in the history.` : ''}`
-              : pending.action === 'archive' ? 'Customers will have no published version of this policy until you publish another. The version stays in the history.' : 'This draft is deleted for good. It was never published, so nothing in the history is lost.'}</AlertDialogDescription>
+              ? `${t('publishBody', { date: formatDisplayDate(pending.policy.effectiveDate) })}${replaced ? t('publishReplaces', { version: replaced.version }) : ''}`
+              : pending.action === 'archive' ? t('archiveBody') : t('discardBody')}</AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="dialog-actions"><AlertDialogCancel asChild><Button variant="outline" className="secondary-button">Cancel</Button></AlertDialogCancel><AlertDialogAction asChild><Button className="primary-button" onClick={confirmPending}>{pending.action === 'publish' ? 'Publish' : pending.action === 'archive' ? 'Archive' : 'Discard'}</Button></AlertDialogAction></AlertDialogFooter>
+          <AlertDialogFooter className="dialog-actions"><AlertDialogCancel asChild><Button variant="outline" className="secondary-button">{t('cancel')}</Button></AlertDialogCancel><AlertDialogAction asChild><Button className="primary-button" onClick={confirmPending}>{pending.action === 'publish' ? t('publish') : pending.action === 'archive' ? t('archive') : t('discard')}</Button></AlertDialogAction></AlertDialogFooter>
         </>}
       </AlertDialogContent>
     </AlertDialog>

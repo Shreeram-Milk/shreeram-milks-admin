@@ -1,4 +1,6 @@
 import { apiRequest } from '@/lib/api-client'
+import { liveLabels } from '@/lib/i18n/core'
+import { t, type OrderKey } from './messages'
 import type { ListResult } from '../configuration/api'
 
 export const ORDER_STATUSES = ['placed', 'out_for_delivery', 'delivered', 'missed', 'cancelled'] as const
@@ -75,13 +77,14 @@ export const orderAdminApi = {
   },
 }
 
-export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = { placed: 'Placed', out_for_delivery: 'Out for delivery', delivered: 'Delivered', missed: 'Missed', cancelled: 'Cancelled' }
+export const ORDER_STATUS_LABELS = liveLabels(t, { placed: 'statusPlaced', out_for_delivery: 'statusOutForDelivery', delivered: 'statusDelivered', missed: 'statusMissed', cancelled: 'statusCancelled' } satisfies Record<OrderStatus, OrderKey>)
 /** The badge colour for each status, using the shared badge's three tones. */
 export const ORDER_STATUS_TONE: Record<OrderStatus, 'pending' | 'delivered' | 'cancelled'> = { placed: 'pending', out_for_delivery: 'pending', delivered: 'delivered', missed: 'cancelled', cancelled: 'cancelled' }
 /** The steps staff can take from each status (the server enforces the same rules). */
 export const NEXT_STATUSES: Record<OrderStatus, ReadonlyArray<Exclude<OrderStatus, 'placed'>>> = { placed: ['out_for_delivery', 'missed', 'cancelled'], out_for_delivery: ['delivered', 'missed', 'cancelled'], delivered: [], missed: [], cancelled: [] }
-export const PAYMENT_LABELS = { credit: 'On credit', online: 'Paid online' } as const
+export const PAYMENT_LABELS = liveLabels(t, { credit: 'payCredit', online: 'payOnline' })
+export const PAYMENT_STATUS_LABELS = liveLabels(t, { unpaid: 'payUnpaid', paid: 'payPaid', partially_refunded: 'payPartlyRefunded', refunded: 'payRefunded' } satisfies Record<AdminOrder['paymentStatus'], OrderKey>)
 
 /** How an order was bought: a one-time purchase, or one delivery of a subscription or trial. */
 export const orderType = (order: Pick<AdminOrder, 'subscriptionId' | 'items'>): OrderType => (!order.subscriptionId ? 'one_time' : order.items[0]?.purchaseMethod === 'trial' ? 'trial' : 'subscription')
-export const ORDER_TYPE_LABELS: Record<OrderType, string> = { one_time: 'One-time', subscription: 'Subscription', trial: 'Trial' }
+export const ORDER_TYPE_LABELS = liveLabels(t, { one_time: 'typeOneTime', subscription: 'typeSubscription', trial: 'typeTrial' } satisfies Record<OrderType, OrderKey>)

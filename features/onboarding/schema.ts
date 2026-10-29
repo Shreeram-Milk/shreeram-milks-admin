@@ -1,11 +1,13 @@
 import { z } from 'zod'
+import { t } from './messages'
 
+// Messages are looked up when shown, so they follow the admin's language.
 export const slideSchema = z.object({
-  imageAssetId: z.string().min(1, 'Choose an image.'),
-  titleEn: z.string().trim().min(1, 'Enter the headline.').max(80, 'Keep the headline under 80 characters.'),
-  titleGu: z.string().trim().max(80, 'Keep the headline under 80 characters.'),
-  descriptionEn: z.string().trim().min(1, 'Enter the text.').max(200, 'Keep the text under 200 characters.'),
-  descriptionGu: z.string().trim().max(200, 'Keep the text under 200 characters.'),
+  imageAssetId: z.string().min(1, { error: () => t('errImage') }),
+  titleEn: z.string().trim().min(1, { error: () => t('errHeadline') }).max(80, { error: () => t('errHeadlineLong') }),
+  titleGu: z.string().trim().max(80, { error: () => t('errHeadlineLong') }),
+  descriptionEn: z.string().trim().min(1, { error: () => t('errText') }).max(200, { error: () => t('errTextLong') }),
+  descriptionGu: z.string().trim().max(200, { error: () => t('errTextLong') }),
   status: z.enum(['active', 'inactive']),
 })
 export type SlideFormValues = z.infer<typeof slideSchema>

@@ -1,4 +1,6 @@
 import { apiRequest } from '@/lib/api-client'
+import { liveLabels } from '@/lib/i18n/core'
+import { t, type CreditKey } from './messages'
 import type { ListResult } from '../configuration/api'
 
 /** A credit customer's account: the limit staff set, and what they owe right now. */
@@ -35,5 +37,5 @@ export const creditAdminApi = {
   async cancelRequest(customerId: string, requestId: string): Promise<PaymentRequest> { return (await apiRequest<{ request: PaymentRequest }>(`${base(customerId)}/payment-requests/${encodeURIComponent(requestId)}/cancel`, { method: 'POST', body: {} })).request },
 }
 
-export const LEDGER_LABELS: Record<LedgerEntry['entryType'], string> = { order_charge: 'Order', payment_received: 'Payment received', order_refund: 'Order reversed', manual_adjustment: 'Adjustment', opening_balance: 'Opening balance' }
-export const METHOD_LABELS: Record<PaymentMethod, string> = { cash: 'Cash', upi: 'UPI', bank_transfer: 'Bank transfer', other: 'Other' }
+export const LEDGER_LABELS = liveLabels(t, { order_charge: 'ledgerOrder', payment_received: 'ledgerPayment', order_refund: 'ledgerRefund', manual_adjustment: 'ledgerAdjustment', opening_balance: 'ledgerOpening' } satisfies Record<LedgerEntry['entryType'], CreditKey>)
+export const METHOD_LABELS = liveLabels(t, { cash: 'methodCash', upi: 'methodUpi', bank_transfer: 'methodBank', other: 'methodOther' } satisfies Record<PaymentMethod, CreditKey>)

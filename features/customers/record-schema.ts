@@ -1,19 +1,21 @@
 import { z } from 'zod'
+import { liveLabels } from '@/lib/i18n/core'
+import { t } from './messages'
 
-/** The staff form for a customer. The server checks the same rules again. */
+/** The staff form for a customer. The server checks the same rules again. Messages are looked up when shown, in the admin's language. */
 export const customerRecordSchema = z.object({
-  name: z.string().trim().max(100, 'Keep the name under 100 characters.'),
-  customerType: z.enum(['prepaid', 'credit'], { error: 'Select a customer type.' }),
-  adminNote: z.string().trim().max(500, 'Keep the note under 500 characters.'),
+  name: z.string().trim().max(100, { error: () => t('nameTooLong') }),
+  customerType: z.enum(['prepaid', 'credit'], { error: () => t('selectType') }),
+  adminNote: z.string().trim().max(500, { error: () => t('noteTooLong') }),
 })
 export type CustomerRecordFormValues = z.infer<typeof customerRecordSchema>
 
-export const CUSTOMER_RECORD_STATUS_LABELS = { active: 'Active', blocked: 'Blocked', deleted: 'Deleted' } as const
-export const CUSTOMER_RECORD_TYPE_LABELS = { prepaid: 'Prepaid', credit: 'Credit' } as const
+export const CUSTOMER_RECORD_STATUS_LABELS = liveLabels(t, { active: 'statusActive', blocked: 'statusBlocked', deleted: 'statusDeleted' })
+export const CUSTOMER_RECORD_TYPE_LABELS = liveLabels(t, { prepaid: 'typePrepaid', credit: 'typeCredit' })
 
-export const ADDRESS_LABELS = { home: 'Home', work: 'Work', other: 'Other' } as const
-export const DROP_LOCATION_LABELS = { 'front-door': 'Front door', 'side-gate': 'Side gate', 'milk-box': 'Milk box', 'security-desk': 'Security desk' } as const
-export const HANDOFF_LABELS = { 'hand-to-me': 'Hand it to me', 'leave-at-door': 'Leave at the door', 'milk-box': 'Put in the milk box', security: 'Give to security' } as const
+export const ADDRESS_LABELS = liveLabels(t, { home: 'labelHome', work: 'labelWork', other: 'labelOther' })
+export const DROP_LOCATION_LABELS = liveLabels(t, { 'front-door': 'dropFrontDoor', 'side-gate': 'dropSideGate', 'milk-box': 'dropMilkBox', 'security-desk': 'dropSecurityDesk' })
+export const HANDOFF_LABELS = liveLabels(t, { 'hand-to-me': 'handToMe', 'leave-at-door': 'leaveAtDoor', 'milk-box': 'putInMilkBox', security: 'giveSecurity' })
 
 /** The customer ids staff can open are UUIDs. Sample pages that are not connected yet link with other ids. */
 export const isCustomerId = (value: string): boolean => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)

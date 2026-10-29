@@ -16,13 +16,14 @@ import { policySchema, type PolicyFormValues } from '../schema'
 import { describeApiError } from '@/lib/api-errors'
 import { policyApi } from '../api'
 import { MIN_PUBLISHED_BODY_LENGTH } from '../types'
-import { POLICY_TYPE_LABELS, type PolicyDocument, type PolicyType } from '../types'
+import { POLICY_TYPE_KEYS, POLICY_TYPE_LABELS, type PolicyDocument, type PolicyType } from '../types'
+import { t, tEnglish } from '../messages'
 
-const TYPES = (Object.keys(POLICY_TYPE_LABELS) as PolicyType[]).map(value => ({ value, label: POLICY_TYPE_LABELS[value] }))
+const types = () => (Object.keys(POLICY_TYPE_LABELS) as PolicyType[]).map(value => ({ value, label: POLICY_TYPE_LABELS[value] }))
 
 const initialValues = (policy: PolicyDocument | null, presetType: PolicyType, suggestedVersion: (type: PolicyType) => string): PolicyFormValues => policy
   ? { type: policy.type, titleEn: policy.titleEn, titleGu: policy.titleGu, bodyEn: policy.bodyEn, bodyGu: policy.bodyGu, version: policy.version, effectiveDate: policy.effectiveDate }
-  : { type: presetType, titleEn: POLICY_TYPE_LABELS[presetType], titleGu: '', bodyEn: '', bodyGu: '', version: suggestedVersion(presetType), effectiveDate: todayInBusinessZone() }
+  : { type: presetType, titleEn: tEnglish(POLICY_TYPE_KEYS[presetType]), titleGu: '', bodyEn: '', bodyGu: '', version: suggestedVersion(presetType), effectiveDate: todayInBusinessZone() }
 
 /** Creates a draft or edits one. Published and archived versions open read-only elsewhere. Mounted fresh each time. */
 export function PolicyDialog({ policy, presetType, suggestedVersion, onClose, onDone }: { policy: PolicyDocument | null; presetType: PolicyType; suggestedVersion: (type: PolicyType) => string; onClose: () => void; onDone: () => void }) {
@@ -33,7 +34,7 @@ export function PolicyDialog({ policy, presetType, suggestedVersion, onClose, on
     try {
       if (policy) await policyApi.updateDraft(policy.id, values)
       else await policyApi.create(values)
-      toast.success(policy ? 'Draft saved.' : 'Draft created.')
+      toast.success(policy ? t('draftSaved') : t('draftCreated'))
       onClose()
       onDone()
     } catch (failure) {
@@ -43,21 +44,21 @@ export function PolicyDialog({ policy, presetType, suggestedVersion, onClose, on
   return <Dialog open onOpenChange={next => { if (!next) onClose() }}>
     <DialogContent className="record-editor-dialog wide">
       <form onSubmit={submit} noValidate>
-        <DialogHeader><DialogTitle>{policy ? `Edit draft ${policy.version}` : 'New policy draft'}</DialogTitle><DialogDescription>Drafts are not visible to customers until published. Once published, a version can’t be changed.</DialogDescription></DialogHeader>
+        <DialogHeader><DialogTitle>{policy ? t('editDraftTitle', { version: policy.version }) : t('newDraftTitle')}</DialogTitle><DialogDescription>{t('dialogDescription')}</DialogDescription></DialogHeader>
         <div className="record-editor-fields two-column">
-          <FormField label="Policy"><Controller control={control} name="type" render={({ field }) => <SelectField label="Policy" placeholder="Choose a policy" value={field.value} options={TYPES} onChange={value => { field.onChange(value); if (!policy) setValue('version', suggestedVersion(value as PolicyType)) }} />} /></FormField>
+          <FormField label={t('policy')}><Controller control={control} name="type" render={({ field }) => <SelectField label={t('policy')} placeholder={t('choosePolicy')} value={field.value} options={types()} onChange={value => { field.onChange(value); if (!policy) setValue('version', suggestedVersion(value as PolicyType)) }} />} /></FormField>
           <div className="record-editor-fields two-column">
-            <FormField label="Version" required error={errors.version?.message}><Input {...register('version')} autoComplete="off" /></FormField>
-            <FormField label="Effective from" required error={errors.effectiveDate?.message}><Controller control={control} name="effectiveDate" render={({ field }) => <DatePickerField label="Effective date" value={field.value} onChange={field.onChange} />} /></FormField>
+            <FormField label={t('version')} required error={errors.version?.message}><Input {...register('version')} autoComplete="off" /></FormField>
+            <FormField label={t('effectiveFrom')} required error={errors.effectiveDate?.message}><Controller control={control} name="effectiveDate" render={({ field }) => <DatePickerField label={t('effectiveDate')} value={field.value} onChange={field.onChange} />} /></FormField>
           </div>
-          <FormField label="Title (English)" required error={errors.titleEn?.message}><Input {...register('titleEn')} autoComplete="off" /></FormField>
-          <FormField label="Title (Gujarati)" error={errors.titleGu?.message}><Input {...register('titleGu')} autoComplete="off" /></FormField>
-          <FormField label="Text (English)" required error={errors.bodyEn?.message}><Textarea {...register('bodyEn')} rows={10} /></FormField>
-          <FormField label="Text (Gujarati)" error={errors.bodyGu?.message}><Textarea {...register('bodyGu')} rows={10} /></FormField>
+          <FormField label={t('titleEn')} required error={errors.titleEn?.message}><Input {...register('titleEn')} autoComplete="off" /></FormField>
+          <FormField label={t('titleGu')} error={errors.titleGu?.message}><Input {...register('titleGu')} autoComplete="off" /></FormField>
+          <FormField label={t('textEn')} required error={errors.bodyEn?.message}><Textarea {...register('bodyEn')} rows={10} /></FormField>
+          <FormField label={t('textGu')} error={errors.bodyGu?.message}><Textarea {...register('bodyGu')} rows={10} /></FormField>
         </div>
-        <p className="product-hint">The English text needs at least {MIN_PUBLISHED_BODY_LENGTH} characters to be published. Avoid health or nutrition claims you cannot prove: the app stores check this.</p>
+        <p className="product-hint">{t('lengthNote', { min: MIN_PUBLISHED_BODY_LENGTH })}</p>
         {error && <p className="field-error" role="alert">{error}</p>}
-        <DialogFooter><Button type="button" variant="outline" className="secondary-button" onClick={onClose}>Cancel</Button><Button type="submit" className="primary-button" disabled={isSubmitting}>{policy ? 'Save Draft' : 'Create Draft'}</Button></DialogFooter>
+        <DialogFooter><Button type="button" variant="outline" className="secondary-button" onClick={onClose}>{t('cancel')}</Button><Button type="submit" className="primary-button" disabled={isSubmitting}>{policy ? t('saveDraft') : t('createDraft')}</Button></DialogFooter>
       </form>
     </DialogContent>
   </Dialog>

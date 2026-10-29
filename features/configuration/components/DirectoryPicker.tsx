@@ -11,6 +11,7 @@ import { FormField as Field } from '@/components/configuration/FormField'
 import { describeApiError } from '@/lib/api-errors'
 import { directoryApi, pinApi, type DeliverySlot, type DirectoryPin, type ServiceArea } from '../api'
 import { SlotChoices } from './SlotChoices'
+import { t } from '../messages'
 
 type Props = { area: ServiceArea; slots: DeliverySlot[]; onClose: () => void; onAdded: () => void }
 type Step<T> = { status: 'idle' } | { status: 'loading' } | { status: 'error'; message: string } | { status: 'ready'; data: T }
@@ -86,13 +87,13 @@ export function DirectoryPicker({ area, slots, onClose, onAdded }: Props) {
   const add = async () => {
     if (pins.status !== 'ready') return
     const chosen = pins.data.filter(pin => picked.has(pin.pinCode))
-    if (chosen.length === 0) return setError('Tick at least one PIN code.')
-    if (slotIds.length === 0) return setError('Choose at least one delivery slot.')
+    if (chosen.length === 0) return setError(t('errTickOne'))
+    if (slotIds.length === 0) return setError(t('errChooseSlotOne'))
     setError(''); setSaving(true)
     try {
       const localities = Object.fromEntries(chosen.map(pin => [pin.pinCode, localityOf(pin)]).filter(([, locality]) => locality))
       const { added, skipped } = await pinApi.addMany(area.id, { pinCodes: chosen.map(pin => pin.pinCode), locality: district, localities, allowedDeliverySlotIds: slotIds, status: 'active' })
-      toast.success(`${added.length} PIN ${added.length === 1 ? 'code' : 'codes'} added${skipped.length ? `, ${skipped.length} already in this area` : ''}.`)
+      toast.success(t(added.length === 1 ? 'addedOne' : 'addedMany', { count: added.length, skipped: skipped.length ? t('skippedSome', { count: skipped.length }) : '' }))
       onAdded()
     } catch (failure) { setError(describeApiError(failure)); setSaving(false) }
   }
@@ -108,43 +109,43 @@ export function DirectoryPicker({ area, slots, onClose, onAdded }: Props) {
   const ready = pins.status === 'ready' && pins.data.length > 0
   const pickedPins = pins.status === 'ready' ? pins.data.filter(pin => picked.has(pin.pinCode)) : []
 
-  return <div className="pin-sheet-stack" aria-label="Add PIN codes from a city">
-    <p className="pin-hint">Choose a state and district from India Post&rsquo;s list. Every PIN code in it is ticked; untick the ones you don&rsquo;t deliver to.</p>
-    {states.status === 'loading' && <p className="pin-hint" aria-busy="true">Loading the PIN list…</p>}
+  return <div className="pin-sheet-stack" aria-label={t('fromCityLabel')}>
+    <p className="pin-hint">{t('cityHint')}</p>
+    {states.status === 'loading' && <p className="pin-hint" aria-busy="true">{t('loadingList')}</p>}
     {states.status === 'error' && <p className="field-error" role="alert">{states.message}</p>}
-    {emptyDirectory && <div className="setup-note attention" role="status"><div><strong>The national PIN list has not been loaded yet</strong>Until it is loaded, add PIN codes one by one or with <b>Paste a list</b>.</div></div>}
+    {emptyDirectory && <div className="setup-note attention" role="status"><div><strong>{t('listNotLoaded')}</strong>{t('listNotLoadedDetail')}</div></div>}
     {states.status === 'ready' && !emptyDirectory && <>
       <div className="pin-form-row">
-        <Field label="State"><SelectField label="State" value={state} onChange={chooseState} placeholder="Choose a state" options={states.data.map(name => ({ value: name, label: name }))} /></Field>
-        <Field label="District / city">
-          {districts.status === 'error' ? <p className="field-error">{districts.message}</p> : <SelectField label="District" value={district} onChange={chooseDistrict} placeholder={state ? 'Choose a district' : 'Choose a state first'} options={districts.status === 'ready' ? districts.data.map(name => ({ value: name, label: name })) : []} />}
+        <Field label={t('state')}><SelectField label={t('state')} value={state} onChange={chooseState} placeholder={t('chooseState')} options={states.data.map(name => ({ value: name, label: name }))} /></Field>
+        <Field label={t('districtCity')}>
+          {districts.status === 'error' ? <p className="field-error">{districts.message}</p> : <SelectField label={t('district')} value={district} onChange={chooseDistrict} placeholder={state ? t('chooseDistrict') : t('stateFirst')} options={districts.status === 'ready' ? districts.data.map(name => ({ value: name, label: name })) : []} />}
         </Field>
       </div>
-      {pins.status === 'loading' && <p className="pin-hint" aria-busy="true">Loading PIN codes…</p>}
+      {pins.status === 'loading' && <p className="pin-hint" aria-busy="true">{t('loadingPins')}</p>}
       {pins.status === 'error' && <p className="field-error" role="alert">{pins.message}</p>}
-      {pins.status === 'ready' && pins.data.length === 0 && <p className="pin-hint">No PIN codes are listed for {district}.</p>}
-      {ready && <div className="pin-scope" role="radiogroup" aria-label="Which PIN codes to add">
-        <button type="button" role="radio" aria-checked={scope === 'all'} className="pin-scope-option" onClick={() => chooseScope('all')}><strong>All PIN codes</strong><small>Every PIN in {district}</small></button>
-        <button type="button" role="radio" aria-checked={scope === 'pick'} className="pin-scope-option" onClick={() => chooseScope('pick')}><strong>Pick specific</strong><small>Search and choose one or a few</small></button>
+      {pins.status === 'ready' && pins.data.length === 0 && <p className="pin-hint">{t('noPinsListed', { district })}</p>}
+      {ready && <div className="pin-scope" role="radiogroup" aria-label={t('whichPins')}>
+        <button type="button" role="radio" aria-checked={scope === 'all'} className="pin-scope-option" onClick={() => chooseScope('all')}><strong>{t('allPins')}</strong><small>{t('everyPinIn', { district })}</small></button>
+        <button type="button" role="radio" aria-checked={scope === 'pick'} className="pin-scope-option" onClick={() => chooseScope('pick')}><strong>{t('pickSpecific')}</strong><small>{t('pickSpecificHint')}</small></button>
       </div>}
-      {ready && scope === 'pick' && pickedPins.length > 0 && <div className="pin-picked" aria-label="Chosen PIN codes">
-        {pickedPins.map(pin => <span key={pin.pinCode} className="pin-picked-chip">{pin.pinCode}<button type="button" aria-label={`Remove ${pin.pinCode}`} onClick={() => toggle(pin.pinCode, false)}><X size={12} /></button></span>)}
+      {ready && scope === 'pick' && pickedPins.length > 0 && <div className="pin-picked" aria-label={t('chosenPins')}>
+        {pickedPins.map(pin => <span key={pin.pinCode} className="pin-picked-chip">{pin.pinCode}<button type="button" aria-label={t('removePin', { pin: pin.pinCode })} onClick={() => toggle(pin.pinCode, false)}><X size={12} /></button></span>)}
       </div>}
       {ready && <div className="pin-checklist">
         <div className="pin-checklist-head">
-          <label className="pin-checklist-all"><Checkbox checked={allVisiblePicked} onCheckedChange={checked => toggleVisible(checked === true)} aria-label="Tick all shown PIN codes" /><span><strong>{picked.size}</strong> of {pins.status === 'ready' ? pins.data.length : 0} ticked</span></label>
-          <div className="pin-checklist-search"><Search size={14} aria-hidden="true" /><Input value={filter} onChange={event => setFilter(event.target.value)} placeholder={scope === 'pick' ? 'Search PIN or post office' : 'Filter PIN or post office'} aria-label="Search PIN codes" /></div>
+          <label className="pin-checklist-all"><Checkbox checked={allVisiblePicked} onCheckedChange={checked => toggleVisible(checked === true)} aria-label={t('tickAllShown')} /><span><strong>{picked.size}</strong> {t('tickedOf', { count: pins.status === 'ready' ? pins.data.length : 0 })}</span></label>
+          <div className="pin-checklist-search"><Search size={14} aria-hidden="true" /><Input value={filter} onChange={event => setFilter(event.target.value)} placeholder={scope === 'pick' ? t('searchPostOffice') : t('filterPostOffice')} aria-label={t('searchPins')} /></div>
         </div>
-        <div className="pin-checklist-rows" role="group" aria-label="PIN codes">
+        <div className="pin-checklist-rows" role="group" aria-label={t('pinCodes')}>
           {visiblePins.map(pin => <label key={pin.pinCode} className="pin-checklist-row"><Checkbox checked={picked.has(pin.pinCode)} onCheckedChange={checked => toggle(pin.pinCode, checked === true)} /><strong>{pin.pinCode}</strong><span title={pin.offices.join(', ')}>{pin.offices.join(', ') || '—'}</span></label>)}
-          {visiblePins.length === 0 && <p className="pin-hint pin-checklist-empty">No PIN codes match “{filter}” in {district}.</p>}
+          {visiblePins.length === 0 && <p className="pin-hint pin-checklist-empty">{t('noPinMatch', { filter, district })}</p>}
         </div>
       </div>}
-      {ready && <SlotChoices label="Delivery slots for these PIN codes" slots={slots} value={slotIds} onChange={setSlotIds} />}
+      {ready && <SlotChoices label={t('slotsForPins')} slots={slots} value={slotIds} onChange={setSlotIds} />}
     </>}
     <div className="pin-sheet-footer pin-sheet-footer-inline">
       {error && <p className="field-error" role="alert">{error}</p>}
-      <div className="pin-sheet-actions"><Button type="button" className="secondary-button" disabled={saving} onClick={onClose}>Cancel</Button>{ready && <Button type="button" className="primary-button" disabled={saving || picked.size === 0} onClick={() => void add()}>{saving ? 'Adding…' : `Add ${picked.size} PIN ${picked.size === 1 ? 'code' : 'codes'}`}</Button>}</div>
+      <div className="pin-sheet-actions"><Button type="button" className="secondary-button" disabled={saving} onClick={onClose}>{t('cancel')}</Button>{ready && <Button type="button" className="primary-button" disabled={saving || picked.size === 0} onClick={() => void add()}>{saving ? t('adding') : t(picked.size === 1 ? 'addCountOne' : 'addCountMany', { count: picked.size })}</Button>}</div>
     </div>
   </div>
 }

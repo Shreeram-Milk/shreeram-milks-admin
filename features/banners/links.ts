@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { categoryApi } from '../categories/api'
 import { productApi } from '../products/api'
 import type { Banner } from './types'
+import { t } from './messages'
 
 type Option = { value: string; label: string }
 type Targets = { categories: Option[]; products: Option[] }
@@ -31,11 +32,11 @@ export function useLinkTargets() {
     loaded: targets !== null,
     options: (ctaType: Banner['ctaType']): Option[] => (ctaType === 'product' ? targets?.products : ctaType === 'category' ? targets?.categories : undefined) ?? [],
     label: (banner: Pick<Banner, 'ctaType' | 'ctaTarget'>): string => {
-      if (banner.ctaType === 'none') return 'No link'
-      if (banner.ctaType === 'offers') return 'The Offers page'
+      if (banner.ctaType === 'none') return t('ctaNone')
+      if (banner.ctaType === 'offers') return t('ctaOffers')
       if (!targets) return '…'
       const list = banner.ctaType === 'product' ? targets.products : targets.categories
-      return list.find(option => option.value === banner.ctaTarget)?.label ?? (banner.ctaType === 'product' ? 'Missing product' : 'Missing category')
+      return list.find(option => option.value === banner.ctaTarget)?.label ?? (banner.ctaType === 'product' ? t('missingProduct') : t('missingCategory'))
     },
   }
 }

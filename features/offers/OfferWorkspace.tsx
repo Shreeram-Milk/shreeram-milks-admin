@@ -17,21 +17,23 @@ import { formatDisplayDate, todayInBusinessZone } from '@/lib/business-time'
 import { formatINR } from '@/lib/money'
 import { offerApi } from './api'
 import { OFFER_KIND_LABELS, type Offer } from './types'
+import { tc } from '@/lib/i18n/common'
+import { t } from './messages'
 
 const schedule = (offer: Offer) => {
-  if (!offer.startsOn && !offer.endsOn) return 'Always'
-  return `${offer.startsOn ? formatDisplayDate(offer.startsOn) : 'Now'} – ${offer.endsOn ? formatDisplayDate(offer.endsOn) : 'No end'}`
+  if (!offer.startsOn && !offer.endsOn) return t('always')
+  return `${offer.startsOn ? formatDisplayDate(offer.startsOn) : t('now')} – ${offer.endsOn ? formatDisplayDate(offer.endsOn) : t('noEnd')}`
 }
 
 /** "20% off, up to ₹100", "₹100 off", "Free Cow Ghee - 250 g". */
 function describeValue(offer: Offer): string {
-  if (offer.kind === 'percent') return `${offer.percent}% off${offer.maxDiscountPaise ? `, up to ${formatINR(offer.maxDiscountPaise)}` : ''}`
-  if (offer.kind === 'flat') return `${formatINR(offer.flatPaise ?? 0)} off`
-  return `Free ${offer.giftQuantity > 1 ? `${offer.giftQuantity} × ` : ''}${offer.giftLabel ?? 'gift'}`
+  if (offer.kind === 'percent') return `${t('percentOff', { percent: offer.percent ?? 0 })}${offer.maxDiscountPaise ? t('upTo', { amount: formatINR(offer.maxDiscountPaise) }) : ''}`
+  if (offer.kind === 'flat') return t('amountOff', { amount: formatINR(offer.flatPaise ?? 0) })
+  return t('free', { gift: `${offer.giftQuantity > 1 ? `${offer.giftQuantity} × ` : ''}${offer.giftLabel ?? t('giftFallback')}` })
 }
 
 function worksFor(offer: Offer): string {
-  const parts = [offer.appliesOneTime && 'One-time', offer.appliesTrial && 'Trials', offer.appliesSubscription && `Subscriptions${offer.minPlanDays ? ` (${offer.minPlanDays}+ days)` : ''}`].filter(Boolean)
+  const parts = [offer.appliesOneTime && t('oneTime'), offer.appliesTrial && t('trials'), offer.appliesSubscription && `${t('subscriptions')}${offer.minPlanDays ? t('plusDays', { days: offer.minPlanDays }) : ''}`].filter(Boolean)
   return parts.join(', ')
 }
 
@@ -63,39 +65,39 @@ export function OfferWorkspace() {
   }
 
   if (state.status === 'loading') return <PageSkeleton />
-  if (state.status === 'error') return <div className="product-state" role="alert"><strong>Offers could not be loaded</strong><span>{state.message}</span><Button className="secondary-button" onClick={() => { setState({ status: 'loading' }); reload() }}>Try again</Button></div>
+  if (state.status === 'error') return <div className="product-state" role="alert"><strong>{t('loadFailed')}</strong><span>{state.message}</span><Button className="secondary-button" onClick={() => { setState({ status: 'loading' }); reload() }}>{tc('tryAgain')}</Button></div>
 
   const { offers } = state
   const today = todayInBusinessZone()
   const filtered = offers.filter(item => (status === 'all' || item.status === status) && `${item.title} ${item.titleGu} ${item.code ?? ''}`.toLowerCase().includes(query.trim().toLowerCase()))
   const toggle = (offer: Offer) => {
-    if (offer.status === 'inactive') void changeStatus(offer, 'active', `${offer.title} activated.`)
+    if (offer.status === 'inactive') void changeStatus(offer, 'active', t('activated', { name: offer.title }))
     else setDeactivating(offer)
   }
 
   return <div className="workspace-page">
     <header className="page-header">
-      <div><PageBreadcrumbs items={[{ label: 'Content' }, { label: 'Offers' }]} /><h1>Offers</h1><p className="page-description">Percent off, flat amount off and free gifts. A customer gets one offer at a time. Totals are always worked out by the server.</p></div>
-      <Link className="primary-button" href="/content/offers/new"><Plus size={16} /> Add Offer</Link>
+      <div><PageBreadcrumbs items={[{ label: t('content') }, { label: t('offers') }]} /><h1>{t('offers')}</h1><p className="page-description">{t('description')}</p></div>
+      <Link className="primary-button" href="/content/offers/new"><Plus size={16} /> {t('addOffer')}</Link>
     </header>
     <section className="config-section">
-      <RecordListToolbar noun="offers" query={query} onQueryChange={setQuery} status={status} onStatusChange={setStatus} count={filtered.length} />
+      <RecordListToolbar noun={t('noun')} query={query} onQueryChange={setQuery} status={status} onStatusChange={setStatus} count={filtered.length} />
       <div className="table-card"><div className="table-scroll"><Table>
-        <TableHeader><TableRow><TableHead>Offer</TableHead><TableHead>What it gives</TableHead><TableHead>Works for</TableHead><TableHead>Minimum</TableHead><TableHead>Runs</TableHead><TableHead>Status</TableHead><TableHead scope="col" aria-label="Actions" /></TableRow></TableHeader>
+        <TableHeader><TableRow><TableHead>{t('offer')}</TableHead><TableHead>{t('whatItGives')}</TableHead><TableHead>{t('worksFor')}</TableHead><TableHead>{t('minimum')}</TableHead><TableHead>{t('runs')}</TableHead><TableHead>{t('status')}</TableHead><TableHead scope="col" aria-label={t('actions')} /></TableRow></TableHeader>
         <TableBody>
           {filtered.map(item => <TableRow key={item.id}>
-            <TableCell><Link className="table-link" href={`/content/offers/${item.id}/edit`}>{item.title}</Link><small className="cell-note">{item.code ? `Code ${item.code}` : 'Applied automatically'}</small></TableCell>
+            <TableCell><Link className="table-link" href={`/content/offers/${item.id}/edit`}>{item.title}</Link><small className="cell-note">{item.code ? t('code', { code: item.code }) : t('automatic')}</small></TableCell>
             <TableCell>{describeValue(item)}<small className="cell-note">{OFFER_KIND_LABELS[item.kind]}</small></TableCell>
             <TableCell>{worksFor(item)}</TableCell>
-            <TableCell>{item.minOrderPaise ? formatINR(item.minOrderPaise) : 'None'}</TableCell>
+            <TableCell>{item.minOrderPaise ? formatINR(item.minOrderPaise) : t('none')}</TableCell>
             <TableCell>{schedule(item)}</TableCell>
             <TableCell><WindowStatusBadge state={windowState({ status: item.status, startDate: item.startsOn, endDate: item.endsOn }, today)} /></TableCell>
             <TableCell><RecordRowActions name={item.title} active={item.status === 'active'} onEdit={() => router.push(`/content/offers/${item.id}/edit`)} onToggle={() => toggle(item)} /></TableCell>
           </TableRow>)}
-          {filtered.length === 0 && <TableRow><TableCell colSpan={7}><div className="empty-table">{offers.length ? 'No offers match your search and filters.' : 'No offers yet.'}{offers.length === 0 && <Link className="text-button" href="/content/offers/new">Create the first offer</Link>}</div></TableCell></TableRow>}
+          {filtered.length === 0 && <TableRow><TableCell colSpan={7}><div className="empty-table">{offers.length ? t('noMatch') : t('noneYet')}{offers.length === 0 && <Link className="text-button" href="/content/offers/new">{t('createFirst')}</Link>}</div></TableCell></TableRow>}
         </TableBody>
       </Table></div></div>
     </section>
-    <DeactivateDialog open={Boolean(deactivating)} noun="offer" name={deactivating?.title ?? ''} onCancel={() => setDeactivating(null)} onConfirm={() => { const target = deactivating; setDeactivating(null); if (target) void changeStatus(target, 'inactive', `${target.title} deactivated.`) }} consequence="Customers stop seeing it and it is no longer applied to new orders. Orders and plans that already used it are not changed." />
+    <DeactivateDialog open={Boolean(deactivating)} noun={t('nounOne')} name={deactivating?.title ?? ''} onCancel={() => setDeactivating(null)} onConfirm={() => { const target = deactivating; setDeactivating(null); if (target) void changeStatus(target, 'inactive', t('deactivated', { name: target.title })) }} consequence={t('deactivateConsequence')} />
   </div>
 }

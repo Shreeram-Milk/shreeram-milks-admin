@@ -18,12 +18,14 @@ import { formatTimestamp } from '@/lib/business-time'
 import { appSettingsApi } from './api'
 import { appSettingsSchema, type AppSettingsFormValues } from './schema'
 import { FEATURE_FLAG_KEYS, FEATURE_FLAG_LABELS, type AppSettings } from './types'
+import { tc } from '@/lib/i18n/common'
+import { t } from './messages'
 
 const TABS = [
-  { value: 'support', label: 'Support' },
-  { value: 'delivery', label: 'Delivery' },
-  { value: 'features', label: 'Features' },
-  { value: 'availability', label: 'Availability' },
+  { value: 'support', label: 'tabSupport' },
+  { value: 'delivery', label: 'tabDelivery' },
+  { value: 'features', label: 'tabFeatures' },
+  { value: 'availability', label: 'tabAvailability' },
 ] as const
 type TabValue = (typeof TABS)[number]['value']
 
@@ -60,7 +62,7 @@ function AppSettingsForm({ initial }: { initial: AppSettings }) {
       const next = await appSettingsApi.save(values)
       setSaved(next)
       reset(toForm(next))
-      toast.success('App settings saved.')
+      toast.success(t('saved'))
     } catch (failure) {
       setError(describeApiError(failure))
     }
@@ -68,71 +70,71 @@ function AppSettingsForm({ initial }: { initial: AppSettings }) {
     // A mistake on a tab that is not showing would otherwise look like Save doing nothing.
     const first = Object.keys(invalid).map(field => TAB_OF_FIELD[field]).find(Boolean)
     if (first) setTab(first)
-    toast.error('Some settings need attention.')
+    toast.error(t('needsAttention'))
   })
   return <div className="workspace-page products-page">
     <header className="page-header">
-      <div><PageBreadcrumbs items={[{ label: 'Content' }, { label: 'App Settings' }]} /><h1>App Settings</h1><p className="page-description">Support details, feature switches and availability for the customer app. Last saved {formatTimestamp(saved.updatedAt)}.</p></div>
+      <div><PageBreadcrumbs items={[{ label: t('content') }, { label: t('title') }]} /><h1>{t('title')}</h1><p className="page-description">{t('description', { when: formatTimestamp(saved.updatedAt) })}</p></div>
     </header>
     <form onSubmit={submit} noValidate className="settings-form">
       <Tabs value={tab} onValueChange={value => setTab(value as TabValue)}>
-        <TabsList aria-label="Settings sections">{TABS.map(item => <TabsTrigger key={item.value} value={item.value}>{item.label}</TabsTrigger>)}</TabsList>
+        <TabsList aria-label={t('sections')}>{TABS.map(item => <TabsTrigger key={item.value} value={item.value}>{t(item.label)}</TabsTrigger>)}</TabsList>
       <TabsContent value="support" className="settings-tab">
-      <section className="form-card"><h2>Support contact</h2>
+      <section className="form-card"><h2>{t('supportContact')}</h2>
         <div className="product-grid">
-          <FormField label="Support phone" error={errors.supportPhone?.message} helper="Used by Call support."><Input {...register('supportPhone')} inputMode="tel" autoComplete="off" placeholder="9876543210" /></FormField>
-          <FormField label="WhatsApp number" error={errors.supportWhatsApp?.message}><Input {...register('supportWhatsApp')} inputMode="tel" autoComplete="off" placeholder="9876543210" /></FormField>
-          <FormField label="Support email" error={errors.supportEmail?.message}><Input {...register('supportEmail')} inputMode="email" autoComplete="off" /></FormField>
+          <FormField label={t('supportPhone')} error={errors.supportPhone?.message} helper={t('supportPhoneHelper')}><Input {...register('supportPhone')} inputMode="tel" autoComplete="off" placeholder="9876543210" /></FormField>
+          <FormField label={t('whatsappNumber')} error={errors.supportWhatsApp?.message}><Input {...register('supportWhatsApp')} inputMode="tel" autoComplete="off" placeholder="9876543210" /></FormField>
+          <FormField label={t('supportEmail')} error={errors.supportEmail?.message}><Input {...register('supportEmail')} inputMode="email" autoComplete="off" /></FormField>
         </div>
         <div className="switch-list">
-          <Controller control={control} name="callEnabled" render={({ field }) => <SwitchRow id="call-enabled" label="Call support" detail="Shows the Call button in Help." error={errors.supportPhone?.message} checked={field.value} onChange={field.onChange} />} />
-          <Controller control={control} name="whatsappEnabled" render={({ field }) => <SwitchRow id="whatsapp-enabled" label="WhatsApp support" detail="Shows the WhatsApp button in Help." error={errors.supportWhatsApp?.message} checked={field.value} onChange={field.onChange} />} />
+          <Controller control={control} name="callEnabled" render={({ field }) => <SwitchRow id="call-enabled" label={t('callSupport')} detail={t('callSupportDetail')} error={errors.supportPhone?.message} checked={field.value} onChange={field.onChange} />} />
+          <Controller control={control} name="whatsappEnabled" render={({ field }) => <SwitchRow id="whatsapp-enabled" label={t('whatsappSupport')} detail={t('whatsappSupportDetail')} error={errors.supportWhatsApp?.message} checked={field.value} onChange={field.onChange} />} />
         </div>
       </section>
-      <section className="form-card"><h2>Support hours</h2>
+      <section className="form-card"><h2>{t('supportHours')}</h2>
         <div className="product-grid">
-          <FormField label="Hours (English)" error={errors.supportHoursEn?.message}><Input {...register('supportHoursEn')} autoComplete="off" /></FormField>
-          <FormField label="Hours (Gujarati)" error={errors.supportHoursGu?.message}><Input {...register('supportHoursGu')} autoComplete="off" /></FormField>
-          <FormField label="After-hours message (English)" error={errors.afterHoursMessageEn?.message} helper="Shown when someone contacts support outside these hours."><Textarea {...register('afterHoursMessageEn')} rows={2} maxLength={160} /></FormField>
-          <FormField label="After-hours message (Gujarati)" error={errors.afterHoursMessageGu?.message}><Textarea {...register('afterHoursMessageGu')} rows={2} maxLength={160} /></FormField>
+          <FormField label={t('hoursEn')} error={errors.supportHoursEn?.message}><Input {...register('supportHoursEn')} autoComplete="off" /></FormField>
+          <FormField label={t('hoursGu')} error={errors.supportHoursGu?.message}><Input {...register('supportHoursGu')} autoComplete="off" /></FormField>
+          <FormField label={t('afterHoursEn')} error={errors.afterHoursMessageEn?.message} helper={t('afterHoursHelper')}><Textarea {...register('afterHoursMessageEn')} rows={2} maxLength={160} /></FormField>
+          <FormField label={t('afterHoursGu')} error={errors.afterHoursMessageGu?.message}><Textarea {...register('afterHoursMessageGu')} rows={2} maxLength={160} /></FormField>
         </div>
       </section>
       </TabsContent>
       <TabsContent value="delivery" className="settings-tab">
-      <section className="form-card"><h2>Delivery promise</h2>
+      <section className="form-card"><h2>{t('deliveryPromise')}</h2>
         <div className="product-grid">
-          <FormField label="Promise line (English)" error={errors.deliveryPromiseEn?.message} helper="Shown on the home and onboarding screens."><Input {...register('deliveryPromiseEn')} autoComplete="off" /></FormField>
-          <FormField label="Promise line (Gujarati)" error={errors.deliveryPromiseGu?.message}><Input {...register('deliveryPromiseGu')} autoComplete="off" /></FormField>
+          <FormField label={t('promiseEn')} error={errors.deliveryPromiseEn?.message} helper={t('promiseHelper')}><Input {...register('deliveryPromiseEn')} autoComplete="off" /></FormField>
+          <FormField label={t('promiseGu')} error={errors.deliveryPromiseGu?.message}><Input {...register('deliveryPromiseGu')} autoComplete="off" /></FormField>
         </div>
       </section>
       </TabsContent>
       <TabsContent value="features" className="settings-tab">
-      <section className="form-card"><h2>Features</h2>
-        <p className="product-hint">Turn parts of the app on or off without an update. These only show or hide what the installed app already has.</p>
+      <section className="form-card"><h2>{t('features')}</h2>
+        <p className="product-hint">{t('featuresHint')}</p>
         <div className="switch-list">{FEATURE_FLAG_KEYS.map(key => <Controller key={key} control={control} name={`flags.${key}`} render={({ field }) => <SwitchRow id={`flag-${key}`} label={FEATURE_FLAG_LABELS[key].label} detail={FEATURE_FLAG_LABELS[key].detail} checked={field.value} onChange={field.onChange} />} />)}</div>
       </section>
       </TabsContent>
       <TabsContent value="availability" className="settings-tab">
-      <section className="form-card"><h2>App availability</h2>
+      <section className="form-card"><h2>{t('availability')}</h2>
         <div className="product-grid">
-          <FormField label="Minimum app version" error={errors.minimumAppVersion?.message} helper="Older versions are asked to update before they can continue."><Input {...register('minimumAppVersion')} autoComplete="off" placeholder="1.0.0" /></FormField>
+          <FormField label={t('minimumVersion')} error={errors.minimumAppVersion?.message} helper={t('minimumVersionHelper')}><Input {...register('minimumAppVersion')} autoComplete="off" placeholder="1.0.0" /></FormField>
         </div>
         <div className="switch-list">
-          <Controller control={control} name="maintenanceMode" render={({ field }) => <SwitchRow id="maintenance-mode" label="Maintenance mode" detail="Customers see the message below instead of the app." checked={field.value} onChange={field.onChange} />} />
+          <Controller control={control} name="maintenanceMode" render={({ field }) => <SwitchRow id="maintenance-mode" label={t('maintenanceMode')} detail={t('maintenanceModeDetail')} checked={field.value} onChange={field.onChange} />} />
         </div>
-        {maintenanceMode && <p className="warning-note" role="status"><TriangleAlert size={15} aria-hidden="true" /> Saving this turns the customer app off for everyone until you switch it back.</p>}
+        {maintenanceMode && <p className="warning-note" role="status"><TriangleAlert size={15} aria-hidden="true" /> {t('maintenanceWarning')}</p>}
         <div className="product-grid">
-          <FormField label="Message (English)" error={errors.maintenanceMessageEn?.message}><Textarea {...register('maintenanceMessageEn')} rows={2} maxLength={200} placeholder="We’ll be back shortly." /></FormField>
-          <FormField label="Message (Gujarati)" error={errors.maintenanceMessageGu?.message}><Textarea {...register('maintenanceMessageGu')} rows={2} maxLength={200} /></FormField>
+          <FormField label={t('messageEn')} error={errors.maintenanceMessageEn?.message}><Textarea {...register('maintenanceMessageEn')} rows={2} maxLength={200} placeholder={t('maintenancePlaceholder')} /></FormField>
+          <FormField label={t('messageGu')} error={errors.maintenanceMessageGu?.message}><Textarea {...register('maintenanceMessageGu')} rows={2} maxLength={200} /></FormField>
         </div>
         <div className="switch-list">
-          <Controller control={control} name="showMaintenanceContact" render={({ field }) => <SwitchRow id="maintenance-contact" label="Show support contact on the maintenance screen" error={errors.showMaintenanceContact?.message} checked={field.value} onChange={field.onChange} />} />
+          <Controller control={control} name="showMaintenanceContact" render={({ field }) => <SwitchRow id="maintenance-contact" label={t('showContact')} error={errors.showMaintenanceContact?.message} checked={field.value} onChange={field.onChange} />} />
         </div>
       </section>
       </TabsContent>
       </Tabs>
       {error && <p className="field-error" role="alert">{error}</p>}
-      <div className="settings-actions"><Button type="button" variant="outline" className="secondary-button" disabled={!isDirty} onClick={() => reset(toForm(saved))}>Discard changes</Button><Button type="submit" className="primary-button" disabled={!isDirty || isSubmitting}>Save Settings</Button></div>
+      <div className="settings-actions"><Button type="button" variant="outline" className="secondary-button" disabled={!isDirty} onClick={() => reset(toForm(saved))}>{t('discard')}</Button><Button type="submit" className="primary-button" disabled={!isDirty || isSubmitting}>{t('saveSettings')}</Button></div>
     </form>
   </div>
 }
@@ -154,6 +156,6 @@ export function AppSettingsWorkspace() {
   }, [reloadKey])
 
   if (state.status === 'loading') return <PageSkeleton />
-  if (state.status === 'error') return <div className="product-state" role="alert"><strong>App settings could not be loaded</strong><span>{state.message}</span><Button className="secondary-button" onClick={() => { setState({ status: 'loading' }); setReloadKey(count => count + 1) }}>Try again</Button></div>
+  if (state.status === 'error') return <div className="product-state" role="alert"><strong>{t('loadFailed')}</strong><span>{state.message}</span><Button className="secondary-button" onClick={() => { setState({ status: 'loading' }); setReloadKey(count => count + 1) }}>{tc('tryAgain')}</Button></div>
   return <AppSettingsForm initial={state.settings} />
 }

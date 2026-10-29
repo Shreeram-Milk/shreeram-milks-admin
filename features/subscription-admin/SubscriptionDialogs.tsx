@@ -8,6 +8,7 @@ import { DatePickerField } from '@/components/shared/DatePickerField'
 import { addDays, formatWeekdayDate, todayInBusinessZone } from '@/lib/business-time'
 import { formatINR } from '@/lib/money'
 import type { DayLine, SubscriptionDetail } from './api'
+import { t } from './messages'
 
 type DialogProps = { busy: boolean; onClose: () => void }
 
@@ -19,18 +20,18 @@ export function PauseDialog({ busy, onClose, onSave }: DialogProps & { onSave: (
   return <AlertDialog open onOpenChange={open => { if (!open && !busy) onClose() }}>
     <AlertDialogContent className="confirm-dialog">
       <AlertDialogHeader>
-        <p className="eyebrow">Pause or vacation</p>
-        <AlertDialogTitle>Stop deliveries for a while?</AlertDialogTitle>
+        <p className="eyebrow">{t('pauseEyebrow')}</p>
+        <AlertDialogTitle>{t('pauseTitle')}</AlertDialogTitle>
         <AlertDialogDescription asChild><div>
-          <p>No deliveries from the first day. With an end date it is a vacation; without one, deliveries wait until someone presses Resume. Paused days are not lost: they move to the end. Orders already made for these days are cancelled where they can still be changed.</p>
-          <label className="product-form-label" htmlFor="pause-from">First day without delivery</label>
-          <DatePickerField id="pause-from" label="First day without delivery" value={fromDate} minDate={todayInBusinessZone()} onChange={setFromDate} />
-          <label className="product-form-label" htmlFor="pause-until">Last day without delivery (optional)</label>
-          <DatePickerField id="pause-until" label="Last day without delivery" value={untilDate} minDate={fromDate} onChange={setUntilDate} placeholder="Until resumed" invalid={invalid} />
-          {untilDate ? <Button className="secondary-button" variant="outline" onClick={() => setUntilDate('')}>No end date</Button> : null}
+          <p>{t('pauseBody')}</p>
+          <label className="product-form-label" htmlFor="pause-from">{t('firstDayWithout')}</label>
+          <DatePickerField id="pause-from" label={t('firstDayWithout')} value={fromDate} minDate={todayInBusinessZone()} onChange={setFromDate} />
+          <label className="product-form-label" htmlFor="pause-until">{t('lastDayWithout')}</label>
+          <DatePickerField id="pause-until" label={t('lastDayWithoutLabel')} value={untilDate} minDate={fromDate} onChange={setUntilDate} placeholder={t('untilResumedPlaceholder')} invalid={invalid} />
+          {untilDate ? <Button className="secondary-button" variant="outline" onClick={() => setUntilDate('')}>{t('noEndDate')}</Button> : null}
         </div></AlertDialogDescription>
       </AlertDialogHeader>
-      <AlertDialogFooter className="dialog-actions"><AlertDialogCancel asChild><Button variant="outline" className="secondary-button" disabled={busy}>Keep delivering</Button></AlertDialogCancel><AlertDialogAction asChild><Button className="primary-button" disabled={busy || invalid || !fromDate} onClick={event => { event.preventDefault(); onSave(fromDate, untilDate || null) }}>{busy ? 'Saving…' : 'Pause'}</Button></AlertDialogAction></AlertDialogFooter>
+      <AlertDialogFooter className="dialog-actions"><AlertDialogCancel asChild><Button variant="outline" className="secondary-button" disabled={busy}>{t('keepDelivering')}</Button></AlertDialogCancel><AlertDialogAction asChild><Button className="primary-button" disabled={busy || invalid || !fromDate} onClick={event => { event.preventDefault(); onSave(fromDate, untilDate || null) }}>{busy ? t('saving') : t('pause')}</Button></AlertDialogAction></AlertDialogFooter>
     </AlertDialogContent>
   </AlertDialog>
 }
@@ -40,15 +41,15 @@ export function ResumeDialog({ busy, onClose, onSave }: DialogProps & { onSave: 
   return <AlertDialog open onOpenChange={open => { if (!open && !busy) onClose() }}>
     <AlertDialogContent className="confirm-dialog">
       <AlertDialogHeader>
-        <p className="eyebrow">Resume</p>
-        <AlertDialogTitle>Restart deliveries?</AlertDialogTitle>
+        <p className="eyebrow">{t('resumeEyebrow')}</p>
+        <AlertDialogTitle>{t('resumeTitle')}</AlertDialogTitle>
         <AlertDialogDescription asChild><div>
-          <p>The pause ends the day before. If the date is too soon for the order-by time, you will be told the earliest possible day.</p>
-          <label className="product-form-label" htmlFor="resume-from">First delivery day</label>
-          <DatePickerField id="resume-from" label="First delivery day" value={fromDate} minDate={todayInBusinessZone()} onChange={setFromDate} />
+          <p>{t('resumeBody')}</p>
+          <label className="product-form-label" htmlFor="resume-from">{t('firstDeliveryDay')}</label>
+          <DatePickerField id="resume-from" label={t('firstDeliveryDay')} value={fromDate} minDate={todayInBusinessZone()} onChange={setFromDate} />
         </div></AlertDialogDescription>
       </AlertDialogHeader>
-      <AlertDialogFooter className="dialog-actions"><AlertDialogCancel asChild><Button variant="outline" className="secondary-button" disabled={busy}>Stay paused</Button></AlertDialogCancel><AlertDialogAction asChild><Button className="primary-button" disabled={busy || !fromDate} onClick={event => { event.preventDefault(); onSave(fromDate) }}>{busy ? 'Saving…' : 'Resume'}</Button></AlertDialogAction></AlertDialogFooter>
+      <AlertDialogFooter className="dialog-actions"><AlertDialogCancel asChild><Button variant="outline" className="secondary-button" disabled={busy}>{t('stayPaused')}</Button></AlertDialogCancel><AlertDialogAction asChild><Button className="primary-button" disabled={busy || !fromDate} onClick={event => { event.preventDefault(); onSave(fromDate) }}>{busy ? t('saving') : t('resume')}</Button></AlertDialogAction></AlertDialogFooter>
     </AlertDialogContent>
   </AlertDialog>
 }
@@ -59,17 +60,17 @@ export function CancelDialog({ subscription, busy, onClose, onSave }: DialogProp
   return <AlertDialog open onOpenChange={open => { if (!open && !busy) onClose() }}>
     <AlertDialogContent className="confirm-dialog">
       <AlertDialogHeader>
-        <p className="eyebrow">Cancel</p>
-        <AlertDialogTitle>Cancel this {subscription.kind === 'trial' ? 'trial' : 'subscription'} for {subscription.customerName.trim() || 'this customer'}?</AlertDialogTitle>
+        <p className="eyebrow">{t('cancelEyebrow')}</p>
+        <AlertDialogTitle>{t('cancelTitle', { kind: subscription.kind === 'trial' ? t('trial').toLowerCase() : t('subscription').toLowerCase(), name: subscription.customerName.trim() || t('thisCustomer') })}</AlertDialogTitle>
         <AlertDialogDescription asChild><div>
-          <p>This is final. No new deliveries are made, and orders not yet locked by the order-by time are cancelled. {subscription.paymentMethod === 'online'
-            ? `It was paid upfront: the value of the deliveries not used (about ${left} × ${formatINR(subscription.unitPricePaise)}) is added to Money → "Refunds to send", for you to refund in PhonePe and record.`
-            : 'It is on credit, so the customer is only charged for deliveries that were made.'}</p>
-          <label className="product-form-label" htmlFor="cancel-reason">Reason (optional)</label>
+          <p>{t('cancelBody')}{subscription.paymentMethod === 'online'
+            ? t('cancelOnline', { count: left, price: formatINR(subscription.unitPricePaise) })
+            : t('cancelCredit')}</p>
+          <label className="product-form-label" htmlFor="cancel-reason">{t('reasonOptional')}</label>
           <Textarea id="cancel-reason" rows={3} maxLength={300} value={reason} onChange={event => setReason(event.target.value)} />
         </div></AlertDialogDescription>
       </AlertDialogHeader>
-      <AlertDialogFooter className="dialog-actions"><AlertDialogCancel asChild><Button variant="outline" className="secondary-button" disabled={busy}>Keep it</Button></AlertDialogCancel><AlertDialogAction asChild><Button className="primary-button destructive-button" disabled={busy} onClick={event => { event.preventDefault(); onSave(reason.trim()) }}>{busy ? 'Cancelling…' : 'Cancel it'}</Button></AlertDialogAction></AlertDialogFooter>
+      <AlertDialogFooter className="dialog-actions"><AlertDialogCancel asChild><Button variant="outline" className="secondary-button" disabled={busy}>{t('keepIt')}</Button></AlertDialogCancel><AlertDialogAction asChild><Button className="primary-button destructive-button" disabled={busy} onClick={event => { event.preventDefault(); onSave(reason.trim()) }}>{busy ? t('cancelling') : t('cancelIt')}</Button></AlertDialogAction></AlertDialogFooter>
     </AlertDialogContent>
   </AlertDialog>
 }
@@ -77,16 +78,17 @@ export function CancelDialog({ subscription, busy, onClose, onSave }: DialogProp
 /** Confirms skipping one day and window, or bringing a skipped one back. */
 export function SkipDialog({ day, busy, onClose, onConfirm }: DialogProps & { day: DayLine & { date: string }; onConfirm: () => void }) {
   const undo = day.state === 'skipped'
+  const which = { day: formatWeekdayDate(day.date), slot: day.slotName, quantity: day.quantity }
   return <AlertDialog open onOpenChange={open => { if (!open && !busy) onClose() }}>
     <AlertDialogContent className="confirm-dialog">
       <AlertDialogHeader>
-        <p className="eyebrow">{undo ? 'Bring back' : 'Skip'}</p>
-        <AlertDialogTitle>{undo ? 'Bring back' : 'Skip'} {formatWeekdayDate(day.date)} · {day.slotName} × {day.quantity}?</AlertDialogTitle>
+        <p className="eyebrow">{undo ? t('bringBack') : t('skip')}</p>
+        <AlertDialogTitle>{undo ? t('bringBackTitle', which) : t('skipTitle', which)}</AlertDialogTitle>
         <AlertDialogDescription>{undo
-          ? 'This delivery comes as planned again, and the last delivery moves one day earlier.'
-          : `This delivery will not come${day.orderNumber ? ` (order ${day.orderNumber} is cancelled)` : ''}. It is added at the end, so the customer still gets every delivery bought. Nothing is refunded.`}</AlertDialogDescription>
+          ? t('bringBackBody')
+          : t('skipBody', { order: day.orderNumber ? t('orderCancelled', { number: day.orderNumber }) : '' })}</AlertDialogDescription>
       </AlertDialogHeader>
-      <AlertDialogFooter className="dialog-actions"><AlertDialogCancel asChild><Button variant="outline" className="secondary-button" disabled={busy}>Keep as it is</Button></AlertDialogCancel><AlertDialogAction asChild><Button className="primary-button" disabled={busy} onClick={event => { event.preventDefault(); onConfirm() }}>{busy ? 'Saving…' : undo ? 'Bring it back' : 'Skip it'}</Button></AlertDialogAction></AlertDialogFooter>
+      <AlertDialogFooter className="dialog-actions"><AlertDialogCancel asChild><Button variant="outline" className="secondary-button" disabled={busy}>{t('keepAsIs')}</Button></AlertDialogCancel><AlertDialogAction asChild><Button className="primary-button" disabled={busy} onClick={event => { event.preventDefault(); onConfirm() }}>{busy ? t('saving') : undo ? t('bringItBack') : t('skipIt')}</Button></AlertDialogAction></AlertDialogFooter>
     </AlertDialogContent>
   </AlertDialog>
 }

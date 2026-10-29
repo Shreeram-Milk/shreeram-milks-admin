@@ -14,6 +14,8 @@ import { MAX_PASTED_PINS, parsePinList } from '../pin-list'
 import { pinApi, type DeliverySlot, type Pin, type RecordStatus, type ServiceArea } from '../api'
 import { DirectoryPicker } from './DirectoryPicker'
 import { SlotChoices } from './SlotChoices'
+import { tc } from '@/lib/i18n/common'
+import { t } from '../messages'
 
 const PIN_CODE = /^[1-9]\d{5}$/
 /** Matches the slide-out length in globals.css (.pin-sheet[data-state="closed"]). */
@@ -50,20 +52,20 @@ export function PinCodeEditor({ area, slots, mode: startMode, editing, onClose, 
 
   const save = async () => {
     const pinCodes = mode === 'many' ? pasted.codes : [pinCode]
-    if (mode === 'many' && pinCodes.length === 0) return setError('Paste at least one PIN code.')
-    if (pinCodes.length > MAX_PASTED_PINS) return setError(`Paste at most ${MAX_PASTED_PINS} PIN codes at a time.`)
+    if (mode === 'many' && pinCodes.length === 0) return setError(t('errPasteOne'))
+    if (pinCodes.length > MAX_PASTED_PINS) return setError(t('errPasteMax', { max: MAX_PASTED_PINS }))
     const bad = pinCodes.find(code => !PIN_CODE.test(code))
-    if (bad !== undefined) return setError(mode === 'many' ? `“${bad}” is not a valid 6-digit PIN code. Fix it and try again.` : 'Enter a valid 6-digit Indian PIN code.')
-    if (slotIds.length === 0) return setError('Choose at least one delivery slot.')
+    if (bad !== undefined) return setError(mode === 'many' ? t('errBadPin', { pin: bad }) : t('errValidPin'))
+    if (slotIds.length === 0) return setError(t('errChooseSlotOne'))
     setError(''); setSaving(true)
     try {
       if (mode === 'many') {
         const { added, skipped } = await pinApi.addMany(area.id, { pinCodes, locality: locality.trim(), allowedDeliverySlotIds: slotIds, status })
-        toast.success(`${added.length} PIN ${added.length === 1 ? 'code' : 'codes'} added${skipped.length ? `, ${skipped.length} already in this area` : ''}.`)
+        toast.success(t(added.length === 1 ? 'addedOne' : 'addedMany', { count: added.length, skipped: skipped.length ? t('skippedSome', { count: skipped.length }) : '' }))
       } else {
         const payload = { pinCode: pinCodes[0] ?? '', locality: locality.trim(), allowedDeliverySlotIds: slotIds, status }
         if (editing) await pinApi.update(area.id, editing.id, payload); else await pinApi.create(area.id, payload)
-        toast.success(editing ? `PIN code ${payload.pinCode} updated.` : `PIN code ${payload.pinCode} added.`)
+        toast.success(editing ? t('pinUpdated', { pin: payload.pinCode }) : t('pinAdded', { pin: payload.pinCode }))
       }
       leave(onSaved)
     } catch (failure) { setError(describeApiError(failure)); setSaving(false) }
@@ -71,37 +73,37 @@ export function PinCodeEditor({ area, slots, mode: startMode, editing, onClose, 
 
   const sharedFields = <>
     <div className="pin-form-row">
-      <Field label="Area / locality" helper={mode === 'many' ? 'Applied to every PIN in the list.' : undefined}><Input value={locality} onChange={event => setLocality(event.target.value)} placeholder="Sector 10" /></Field>
-      <Field label="Status"><SelectField label="PIN status" value={status} onChange={value => setStatus(value as RecordStatus)} placeholder="Choose a status" options={[{ value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }]} /></Field>
+      <Field label={t('areaLocality')} helper={mode === 'many' ? t('appliedToAll') : undefined}><Input value={locality} onChange={event => setLocality(event.target.value)} placeholder={t('localityPlaceholder')} /></Field>
+      <Field label={t('status')}><SelectField label={t('pinStatus')} value={status} onChange={value => setStatus(value as RecordStatus)} placeholder={t('chooseStatus')} options={[{ value: 'active', label: tc('active') }, { value: 'inactive', label: tc('inactive') }]} /></Field>
     </div>
-    <SlotChoices label="Delivery slots" slots={slots} value={slotIds} onChange={setSlotIds} />
+    <SlotChoices label={t('deliverySlotsCol')} slots={slots} value={slotIds} onChange={setSlotIds} />
   </>
-  const manyLabel = pasted.codes.length > 0 ? `Add ${pasted.codes.length} PIN ${pasted.codes.length === 1 ? 'code' : 'codes'}` : 'Add PIN codes'
-  const actionLabel = saving ? 'Saving…' : mode === 'many' ? manyLabel : editing ? 'Update PIN code' : 'Add PIN code'
+  const manyLabel = pasted.codes.length > 0 ? t(pasted.codes.length === 1 ? 'addCountOne' : 'addCountMany', { count: pasted.codes.length }) : t('addPinCodes')
+  const actionLabel = saving ? t('saving') : mode === 'many' ? manyLabel : editing ? t('updatePin') : t('addPin')
 
   return <Sheet open={open} onOpenChange={next => { if (!next && !saving) leave(onClose) }}>
     <SheetContent side="right" className="pin-sheet w-full sm:max-w-[560px]">
       <SheetHeader className="pin-sheet-header">
-        <SheetTitle>{editing ? `Edit PIN code ${editing.pinCode}` : 'Add PIN codes'}</SheetTitle>
-        <SheetDescription>{editing ? 'Change its locality, status or delivery slots.' : `Add the PIN codes ${area.name} delivers to, and the slots each one gets.`}</SheetDescription>
+        <SheetTitle>{editing ? t('editPinTitle', { pin: editing.pinCode }) : t('addPinCodes')}</SheetTitle>
+        <SheetDescription>{editing ? t('editPinHint') : t('addPinsHint', { area: area.name })}</SheetDescription>
       </SheetHeader>
       <div className="pin-sheet-body">
         {editing ? <div className="pin-sheet-stack">
-          <Field label="PIN code" required><Input inputMode="numeric" maxLength={6} value={pinCode} onChange={event => setPinCode(event.target.value.replace(/\D/g, '').slice(0, 6))} /></Field>
+          <Field label={t('pinCode')} required><Input inputMode="numeric" maxLength={6} value={pinCode} onChange={event => setPinCode(event.target.value.replace(/\D/g, '').slice(0, 6))} /></Field>
           {sharedFields}
         </div> : <Tabs value={mode} onValueChange={value => { setMode(value as PinEditorMode); setError('') }}>
-          <TabsList className="pin-tabs"><TabsTrigger value="one">Single PIN</TabsTrigger><TabsTrigger value="many">Paste a list</TabsTrigger><TabsTrigger value="city">From a city</TabsTrigger></TabsList>
+          <TabsList className="pin-tabs"><TabsTrigger value="one">{t('singlePin')}</TabsTrigger><TabsTrigger value="many">{t('pasteList')}</TabsTrigger><TabsTrigger value="city">{t('fromCity')}</TabsTrigger></TabsList>
           <TabsContent value="one" className="pin-sheet-stack">
-            <Field label="PIN code" required><Input inputMode="numeric" maxLength={6} value={pinCode} onChange={event => setPinCode(event.target.value.replace(/\D/g, '').slice(0, 6))} placeholder="382010" /></Field>
+            <Field label={t('pinCode')} required><Input inputMode="numeric" maxLength={6} value={pinCode} onChange={event => setPinCode(event.target.value.replace(/\D/g, '').slice(0, 6))} placeholder="382010" /></Field>
             {sharedFields}
           </TabsContent>
           <TabsContent value="many" className="pin-sheet-stack">
-            <Field label="PIN codes" required helper={`One per line, or separated by commas or spaces. Up to ${MAX_PASTED_PINS} at a time; PIN codes already in this area are skipped.`}>
+            <Field label={t('pinCodes')} required helper={t('pasteHelper', { max: MAX_PASTED_PINS })}>
               <Textarea rows={6} className="pin-paste" value={pinsText} onChange={event => setPinsText(event.target.value)} placeholder={'382010\n382011\n382012'} />
             </Field>
             {pasted.codes.length > 0 && <div className="pin-paste-summary" aria-live="polite">
-              <span className="pin-count-chip ok">{pasted.codes.length - pasted.invalid.length} valid</span>
-              {pasted.invalid.length > 0 && <span className="pin-count-chip bad">{pasted.invalid.length} invalid</span>}
+              <span className="pin-count-chip ok">{t('validCount', { count: pasted.codes.length - pasted.invalid.length })}</span>
+              {pasted.invalid.length > 0 && <span className="pin-count-chip bad">{t('invalidCount', { count: pasted.invalid.length })}</span>}
               {pasted.invalid.length > 0 && <span className="pin-paste-bad">{pasted.invalid.slice(0, 6).join(', ')}{pasted.invalid.length > 6 ? '…' : ''}</span>}
             </div>}
             {sharedFields}
@@ -113,7 +115,7 @@ export function PinCodeEditor({ area, slots, mode: startMode, editing, onClose, 
       </div>
       {mode !== 'city' && <div className="pin-sheet-footer">
         {error && <p className="field-error" role="alert">{error}</p>}
-        <div className="pin-sheet-actions"><Button className="secondary-button" disabled={saving} onClick={() => leave(onClose)}>Cancel</Button><Button className="primary-button" disabled={saving} onClick={() => void save()}>{actionLabel}</Button></div>
+        <div className="pin-sheet-actions"><Button className="secondary-button" disabled={saving} onClick={() => leave(onClose)}>{t('cancel')}</Button><Button className="primary-button" disabled={saving} onClick={() => void save()}>{actionLabel}</Button></div>
       </div>}
     </SheetContent>
   </Sheet>

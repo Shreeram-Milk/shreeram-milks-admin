@@ -2,47 +2,49 @@ import { z } from 'zod'
 import { windowError } from '@/lib/active-window'
 import { paiseToRupeeInput, parseRupeesToPaise } from '@/lib/money'
 import type { Offer, OfferInput } from './types'
+import { t } from './messages'
 
-const isoDateOrEmpty = z.string().regex(/^(\d{4}-\d{2}-\d{2})?$/, 'Choose a valid date.')
-const wholeNumberOrEmpty = (label: string) => z.string().trim().refine(value => value === '' || /^[1-9]\d{0,6}$/.test(value), `${label} must be a whole number, or empty.`)
-const rupeesOrEmpty = z.string().trim().refine(value => value === '' || parseRupeesToPaise(value) !== null, 'Enter an amount like 250 or 250.50.')
+// Messages are looked up when shown, so they follow the admin's language.
+const isoDateOrEmpty = z.string().regex(/^(\d{4}-\d{2}-\d{2})?$/, { error: () => t('errDate') })
+const wholeNumberOrEmpty = (label: 'planLength' | 'limit') => z.string().trim().refine(value => value === '' || /^[1-9]\d{0,6}$/.test(value), { error: () => t('errWhole', { label: t(label) }) })
+const rupeesOrEmpty = z.string().trim().refine(value => value === '' || parseRupeesToPaise(value) !== null, { error: () => t('errAmount') })
 
 /** Form values keep amounts and counts as text (rupees, percent, numbers); `toInput` converts them for the server, which checks everything again. */
 export const offerSchema = z.object({
-  title: z.string().trim().min(1, 'Enter a title.').max(80, 'Keep the title under 80 characters.'),
-  titleGu: z.string().trim().max(80, 'Keep the title under 80 characters.'),
-  description: z.string().trim().max(300, 'Keep the description under 300 characters.'),
-  descriptionGu: z.string().trim().max(300, 'Keep the description under 300 characters.'),
+  title: z.string().trim().min(1, { error: () => t('errTitle') }).max(80, { error: () => t('errTitleLong') }),
+  titleGu: z.string().trim().max(80, { error: () => t('errTitleLong') }),
+  description: z.string().trim().max(300, { error: () => t('errDescriptionLong') }),
+  descriptionGu: z.string().trim().max(300, { error: () => t('errDescriptionLong') }),
   kind: z.enum(['percent', 'flat', 'free_gift']),
   percent: z.string().trim(),
   flat: rupeesOrEmpty,
   maxDiscount: rupeesOrEmpty,
   minOrder: rupeesOrEmpty,
   scope: z.enum(['order', 'products']),
-  productIds: z.array(z.string()).max(50, 'Choose at most 50 products.'),
+  productIds: z.array(z.string()).max(50, { error: () => t('errProductsMax') }),
   giftProductId: z.string(),
   giftVariantId: z.string(),
-  giftQuantity: z.string().trim().refine(value => /^([1-9]|1\d|20)$/.test(value), 'Use 1 to 20.'),
+  giftQuantity: z.string().trim().refine(value => /^([1-9]|1\d|20)$/.test(value), { error: () => t('errGiftQuantity') }),
   appliesOneTime: z.boolean(), appliesTrial: z.boolean(), appliesSubscription: z.boolean(),
-  minPlanDays: wholeNumberOrEmpty('The plan length'),
-  code: z.string().trim().toUpperCase().refine(value => value === '' || /^[A-Z0-9]{3,20}$/.test(value), 'Use 3 to 20 letters or digits, with no spaces, or leave empty.'),
+  minPlanDays: wholeNumberOrEmpty('planLength'),
+  code: z.string().trim().toUpperCase().refine(value => value === '' || /^[A-Z0-9]{3,20}$/.test(value), { error: () => t('errCode') }),
   startsOn: isoDateOrEmpty, endsOn: isoDateOrEmpty,
-  totalLimit: wholeNumberOrEmpty('The limit'), perCustomerLimit: wholeNumberOrEmpty('The limit'),
+  totalLimit: wholeNumberOrEmpty('limit'), perCustomerLimit: wholeNumberOrEmpty('limit'),
   status: z.enum(['active', 'inactive']),
 }).superRefine((form, context) => {
   const problem = (path: string, message: string) => context.addIssue({ code: 'custom', path: [path], message })
   if (form.kind === 'percent') {
     const percent = Number(form.percent)
-    if (!/^\d{1,2}$/.test(form.percent) || percent < 1 || percent > 99) problem('percent', 'Enter a whole percentage from 1 to 99.')
+    if (!/^\d{1,2}$/.test(form.percent) || percent < 1 || percent > 99) problem('percent', t('errPercent'))
   }
-  if (form.kind === 'flat' && (parseRupeesToPaise(form.flat) ?? 0) <= 0) problem('flat', 'Enter an amount greater than zero.')
+  if (form.kind === 'flat' && (parseRupeesToPaise(form.flat) ?? 0) <= 0) problem('flat', t('errFlat'))
   if (form.kind === 'free_gift') {
-    if (!form.giftVariantId) problem('giftVariantId', 'Choose the free product and size.')
-    if (form.productIds.length === 0) problem('productIds', 'Choose the products that earn the gift.')
+    if (!form.giftVariantId) problem('giftVariantId', t('errGiftVariant'))
+    if (form.productIds.length === 0) problem('productIds', t('errGiftProducts'))
   }
-  if (form.kind !== 'free_gift' && form.scope === 'products' && form.productIds.length === 0) problem('productIds', 'Choose at least one product.')
-  if (!form.appliesOneTime && !form.appliesTrial && !form.appliesSubscription) problem('appliesOneTime', 'Choose where this offer works.')
-  if (form.minPlanDays && !form.appliesSubscription) problem('minPlanDays', 'A plan length only applies to subscriptions.')
+  if (form.kind !== 'free_gift' && form.scope === 'products' && form.productIds.length === 0) problem('productIds', t('errProducts'))
+  if (!form.appliesOneTime && !form.appliesTrial && !form.appliesSubscription) problem('appliesOneTime', t('errWhere'))
+  if (form.minPlanDays && !form.appliesSubscription) problem('minPlanDays', t('errPlanOnlySubscriptions'))
   const range = windowError(form.startsOn, form.endsOn)
   if (range) problem('endsOn', range)
 })

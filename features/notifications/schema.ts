@@ -1,15 +1,17 @@
 import { z } from 'zod'
 import type { Audience } from './api'
+import { t } from './messages'
 
 export const TITLE_MAX = 60
 export const BODY_MAX = 240
 export const MAX_PIN_CODES = 50
 export const MAX_CHOSEN_CUSTOMERS = 200
 
-const title = z.string().trim().min(1, 'Enter a title.').max(TITLE_MAX, `Keep the title under ${TITLE_MAX} characters.`)
-const body = z.string().trim().min(1, 'Enter the message.').max(BODY_MAX, `Keep the message under ${BODY_MAX} characters.`)
-const titleGujarati = z.string().trim().max(TITLE_MAX, `Keep the title under ${TITLE_MAX} characters.`)
-const bodyGujarati = z.string().trim().max(BODY_MAX, `Keep the message under ${BODY_MAX} characters.`)
+// Messages are looked up when shown, so they follow the admin's language.
+const title = z.string().trim().min(1, { error: () => t('errTitle') }).max(TITLE_MAX, { error: () => t('errTitleLong', { max: TITLE_MAX }) })
+const body = z.string().trim().min(1, { error: () => t('errBody') }).max(BODY_MAX, { error: () => t('errBodyLong', { max: BODY_MAX }) })
+const titleGujarati = z.string().trim().max(TITLE_MAX, { error: () => t('errTitleLong', { max: TITLE_MAX }) })
+const bodyGujarati = z.string().trim().max(BODY_MAX, { error: () => t('errBodyLong', { max: BODY_MAX }) })
 
 /** The wording of an automatic message. The server also checks it only uses details that message knows. */
 export const templateSchema = z.object({ title, titleGujarati, body, bodyGujarati, enabled: z.boolean() })
@@ -30,17 +32,17 @@ export const broadcastSchema = z.object({
   opensOffers: z.boolean(),
   audienceType: z.enum(AUDIENCE_TYPES),
   customerType: z.enum(['', 'prepaid', 'credit']),
-  pinCodes: z.string().max(600, 'That is too many PIN codes.'),
+  pinCodes: z.string().max(600, { error: () => t('errPinsLong') }),
   subscription: z.enum(['any', 'with', 'without']),
-  customerIds: z.array(z.string()).max(MAX_CHOSEN_CUSTOMERS, `Choose at most ${MAX_CHOSEN_CUSTOMERS} customers.`),
+  customerIds: z.array(z.string()).max(MAX_CHOSEN_CUSTOMERS, { error: () => t('errCustomersMax', { max: MAX_CHOSEN_CUSTOMERS }) }),
 }).superRefine((value, context) => {
   if (value.audienceType === 'filter') {
     const pins = parsePinCodes(value.pinCodes)
-    if (pins.some(pin => !/^[1-9][0-9]{5}$/.test(pin))) context.addIssue({ code: 'custom', path: ['pinCodes'], message: 'Use 6-digit PIN codes, separated by commas or spaces.' })
-    else if (pins.length > MAX_PIN_CODES) context.addIssue({ code: 'custom', path: ['pinCodes'], message: `Use at most ${MAX_PIN_CODES} PIN codes.` })
-    else if (!value.customerType && pins.length === 0 && value.subscription === 'any') context.addIssue({ code: 'custom', path: ['customerType'], message: 'Choose at least one thing to narrow the group, or send to everyone.' })
+    if (pins.some(pin => !/^[1-9][0-9]{5}$/.test(pin))) context.addIssue({ code: 'custom', path: ['pinCodes'], message: t('errPins') })
+    else if (pins.length > MAX_PIN_CODES) context.addIssue({ code: 'custom', path: ['pinCodes'], message: t('errPinsMax', { max: MAX_PIN_CODES }) })
+    else if (!value.customerType && pins.length === 0 && value.subscription === 'any') context.addIssue({ code: 'custom', path: ['customerType'], message: t('errNarrow') })
   }
-  if (value.audienceType === 'customers' && value.customerIds.length === 0) context.addIssue({ code: 'custom', path: ['customerIds'], message: 'Choose at least one customer.' })
+  if (value.audienceType === 'customers' && value.customerIds.length === 0) context.addIssue({ code: 'custom', path: ['customerIds'], message: t('errChooseCustomer') })
 })
 export type BroadcastFormValues = z.infer<typeof broadcastSchema>
 
@@ -61,12 +63,12 @@ export function toAudience(values: Pick<BroadcastFormValues, 'audienceType' | 'c
 
 /** The group in plain words, for the history list. */
 export function describeAudience(audience: Audience): string {
-  if (audience.type === 'all') return 'Everyone'
-  if (audience.type === 'customers') return `${audience.customerIds.length} chosen ${audience.customerIds.length === 1 ? 'customer' : 'customers'}`
+  if (audience.type === 'all') return t('describeAll')
+  if (audience.type === 'customers') return t(audience.customerIds.length === 1 ? 'describeChosenOne' : 'describeChosenMany', { count: audience.customerIds.length })
   const parts = [
-    audience.customerType === 'credit' ? 'Credit customers' : audience.customerType === 'prepaid' ? 'Prepaid customers' : 'Customers',
-    audience.pinCodes?.length ? `in ${audience.pinCodes.join(', ')}` : '',
-    audience.hasActiveSubscription === true ? 'with a subscription' : audience.hasActiveSubscription === false ? 'without a subscription' : '',
+    audience.customerType === 'credit' ? t('creditCustomers') : audience.customerType === 'prepaid' ? t('prepaidCustomers') : t('describeCustomers'),
+    audience.pinCodes?.length ? t('describeIn', { pins: audience.pinCodes.join(', ') }) : '',
+    audience.hasActiveSubscription === true ? t('describeWith') : audience.hasActiveSubscription === false ? t('describeWithout') : '',
   ]
   return parts.filter(Boolean).join(' ')
 }

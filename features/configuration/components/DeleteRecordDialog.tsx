@@ -8,6 +8,7 @@ import { ApiError } from '@/lib/api-client'
 import { describeApiError } from '@/lib/api-errors'
 import { describeUsage, readUsages } from '../format'
 import type { RecordStatus, Usage } from '../api'
+import { t } from '../messages'
 
 type Target = { id: string; name: string; status: RecordStatus }
 
@@ -33,7 +34,7 @@ export function DeleteRecordDialog({ target, noun, remove, deactivate, onClose, 
     setBusy(true)
     try {
       await remove(target.id)
-      finish(`${target.name} deleted.`)
+      finish(t('deletedName', { name: target.name }))
     } catch (failure) {
       if (failure instanceof ApiError && failure.code === 'IN_USE') setUsages(readUsages(failure.details))
       else { toast.error(describeApiError(failure)); onChanged(); onClose() }
@@ -43,28 +44,28 @@ export function DeleteRecordDialog({ target, noun, remove, deactivate, onClose, 
     setBusy(true)
     try {
       await deactivate(target.id)
-      finish(`${target.name} deactivated.`)
+      finish(t('deactivated', { name: target.name }))
     } catch (failure) { toast.error(describeApiError(failure)); onClose() } finally { setBusy(false) }
   }
 
   return <AlertDialog open onOpenChange={next => { if (!next && !busy) onClose() }}>
     <AlertDialogContent className="confirm-dialog">
       <AlertDialogHeader>
-        <p className="eyebrow">{usages ? 'Cannot delete' : 'Delete'}</p>
-        <AlertDialogTitle>{usages ? `“${target.name}” is in use` : `Delete “${target.name}”?`}</AlertDialogTitle>
+        <p className="eyebrow">{usages ? t('cannotDelete') : t('delete')}</p>
+        <AlertDialogTitle>{usages ? t('inUse', { name: target.name }) : t('deleteName', { name: target.name })}</AlertDialogTitle>
         <AlertDialogDescription asChild><div>
           {usages ? <>
-            <p>This {noun} is used by:</p>
+            <p>{t('usedByNoun', { noun })}</p>
             <ul>{usages.filter(usage => usage.count > 0).map(usage => <li key={usage.label}>{describeUsage(usage)}</li>)}</ul>
-            <p className="warning-note">{target.status === 'active' ? 'It cannot be deleted while it is used. Deactivate it instead: existing references stay visible as inactive, and it will not be available for new setup.' : 'It cannot be deleted while it is used. It is already inactive, so it is not available for new setup.'}</p>
-          </> : <p className="warning-note">This permanently deletes this {noun} and cannot be undone. If it is used anywhere, nothing is deleted and you can deactivate it instead.</p>}
+            <p className="warning-note">{target.status === 'active' ? t('deactivateInstead') : t('alreadyInactive')}</p>
+          </> : <p className="warning-note">{t('deleteWarning', { noun })}</p>}
         </div></AlertDialogDescription>
       </AlertDialogHeader>
       <AlertDialogFooter className="dialog-actions">
-        <AlertDialogCancel asChild><Button variant="outline" className="secondary-button" disabled={busy}>{usages ? 'Close' : 'Keep it'}</Button></AlertDialogCancel>
+        <AlertDialogCancel asChild><Button variant="outline" className="secondary-button" disabled={busy}>{usages ? t('close') : t('keepIt')}</Button></AlertDialogCancel>
         {usages
-          ? target.status === 'active' && <AlertDialogAction asChild><Button className="primary-button" disabled={busy} onClick={event => { event.preventDefault(); void confirmDeactivate() }}>Deactivate instead</Button></AlertDialogAction>
-          : <AlertDialogAction asChild><Button className="primary-button destructive-button" disabled={busy} onClick={event => { event.preventDefault(); void confirmDelete() }}>{busy ? 'Deleting…' : 'Delete'}</Button></AlertDialogAction>}
+          ? target.status === 'active' && <AlertDialogAction asChild><Button className="primary-button" disabled={busy} onClick={event => { event.preventDefault(); void confirmDeactivate() }}>{t('deactivateInsteadButton')}</Button></AlertDialogAction>
+          : <AlertDialogAction asChild><Button className="primary-button destructive-button" disabled={busy} onClick={event => { event.preventDefault(); void confirmDelete() }}>{busy ? t('deleting') : t('delete')}</Button></AlertDialogAction>}
       </AlertDialogFooter>
     </AlertDialogContent>
   </AlertDialog>

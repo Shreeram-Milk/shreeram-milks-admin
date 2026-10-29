@@ -10,10 +10,12 @@ import { PageBreadcrumbs } from '@/components/shared/PageBreadcrumbs'
 import { PageSkeleton } from '@/components/shared/PageSkeleton'
 import { TablePagination } from '@/components/shared/TablePagination'
 import { describeApiError } from '@/lib/api-errors'
+import { tc } from '@/lib/i18n/common'
 import { formatDisplayDate, formatTimestamp } from '@/lib/business-time'
 import { formatINR } from '@/lib/money'
 import { creditAdminApi, LEDGER_LABELS, type CreditAccount, type LedgerEntry, type PaymentRequest } from './api'
 import { AdjustmentDialog, LimitDialog, PaymentDialog, RequestDialog } from './CreditDialogs'
+import { t } from './messages'
 
 const LEDGER_PAGE_SIZE = 20
 type Dialog = 'limit' | 'payment' | 'adjustment' | 'request' | null
@@ -36,45 +38,45 @@ export function CreditDetail({ customerId }: { customerId: string }) {
   }, [customerId, page, reloadKey])
 
   if (state.status === 'loading') return <PageSkeleton />
-  if (state.status === 'error') return <div className="product-state" role="alert"><strong>This credit account could not be loaded</strong><span>{state.message}</span><Button className="secondary-button" variant="outline" onClick={() => { setState({ status: 'loading' }); setReloadKey(count => count + 1) }}>Try again</Button><Link className="secondary-button" href="/credit-accounts">Back to credit accounts</Link></div>
+  if (state.status === 'error') return <div className="product-state" role="alert"><strong>{t('detailFailed')}</strong><span>{state.message}</span><Button className="secondary-button" variant="outline" onClick={() => { setState({ status: 'loading' }); setReloadKey(count => count + 1) }}>{tc('tryAgain')}</Button><Link className="secondary-button" href="/credit-accounts">{t('backToAccounts')}</Link></div>
 
   const { account, requests, ledger, ledgerTotal } = state
   const close = () => setDialog(null)
   const done = () => { setDialog(null); setPage(1); setReloadKey(count => count + 1) }
   const cancelRequest = async (request: PaymentRequest) => {
-    try { await creditAdminApi.cancelRequest(customerId, request.id); toast.success('Request cancelled.'); setReloadKey(count => count + 1) } catch (failure) { toast.error(describeApiError(failure)) }
+    try { await creditAdminApi.cancelRequest(customerId, request.id); toast.success(t('requestCancelled')); setReloadKey(count => count + 1) } catch (failure) { toast.error(describeApiError(failure)) }
   }
   const pageCount = Math.max(1, Math.ceil(ledgerTotal / LEDGER_PAGE_SIZE))
-  const name = account.name.trim() || 'Customer'
+  const name = account.name.trim() || t('customerFallback')
 
   return <div className="workspace-page products-page">
     <header className="page-header page-header-form">
       <div className="page-title-row">
-        <Link className="title-back-button" href="/credit-accounts" aria-label="Back to credit accounts"><ArrowLeft size={19} /></Link>
-        <div><PageBreadcrumbs items={[{ label: 'Money' }, { label: 'Pay-later customers', href: '/credit-accounts' }, { label: name }]} /><h1>{name}</h1><p className="page-description">{account.phone} · <Link className="product-name-link" href={`/customers/${account.customerId}`}>Open customer</Link>{account.status === 'blocked' ? ' · Blocked: cannot order' : ''}</p></div>
+        <Link className="title-back-button" href="/credit-accounts" aria-label={t('backToAccounts')}><ArrowLeft size={19} /></Link>
+        <div><PageBreadcrumbs items={[{ label: t('money') }, { label: t('payLater'), href: '/credit-accounts' }, { label: name }]} /><h1>{name}</h1><p className="page-description">{account.phone} · <Link className="product-name-link" href={`/customers/${account.customerId}`}>{t('openCustomer')}</Link>{account.status === 'blocked' ? t('blockedCannotOrder') : ''}</p></div>
       </div>
       <div className="header-actions">
-        <Button className="secondary-button" onClick={() => setDialog('limit')}>Change limit</Button>
-        <Button className="secondary-button" onClick={() => setDialog('adjustment')}>Correct ledger</Button>
-        <Button className="secondary-button" disabled={account.owedPaise === 0} onClick={() => setDialog('request')}>Ask for payment</Button>
-        <Button className="primary-button" disabled={account.owedPaise === 0} onClick={() => setDialog('payment')}>Record payment</Button>
+        <Button className="secondary-button" onClick={() => setDialog('limit')}>{t('changeLimit')}</Button>
+        <Button className="secondary-button" onClick={() => setDialog('adjustment')}>{t('correctLedger')}</Button>
+        <Button className="secondary-button" disabled={account.owedPaise === 0} onClick={() => setDialog('request')}>{t('askPayment')}</Button>
+        <Button className="primary-button" disabled={account.owedPaise === 0} onClick={() => setDialog('payment')}>{t('recordPayment')}</Button>
       </div>
     </header>
     <div className="product-detail-grid">
-      <section className="form-card"><h2>Balance</h2><div className="product-detail-rows">
-        <div><span>Owes now</span><strong>{formatINR(account.owedPaise)}</strong></div>
-        <div><span>Credit limit</span><strong>{formatINR(account.limitPaise)}</strong></div>
-        <div><span>Room left to order</span><strong>{formatINR(account.remainingPaise)}</strong></div>
-        <div><span>Last payment</span><strong>{account.lastPaymentAt ? formatTimestamp(account.lastPaymentAt) : 'None yet'}</strong></div>
+      <section className="form-card"><h2>{t('balance')}</h2><div className="product-detail-rows">
+        <div><span>{t('owesNow')}</span><strong>{formatINR(account.owedPaise)}</strong></div>
+        <div><span>{t('creditLimit')}</span><strong>{formatINR(account.limitPaise)}</strong></div>
+        <div><span>{t('roomToOrder')}</span><strong>{formatINR(account.remainingPaise)}</strong></div>
+        <div><span>{t('lastPayment')}</span><strong>{account.lastPaymentAt ? formatTimestamp(account.lastPaymentAt) : t('noneYetShort')}</strong></div>
       </div></section>
-      <section className="form-card"><h2>Open payment requests</h2>
-        {requests.length === 0 ? <p className="product-hint">None. Use Ask for payment to send the customer a Pay now card.</p>
-          : <ul className="product-reference-list">{requests.map(request => <li key={request.id}>{formatINR(request.amountPaise)}{request.note ? ` · ${request.note}` : ''} <small>asked {formatTimestamp(request.createdAt)}</small> <Button variant="ghost" className="text-button" onClick={() => void cancelRequest(request)}>Cancel request</Button></li>)}</ul>}
+      <section className="form-card"><h2>{t('openRequests')}</h2>
+        {requests.length === 0 ? <p className="product-hint">{t('noRequests')}</p>
+          : <ul className="product-reference-list">{requests.map(request => <li key={request.id}>{formatINR(request.amountPaise)}{request.note ? ` · ${request.note}` : ''} <small>{t('asked', { when: formatTimestamp(request.createdAt) })}</small> <Button variant="ghost" className="text-button" onClick={() => void cancelRequest(request)}>{t('cancelRequest')}</Button></li>)}</ul>}
       </section>
-      <section className="form-card"><h2>Ledger</h2>
-        {ledger.length === 0 ? <p className="product-hint">Nothing yet. Orders on credit, payments and corrections appear here.</p>
+      <section className="form-card"><h2>{t('ledger')}</h2>
+        {ledger.length === 0 ? <p className="product-hint">{t('ledgerEmpty')}</p>
           : <div className="product-table-wrap"><Table className="config-table">
-            <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>What</TableHead><TableHead>Charge</TableHead><TableHead>Payment / credit</TableHead><TableHead>Owed after</TableHead></TableRow></TableHeader>
+            <TableHeader><TableRow><TableHead>{t('date')}</TableHead><TableHead>{t('what')}</TableHead><TableHead>{t('charge')}</TableHead><TableHead>{t('paymentCredit')}</TableHead><TableHead>{t('owedAfter')}</TableHead></TableRow></TableHeader>
             <TableBody>{ledger.map(entry => <TableRow key={entry.id}>
               <TableCell>{formatDisplayDate(entry.occurredOn)}</TableCell>
               <TableCell>{LEDGER_LABELS[entry.entryType]}{entry.orderNumber ? ` · ${entry.orderNumber}` : ''}{entry.description && entry.entryType !== 'order_charge' ? <><br /><small>{entry.description}</small></> : null}</TableCell>
@@ -83,7 +85,7 @@ export function CreditDetail({ customerId }: { customerId: string }) {
               <TableCell>{formatINR(entry.balancePaise)}</TableCell>
             </TableRow>)}</TableBody>
           </Table></div>}
-        {ledgerTotal > LEDGER_PAGE_SIZE && <div className="product-pagination"><span>{ledgerTotal} entries · Page {page} of {pageCount}</span><TablePagination page={Math.min(page, pageCount)} pageCount={pageCount} onPageChange={setPage} /></div>}
+        {ledgerTotal > LEDGER_PAGE_SIZE && <div className="product-pagination"><span>{t('entries', { count: ledgerTotal })}{t('pageOf', { page, count: pageCount })}</span><TablePagination page={Math.min(page, pageCount)} pageCount={pageCount} onPageChange={setPage} /></div>}
       </section>
     </div>
     {dialog === 'limit' && <LimitDialog account={account} onClose={close} onDone={done} />}

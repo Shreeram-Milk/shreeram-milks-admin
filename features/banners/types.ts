@@ -1,24 +1,23 @@
 import type { IsoDate } from '@/lib/business-time'
+import { liveLabels } from '@/lib/i18n/core'
+import { t, type BannerKey } from './messages'
 
 export type BannerType = 'promotion' | 'warning' | 'maintenance' | 'informational'
 export type BannerAudience = 'all_users' | 'prepaid' | 'credit' | 'subscribers'
 export type BannerCtaType = 'none' | 'product' | 'category' | 'offers'
 export type BannerStatus = 'active' | 'inactive'
 
-export const BANNER_TYPE_LABELS: Record<BannerType, string> = { promotion: 'Promotion', warning: 'Warning', maintenance: 'Maintenance', informational: 'Information' }
+export const BANNER_TYPE_LABELS = liveLabels(t, { promotion: 'typePromotion', warning: 'typeWarning', maintenance: 'typeMaintenance', informational: 'typeInformational' } satisfies Record<BannerType, BannerKey>)
 /** Banner types in tab order, with the plural name used on the tab and a line saying what the type is for. */
 export const BANNER_TYPES: BannerType[] = ['promotion', 'warning', 'maintenance', 'informational']
-export const BANNER_TAB_LABELS: Record<BannerType, string> = { promotion: 'Promotions', warning: 'Warnings', maintenance: 'Maintenance', informational: 'Information' }
-export const BANNER_TYPE_DESCRIPTIONS: Record<BannerType, string> = {
-  promotion: 'Offers shown as a swipeable slideshow at the top of the home screen. Each one can carry a photo.',
-  warning: 'Plain text for something that needs attention, such as a delay or a changed delivery time. No picture.',
-  maintenance: 'Shown while a service is paused or being worked on. It can carry a small SVG icon.',
-  informational: 'Helpful, low-priority information. It can carry a small SVG icon.',
-}
+export const BANNER_TAB_LABELS = liveLabels(t, { promotion: 'tabPromotion', warning: 'tabWarning', maintenance: 'tabMaintenance', informational: 'tabInformational' } satisfies Record<BannerType, BannerKey>)
+export const BANNER_TYPE_DESCRIPTIONS = liveLabels(t, {
+  promotion: 'descPromotion', warning: 'descWarning', maintenance: 'descMaintenance', informational: 'descInformational',
+} satisfies Record<BannerType, BannerKey>)
 export const isBannerType = (value: string | null): value is BannerType => BANNER_TYPES.includes(value as BannerType)
 
-export const BANNER_AUDIENCE_LABELS: Record<BannerAudience, string> = { all_users: 'Everyone', prepaid: 'Prepaid customers', credit: 'Credit customers', subscribers: 'Customers with a subscription' }
-export const BANNER_CTA_LABELS: Record<BannerCtaType, string> = { none: 'No link', product: 'A product', category: 'A category', offers: 'The Offers page' }
+export const BANNER_AUDIENCE_LABELS = liveLabels(t, { all_users: 'audienceAll', prepaid: 'audiencePrepaid', credit: 'audienceCredit', subscribers: 'audienceSubscribers' } satisfies Record<BannerAudience, BannerKey>)
+export const BANNER_CTA_LABELS = liveLabels(t, { none: 'ctaNone', product: 'ctaProduct', category: 'ctaCategory', offers: 'ctaOffers' } satisfies Record<BannerCtaType, BannerKey>)
 
 /**
  * A message on the customer app's home screen: a promotion, or a notice such as a delay or maintenance window.

@@ -11,6 +11,9 @@ import { PageSkeleton } from '@/components/shared/PageSkeleton'
 import { useUrlListState } from '@/hooks/useUrlListState'
 import { describeApiError } from '@/lib/api-errors'
 import { addDays, formatTime12h, formatTimestamp, formatWeekdayDate, todayInBusinessZone } from '@/lib/business-time'
+import { tc } from '@/lib/i18n/common'
+import { KitchenSheet } from './KitchenSheet'
+import { t, warningText } from './messages'
 import { TYPE_PARTS, describeTotals, planToCsv, productionAdminApi, sumTotals, type PlannedSlot, type ProductionPlan as Plan, type TypeSplit } from './api'
 
 const FILTERS = { date: 'free', slotId: 'free', productId: 'free' } as const
@@ -23,9 +26,9 @@ type LoadState = { status: 'loading' } | { status: 'error'; message: string } | 
 function timeLeft(iso: string, now: number): string | null {
   const minutes = Math.round((Date.parse(iso) - now) / 60_000)
   if (minutes <= 0) return null
-  if (minutes < 60) return `in ${minutes} min`
+  if (minutes < 60) return t('inMinutes', { minutes })
   const hours = Math.floor(minutes / 60)
-  return hours >= 24 ? `in ${Math.floor(hours / 24)} d ${hours % 24} h` : `in ${hours} h ${minutes % 60} min`
+  return hours >= 24 ? t('inDays', { days: Math.floor(hours / 24), hours: hours % 24 }) : t('inHours', { hours, minutes: minutes % 60 })
 }
 
 /** Hands the browser a CSV file to save. The plan on screen (with the chosen filters) is what is saved. */
@@ -93,60 +96,72 @@ function PlanView() {
 
   return <div className="workspace-page products-page production-page">
     <header className="page-header">
-      <div><PageBreadcrumbs items={[{ label: 'Operations' }, { label: 'Production Planning' }]} /><h1>Production Planning</h1><p className="page-description">What to make for {formatWeekdayDate(date)}, per delivery window. One-time orders, subscriptions and trials are counted together; cancelled and skipped deliveries are left out.</p></div>
-      <div className="header-actions">{state.status === 'ready' && slots.length > 0 ? <Button variant="outline" className="secondary-button" onClick={() => downloadCsv(`production-plan-${date}.csv`, planToCsv(date, slots))}>Download CSV</Button> : null}
-        <Button variant="outline" className="secondary-button" onClick={reload}>Refresh</Button></div>
+      <div><PageBreadcrumbs items={[{ label: t('operations') }, { label: t('title') }]} /><h1>{t('title')}</h1><p className="page-description">{t('description', { day: formatWeekdayDate(date) })}</p></div>
+      <div className="header-actions">{state.status === 'ready' && slots.length > 0 ? <>
+        <Button className="primary-button" onClick={() => window.print()}>{t('printKitchen')}</Button>
+        <Button variant="outline" className="secondary-button" onClick={() => downloadCsv(`production-plan-${date}.csv`, planToCsv(date, slots))}>{t('downloadCsv')}</Button>
+      </> : null}
+        <Button variant="outline" className="secondary-button" onClick={reload}>{tc('refresh')}</Button></div>
     </header>
 
-    <div className="day-chip-row" role="group" aria-label="Delivery day">
-      <button type="button" className="day-chip" onClick={() => update({ date: addDays(date, -1) })} aria-label="Previous day">‹</button>
-      {dayChip('Today', today)}
-      {dayChip('Tomorrow', addDays(today, 1))}
-      <label className="date-filter compact"><span className="sr-only">Delivery day</span><Input type="date" value={date} onChange={event => update({ date: event.target.value || null })} aria-label="Pick a delivery day" /></label>
-      <button type="button" className="day-chip" onClick={() => update({ date: addDays(date, 1) })} aria-label="Next day">›</button>
+    <div className="day-chip-row" role="group" aria-label={tc('deliveryDay')}>
+      <button type="button" className="day-chip" onClick={() => update({ date: addDays(date, -1) })} aria-label={tc('previousDay')}>‹</button>
+      {dayChip(tc('today'), today)}
+      {dayChip(tc('tomorrow'), addDays(today, 1))}
+      <label className="date-filter compact"><span className="sr-only">{tc('deliveryDay')}</span><Input type="date" value={date} onChange={event => update({ date: event.target.value || null })} aria-label={t('pickDay')} /></label>
+      <button type="button" className="day-chip" onClick={() => update({ date: addDays(date, 1) })} aria-label={tc('nextDay')}>›</button>
     </div>
 
     {state.status === 'ready' && state.plan.warnings.length > 0 && <div className="product-state tone-warning" role="alert">
-      <strong>Check before you produce</strong>
-      {state.plan.warnings.map(warning => <span key={warning.code}>{warning.message}</span>)}
+      <strong>{t('checkBeforeProduce')}</strong>
+      {state.plan.warnings.map(warning => <span key={warning.code}>{warningText(warning)}</span>)}
     </div>}
 
     {state.status === 'loading' && <PageSkeleton />}
-    {state.status === 'error' && <div className="product-state" role="alert"><strong>The plan could not be loaded</strong><span>{state.message}</span><Button className="secondary-button" variant="outline" onClick={reload}>Try again</Button></div>}
-    {state.status === 'ready' && allSlots.length === 0 && <div className="product-state"><strong>Nothing to make for {formatWeekdayDate(date)} yet</strong><span>No orders for a product marked for production planning. One-time orders appear as customers order; subscription deliveries appear up to three days ahead.</span></div>}
+    {state.status === 'error' && <div className="product-state" role="alert"><strong>{t('loadFailed')}</strong><span>{state.message}</span><Button className="secondary-button" variant="outline" onClick={reload}>{tc('tryAgain')}</Button></div>}
+    {state.status === 'ready' && allSlots.length === 0 && <div className="product-state"><strong>{t('nothingYet', { day: formatWeekdayDate(date) })}</strong><span>{t('nothingYetDetail')}</span></div>}
 
     {state.status === 'ready' && allSlots.length > 0 && <>
+      <div className="window-banners">{allSlots.map(slot => <div key={slot.slotId} className={`window-banner ${slot.status === 'final' ? 'is-final' : 'is-open'}`} role="status">
+        <div>
+          <strong>{slot.slotName} {formatTime12h(slot.startTime)}–{formatTime12h(slot.endTime)} · {slot.status === 'final' ? t('bannerFinal') : t('bannerOpen')}</strong>
+          <span>{slot.status === 'final'
+            ? t('nothingChanges', { deliveries: t(slot.orderCount === 1 ? 'deliveryOne' : 'deliveryMany', { count: slot.orderCount }) })
+            : slot.closesAt ? t('canChangeUntil', { time: formatTimestamp(slot.closesAt), left: timeLeft(slot.closesAt, now) ? ` (${timeLeft(slot.closesAt, now)})` : '' }) : t('noCutoffBanner')}</span>
+        </div>
+        {slot.status === 'final' ? <Link className="secondary-button window-banner-link" href={`/deliveries/rider-sheet?date=${date}&slotId=${slot.slotId}`}>{t('riderSheet')}</Link> : null}
+      </div>)}</div>
       <div className="kpi-row kpi-row-six card-in">
-        <div className="kpi-card kpi-card-main"><span>Make in total</span><strong>{describeTotals(toMake, slots.reduce((sum, slot) => sum + slot.quantity, 0))}</strong><small>{slots.length} {slots.length === 1 ? 'window' : 'windows'}</small></div>
-        <div className="kpi-card"><span>Pieces to pack</span><strong>{pieces}</strong><small>bottles, packs or pouches</small></div>
-        <div className="kpi-card"><span>Deliveries</span><strong>{deliveries ?? '—'}</strong><small>{deliveries === null ? 'all products only' : 'orders to deliver'}</small></div>
-        <div className="kpi-card"><span>Repeat orders</span><strong>{pieces > 0 ? Math.round((repeat / pieces) * 100) : 0}%</strong><small>{split.subscription} subscription · {split.trial} trial · {split.oneTime} one-time</small><TypeBar split={split} total={pieces} /></div>
-        <div className={`kpi-card${dropped > 0 ? ' tone-danger' : ''}`}><span>Cancelled or skipped</span><strong>{dropped}</strong><small>pieces not to make</small></div>
-        <div className={`kpi-card${openSlots.length === 0 ? ' tone-success' : ' tone-warning'}`}><span>{openSlots.length === 0 ? 'All final' : 'Next cut-off'}</span><strong>{openSlots.length === 0 ? 'Make now' : nextClose?.closesAt ? formatTime12h(new Date(nextClose.closesAt).toLocaleTimeString('en-GB', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' })) : 'No cut-off'}</strong><small>{openSlots.length === 0 ? 'Nothing can change any more' : nextClose ? `${nextClose.slotName}${nextClose.closesAt && timeLeft(nextClose.closesAt, now) ? ` · ${timeLeft(nextClose.closesAt, now)}` : ''}` : `${openSlots.length} window still open`}</small></div>
+        <div className="kpi-card kpi-card-main"><span>{t('makeInTotal')}</span><strong>{describeTotals(toMake, slots.reduce((sum, slot) => sum + slot.quantity, 0))}</strong><small>{t(slots.length === 1 ? 'windowOne' : 'windowMany', { count: slots.length })}</small></div>
+        <div className="kpi-card"><span>{t('piecesToPack')}</span><strong>{pieces}</strong><small>{t('piecesHint')}</small></div>
+        <div className="kpi-card"><span>{t('deliveries')}</span><strong>{deliveries ?? '—'}</strong><small>{deliveries === null ? t('allProductsOnly') : t('ordersToDeliver')}</small></div>
+        <div className="kpi-card"><span>{t('repeatOrders')}</span><strong>{pieces > 0 ? Math.round((repeat / pieces) * 100) : 0}%</strong><small>{t('repeatSplit', { subscription: split.subscription, trial: split.trial, oneTime: split.oneTime })}</small><TypeBar split={split} total={pieces} /></div>
+        <div className={`kpi-card${dropped > 0 ? ' tone-danger' : ''}`}><span>{t('cancelledSkipped')}</span><strong>{dropped}</strong><small>{t('piecesNotToMake')}</small></div>
+        <div className={`kpi-card${openSlots.length === 0 ? ' tone-success' : ' tone-warning'}`}><span>{openSlots.length === 0 ? t('allFinal') : t('nextCutoff')}</span><strong>{openSlots.length === 0 ? t('makeNow') : nextClose?.closesAt ? formatTime12h(new Date(nextClose.closesAt).toLocaleTimeString('en-GB', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' })) : t('noCutoff')}</strong><small>{openSlots.length === 0 ? t('nothingCanChange') : nextClose ? `${nextClose.slotName}${nextClose.closesAt && timeLeft(nextClose.closesAt, now) ? ` · ${timeLeft(nextClose.closesAt, now)}` : ''}` : t('windowStillOpen', { count: openSlots.length })}</small></div>
       </div>
 
       <div className="plan-toolbar">
-        <div className="window-tabs" role="tablist" aria-label="Delivery window">
-          <button type="button" role="tab" aria-selected={!filters.slotId} className={`window-tab${!filters.slotId ? ' is-active' : ''}`} onClick={() => update({ slotId: null })}>All windows</button>
+        <div className="window-tabs" role="tablist" aria-label={t('deliveryWindow')}>
+          <button type="button" role="tab" aria-selected={!filters.slotId} className={`window-tab${!filters.slotId ? ' is-active' : ''}`} onClick={() => update({ slotId: null })}>{t('allWindows')}</button>
           {allSlots.map(slot => <button type="button" role="tab" key={slot.slotId} aria-selected={filters.slotId === slot.slotId} className={`window-tab${filters.slotId === slot.slotId ? ' is-active' : ''}`} onClick={() => update({ slotId: slot.slotId })}>
-            {slot.slotName} <small>{formatTime12h(slot.startTime)}</small> <span className={`lock-tag ${slot.status === 'final' ? 'is-locked' : 'is-open'}`}>{slot.status === 'final' ? 'Final' : 'Open'}</span>
+            {slot.slotName} <small>{formatTime12h(slot.startTime)}</small> <span className={`lock-tag ${slot.status === 'final' ? 'is-locked' : 'is-open'}`}>{slot.status === 'final' ? t('final') : t('open')}</span>
           </button>)}
         </div>
-        <SelectField label="Product" className="product-select-trigger" value={filters.productId || ALL} onChange={value => update({ productId: value === ALL ? null : value })} placeholder="All products" options={[{ value: ALL, label: 'All products' }, ...productChoices.map(([id, name]) => ({ value: id, label: name }))]} />
+        <SelectField label={t('product')} className="product-select-trigger" value={filters.productId || ALL} onChange={value => update({ productId: value === ALL ? null : value })} placeholder={t('allProducts')} options={[{ value: ALL, label: t('allProducts') }, ...productChoices.map(([id, name]) => ({ value: id, label: name }))]} />
       </div>
 
       {slots.length === 0
-        ? <div className="product-state"><strong>Nothing matches these filters</strong><span>Choose another window or product.</span></div>
+        ? <div className="product-state"><strong>{t('noMatch')}</strong><span>{t('noMatchDetail')}</span></div>
         : <div className="table-card product-list-table-card card-in"><Table className="config-table make-table">
           <TableHeader><TableRow>
-            <TableHead>Product and size</TableHead><TableHead className="num">To make</TableHead><TableHead className="num">Pieces</TableHead><TableHead className="num">One-time</TableHead><TableHead className="num">Subscription</TableHead><TableHead className="num">Trial</TableHead><TableHead className="num">Cancelled / skipped</TableHead><TableHead className="num">Orders</TableHead><TableHead><span className="sr-only">Orders link</span></TableHead>
+            <TableHead>{t('productAndSize')}</TableHead><TableHead className="num">{t('toMake')}</TableHead><TableHead className="num">{t('pieces')}</TableHead><TableHead className="num">{t('oneTime')}</TableHead><TableHead className="num">{t('subscription')}</TableHead><TableHead className="num">{t('trial')}</TableHead><TableHead className="num">{t('cancelledSlashSkipped')}</TableHead><TableHead className="num">{t('orders')}</TableHead><TableHead><span className="sr-only">{t('ordersLink')}</span></TableHead>
           </TableRow></TableHeader>
           <TableBody>{slots.map(slot => <Fragment key={slot.slotId}>
             <TableRow className="window-row">
               <TableCell colSpan={9}>
                 <strong>{slot.slotName}</strong> <span>{formatTime12h(slot.startTime)} – {formatTime12h(slot.endTime)}</span>
-                <span className={`lock-tag ${slot.status === 'final' ? 'is-locked' : 'is-open'}`}>{slot.status === 'final' ? 'Final' : 'Open'}</span>
-                <span className="window-row-note">{slot.status === 'final' ? (slot.closesAt ? `Closed ${formatTimestamp(slot.closesAt)}: make exactly this` : 'The delivery day has begun: make exactly this') : slot.closesAt ? `Can still change until ${formatTimestamp(slot.closesAt)}` : 'No cut-off: can still change'}</span>
+                <span className={`lock-tag ${slot.status === 'final' ? 'is-locked' : 'is-open'}`}>{slot.status === 'final' ? t('final') : t('open')}</span>
+                <span className="window-row-note">{slot.status === 'final' ? (slot.closesAt ? t('closedMakeThis', { time: formatTimestamp(slot.closesAt) }) : t('dayBegunMakeThis')) : slot.closesAt ? t('canStillChange', { time: formatTimestamp(slot.closesAt) }) : t('noCutoffCanChange')}</span>
                 <span className="window-row-total">{describeTotals(slot.products.flatMap(product => product.production).length ? sumTotals(slot.products.map(product => product.production)) : [], slot.quantity)}</span>
               </TableCell>
             </TableRow>
@@ -160,10 +175,10 @@ function PlanView() {
                 <TableCell className="num muted">{variant.byType.trial || '—'}</TableCell>
                 <TableCell className="num">{variant.cancelledQuantity > 0 ? <span className="dropped-count">{variant.cancelledQuantity}</span> : '—'}</TableCell>
                 <TableCell className="num muted">{variant.orderCount}</TableCell>
-                <TableCell>{index === 0 ? <Link className="product-name-link" href={`/orders?date=${date}&slotId=${slot.slotId}&productId=${product.productId}`}>View orders</Link> : null}</TableCell>
+                <TableCell>{index === 0 ? <Link className="product-name-link" href={`/orders?date=${date}&slotId=${slot.slotId}&productId=${product.productId}`}>{t('viewOrders')}</Link> : null}</TableCell>
               </TableRow>)}
               {product.variants.length > 1 ? <TableRow className="subtotal-row">
-                <TableCell>{product.productName} total</TableCell>
+                <TableCell>{t('productTotal', { name: product.productName })}</TableCell>
                 <TableCell className="num strong">{describeTotals(product.production, product.quantity)}</TableCell>
                 <TableCell className="num">{product.quantity}</TableCell>
                 <TableCell className="num muted">{product.byType.oneTime || '—'}</TableCell>
@@ -175,6 +190,7 @@ function PlanView() {
             </Fragment>)}
           </Fragment>)}</TableBody>
         </Table></div>}
+      {slots.length > 0 ? <KitchenSheet date={date} slots={slots} /> : null}
     </>}
   </div>
 }

@@ -1,21 +1,23 @@
 import Image from 'next/image'
 import { ShoppingBag, Truck, Users } from 'lucide-react'
-
-const capabilities = [
-  { icon: ShoppingBag, title: 'Orders', text: 'From a new order to the next delivery.' },
-  { icon: Truck, title: 'Deliveries', text: 'Keep delivery schedules and slots in sync.' },
-  { icon: Users, title: 'Customers', text: 'A little more care, in every interaction.' },
-]
+import { translateFor, type Language } from '@/lib/i18n/core'
+import { authMessages } from '../messages'
 
 /** Brand introduction beside the sign-in form; omitted on narrow screens. */
-export function LoginShowcase() {
-  return <aside className="login-aside" aria-label="ShreeRam Milks workspace">
-    <div className="login-aside-brand"><Image src="/icon.svg" alt="" width={44} height={44} unoptimized /><div><span>ShreeRam Milks</span><small>Admin workspace</small></div></div>
+export function LoginShowcase({ language }: { language: Language }) {
+  const t = translateFor(authMessages, language)
+  const capabilities = [
+    { icon: ShoppingBag, title: t('ordersTitle'), text: t('ordersText') },
+    { icon: Truck, title: t('deliveriesTitle'), text: t('deliveriesText') },
+    { icon: Users, title: t('customersTitle'), text: t('customersText') },
+  ]
+  return <aside className="login-aside" aria-label={t('workspaceLabel')}>
+    <div className="login-aside-brand"><Image src="/icon.svg" alt="" width={44} height={44} unoptimized /><div><span>ShreeRam Milks</span><small>{t('adminWorkspace')}</small></div></div>
     <div className="login-aside-content">
       <div className="login-aside-copy">
-        <span className="login-eyebrow">THE BUSINESS BEHIND EVERY MORNING</span>
-        <h2>Everyday operations.<br /><em>Under control.</em></h2>
-        <p>A clearer view of your business. One workspace for the people, plans and deliveries that keep it moving.</p>
+        <span className="login-eyebrow">{t('eyebrow')}</span>
+        <h2>{t('headline')}<br /><em>{t('headlineEmphasis')}</em></h2>
+        <p>{t('intro')}</p>
       </div>
       <ul className="login-capabilities">
         {capabilities.map(({ icon: Icon, title, text }) => <li key={title}>
@@ -24,6 +26,6 @@ export function LoginShowcase() {
         </li>)}
       </ul>
     </div>
-    <p className="login-aside-footer"><span />Fresh starts. Every day.</p>
+    <p className="login-aside-footer"><span />{t('tagline')}</p>
   </aside>
 }

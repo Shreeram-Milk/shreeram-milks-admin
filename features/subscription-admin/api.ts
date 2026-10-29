@@ -1,4 +1,6 @@
 import { apiRequest } from '@/lib/api-client'
+import { liveLabels } from '@/lib/i18n/core'
+import { t, type SubscriptionKey } from './messages'
 import type { ListResult } from '../configuration/api'
 
 export type SubscriptionKind = 'subscription' | 'trial'
@@ -61,25 +63,26 @@ export const subscriptionAdminApi = {
   cancel: (id: string, reason: string) => act(id, 'cancel', { reason }),
 }
 
-export const KIND_TEXT: Record<SubscriptionKind, { singular: string; plural: string; path: string }> = {
-  subscription: { singular: 'Subscription', plural: 'Subscriptions', path: '/subscriptions' },
-  trial: { singular: 'Trial', plural: 'Trials', path: '/trials' },
+// The words are read when used, so they follow the admin's language.
+export const KIND_TEXT: Record<SubscriptionKind, { readonly singular: string; readonly plural: string; path: string }> = {
+  subscription: { get singular() { return t('subscription') }, get plural() { return t('subscriptions') }, path: '/subscriptions' },
+  trial: { get singular() { return t('trial') }, get plural() { return t('trials') }, path: '/trials' },
 }
 export const SUBSCRIPTION_STATES: SubscriptionState[] = ['active', 'paused', 'completed', 'cancelled']
-export const STATE_LABELS: Record<SubscriptionState, string> = { active: 'Active', paused: 'Paused', completed: 'Finished', cancelled: 'Cancelled' }
+export const STATE_LABELS = liveLabels(t, { active: 'stateActive', paused: 'statePaused', completed: 'stateCompleted', cancelled: 'stateCancelled' } satisfies Record<SubscriptionState, SubscriptionKey>)
 export const STATE_TONE: Record<SubscriptionState, 'pending' | 'delivered' | 'cancelled'> = { active: 'delivered', paused: 'pending', completed: 'delivered', cancelled: 'cancelled' }
-export const DAY_LABELS: Record<DayLineState, string> = { upcoming: 'Coming', placed: 'Order made', out_for_delivery: 'Out for delivery', delivered: 'Delivered', missed: 'Missed', skipped: 'Skipped', paused: 'Paused (vacation)' }
-export const SKIP_REASON_LABELS: Record<SkipReason, string> = {
-  customer: 'Skipped by the customer', admin: 'Skipped by ShreeRam staff', order_cancelled: 'Its order was cancelled', credit_limit: 'Over the credit limit', not_deliverable: 'Could not be delivered',
-}
-const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+export const DAY_LABELS = liveLabels(t, { upcoming: 'dayUpcoming', placed: 'dayPlaced', out_for_delivery: 'dayOut', delivered: 'dayDelivered', missed: 'dayMissed', skipped: 'daySkipped', paused: 'dayPaused' } satisfies Record<DayLineState, SubscriptionKey>)
+export const SKIP_REASON_LABELS = liveLabels(t, {
+  customer: 'skipCustomer', admin: 'skipAdmin', order_cancelled: 'skipOrderCancelled', credit_limit: 'skipCreditLimit', not_deliverable: 'skipNotDeliverable',
+} satisfies Record<SkipReason, SubscriptionKey>)
+const WEEKDAYS: SubscriptionKey[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
 export function scheduleText(type: ScheduleType, weekdays: number[]): string {
-  if (type === 'daily') return 'Every day'
-  if (type === 'alternate_days') return 'Every other day'
-  return weekdays.map(day => WEEKDAYS[day - 1]).join(', ')
+  if (type === 'daily') return t('everyDay')
+  if (type === 'alternate_days') return t('everyOtherDay')
+  return weekdays.map(day => t(WEEKDAYS[day - 1] ?? 'mon')).join(', ')
 }
 export const linesText = (lines: SubscriptionLine[]) => lines.map(line => `${line.slotName} × ${line.quantity}`).join(' · ')
-export const ACTIVITY_LABELS: Record<string, string> = {
-  started: 'Started', paused: 'Paused', resumed: 'Resumed', skipped: 'Day skipped', skip_undone: 'Skip undone', cancelled: 'Cancelled',
-  completed: 'Completed', refund_due: 'Refund to send added', credit_limit_skipped: 'Day skipped: over the credit limit',
-}
+export const ACTIVITY_LABELS: Readonly<Record<string, string>> = liveLabels(t, {
+  started: 'actStarted', paused: 'actPaused', resumed: 'actResumed', skipped: 'actSkipped', skip_undone: 'actSkipUndone', cancelled: 'actCancelled',
+  completed: 'actCompleted', refund_due: 'actRefundDue', credit_limit_skipped: 'actCreditSkipped',
+})

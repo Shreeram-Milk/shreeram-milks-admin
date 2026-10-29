@@ -1,4 +1,6 @@
 import { apiRequest } from '@/lib/api-client'
+import { liveLabels } from '@/lib/i18n/core'
+import { t, type AdjustmentKey } from './messages'
 import type { ListResult } from '../configuration/api'
 
 export const ADJUSTMENT_TYPES = ['carry_forward', 'account_credit', 'refund_pending', 'manual_adjustment'] as const
@@ -32,6 +34,6 @@ export const adjustmentAdminApi = {
   async cancel(id: string): Promise<Adjustment> { return (await apiRequest<{ adjustment: Adjustment }>(`/admin/prepaid-adjustments/${encodeURIComponent(id)}/cancel`, { method: 'POST', body: {} })).adjustment },
 }
 
-export const TYPE_LABELS: Record<AdjustmentType, string> = { carry_forward: 'Delivery moved later', account_credit: 'Credit on account', refund_pending: 'Refund to send', manual_adjustment: 'Other correction' }
-export const STATUS_LABELS: Record<AdjustmentStatus, string> = { pending: 'To do', applied: 'Done', cancelled: 'Cancelled' }
+export const TYPE_LABELS = liveLabels(t, { carry_forward: 'typeCarry', account_credit: 'typeCredit', refund_pending: 'typeRefund', manual_adjustment: 'typeManual' } satisfies Record<AdjustmentType, AdjustmentKey>)
+export const STATUS_LABELS = liveLabels(t, { pending: 'statusPending', applied: 'statusApplied', cancelled: 'statusCancelled' } satisfies Record<AdjustmentStatus, AdjustmentKey>)
 export const STATUS_TONE: Record<AdjustmentStatus, 'pending' | 'delivered' | 'cancelled'> = { pending: 'pending', applied: 'delivered', cancelled: 'cancelled' }

@@ -13,6 +13,8 @@ import { describeApiError } from '@/lib/api-errors'
 import { pinApi, type DeliverySlot, type ListResult, type Pin, type RecordStatus, type ServiceArea } from '../api'
 import { enumText } from '../format'
 import { PinCodeEditor, type PinEditorMode } from './PinCodeEditor'
+import { tc } from '@/lib/i18n/common'
+import { t } from '../messages'
 
 const PAGE_SIZE = 8
 const ALL = '__all__'
@@ -29,7 +31,7 @@ export function PinCodeSection({ area, slots, onChanged, startOpen = false }: { 
   const [page, setPage] = useState(1)
   const [reloadKey, setReloadKey] = useState(0)
   const [editor, setEditor] = useState<EditorState>(startOpen ? { mode: 'one', editing: null } : null)
-  const slotName = (id: string) => slots.find(slot => slot.id === id)?.name ?? 'Inactive slot'
+  const slotName = (id: string) => slots.find(slot => slot.id === id)?.name ?? t('inactiveSlot')
   const filtered = Boolean(search || slotId || status)
 
   useEffect(() => {
@@ -48,46 +50,46 @@ export function PinCodeSection({ area, slots, onChanged, startOpen = false }: { 
   return <section className="section-block detail-section pin-section">
     <div className="pin-section-head">
       <div>
-        <h2>PIN codes <span className="pin-total">{area.pinCount}</span></h2>
-        <p>Each PIN code can be delivered to in the slots you choose for it.</p>
+        <h2>{t('pinCodesTitle')} <span className="pin-total">{area.pinCount}</span></h2>
+        <p>{t('pinCodesIntro')}</p>
       </div>
       <div className="pin-add-group">
-        <Button className="primary-button pin-add-main" onClick={() => open('one')}><Plus size={15} /> Add PIN codes</Button>
+        <Button className="primary-button pin-add-main" onClick={() => open('one')}><Plus size={15} /> {t('addPinCodes')}</Button>
         <DropdownMenu>
-          <DropdownMenuTrigger asChild><Button className="primary-button pin-add-more" aria-label="More ways to add PIN codes"><ChevronDown size={15} /></Button></DropdownMenuTrigger>
+          <DropdownMenuTrigger asChild><Button className="primary-button pin-add-more" aria-label={t('moreWays')}><ChevronDown size={15} /></Button></DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onSelect={() => open('many')}><ListPlus size={15} /> Paste a list</DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => open('city')}><MapPinned size={15} /> Add from a city</DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => open('many')}><ListPlus size={15} /> {t('pasteList')}</DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => open('city')}><MapPinned size={15} /> {t('addFromCity')}</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
     </div>
 
     <div className="pin-toolbar">
-      <ListSearchInput label="Search PIN or locality" value={search} onCommit={value => { setSearch(value); setPage(1) }} placeholder="Search PIN or locality" />
-      <SelectField label="Filter by delivery slot" className="config-select" value={slotId || ALL} onChange={value => { setSlotId(value === ALL ? '' : value); setPage(1) }} placeholder="All slots" options={[{ value: ALL, label: 'All slots' }, ...slots.map(slot => ({ value: slot.id, label: slot.name }))]} />
-      <SelectField label="Filter PIN code status" className="config-select" value={status || ALL} onChange={value => { setStatus(value === ALL ? '' : value as RecordStatus); setPage(1) }} placeholder="All statuses" options={[{ value: ALL, label: 'All statuses' }, { value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }]} />
+      <ListSearchInput label={t('searchPin')} value={search} onCommit={value => { setSearch(value); setPage(1) }} placeholder={t('searchPin')} />
+      <SelectField label={t('filterSlot')} className="config-select" value={slotId || ALL} onChange={value => { setSlotId(value === ALL ? '' : value); setPage(1) }} placeholder={t('allSlots')} options={[{ value: ALL, label: t('allSlots') }, ...slots.map(slot => ({ value: slot.id, label: slot.name }))]} />
+      <SelectField label={t('filterPinStatus')} className="config-select" value={status || ALL} onChange={value => { setStatus(value === ALL ? '' : value as RecordStatus); setPage(1) }} placeholder={t('allStatuses')} options={[{ value: ALL, label: t('allStatuses') }, { value: 'active', label: tc('active') }, { value: 'inactive', label: tc('inactive') }]} />
     </div>
 
-    {state.status === 'error' && <div className="product-state" role="alert"><strong>PIN codes could not be loaded</strong><span>{state.message}</span><Button className="secondary-button" onClick={() => { setState({ status: 'loading' }); setReloadKey(count => count + 1) }}>Try again</Button></div>}
-    {state.status === 'loading' && <div className="product-state" aria-busy="true"><span>Loading PIN codes…</span></div>}
+    {state.status === 'error' && <div className="product-state" role="alert"><strong>{t('pinsFailed')}</strong><span>{state.message}</span><Button className="secondary-button" onClick={() => { setState({ status: 'loading' }); setReloadKey(count => count + 1) }}>{t('tryAgain')}</Button></div>}
+    {state.status === 'loading' && <div className="product-state" aria-busy="true"><span>{t('loadingPins')}</span></div>}
     {state.status === 'ready' && <div className="table-card"><div className="table-scroll"><Table>
-      <TableHeader><TableRow><TableHead>PIN code</TableHead><TableHead>Locality</TableHead><TableHead>Delivery slots</TableHead><TableHead>Status</TableHead><TableHead className="pin-col-action"><span className="sr-only">Actions</span></TableHead></TableRow></TableHeader>
+      <TableHeader><TableRow><TableHead>{t('pinCode')}</TableHead><TableHead>{t('locality')}</TableHead><TableHead>{t('deliverySlotsCol')}</TableHead><TableHead>{t('status')}</TableHead><TableHead className="pin-col-action"><span className="sr-only">{t('actions')}</span></TableHead></TableRow></TableHeader>
       <TableBody>
         {state.result.rows.map(pin => <TableRow key={pin.id}>
           <TableCell className="pin-code-cell">{pin.pinCode}</TableCell>
           <TableCell className="pin-locality-cell">{pin.locality || <span className="pin-muted">—</span>}</TableCell>
           <TableCell><div className="pin-slot-chips">{pin.allowedDeliverySlotIds.map(id => <span key={id} className="pin-slot-chip">{slotName(id)}</span>)}</div></TableCell>
           <TableCell><StatusBadge status={pin.status}>{enumText(pin.status)}</StatusBadge></TableCell>
-          <TableCell className="pin-col-action"><Button className="pin-row-edit" aria-label={`Edit PIN code ${pin.pinCode}`} onClick={() => setEditor({ mode: 'one', editing: pin })}><Pencil size={14} /> Edit</Button></TableCell>
+          <TableCell className="pin-col-action"><Button className="pin-row-edit" aria-label={t('editPin', { pin: pin.pinCode })} onClick={() => setEditor({ mode: 'one', editing: pin })}><Pencil size={14} /> {tc('edit')}</Button></TableCell>
         </TableRow>)}
         {state.result.rows.length === 0 && <TableRow><TableCell colSpan={5}><div className="pin-empty">
-          {filtered ? <><strong>No PIN codes match these filters</strong><span>Try a different search or clear the filters.</span></>
-            : <><strong>No PIN codes yet</strong><span>Add one, paste a list, or pick them from a city.</span><Button className="primary-button" onClick={() => open('one')}><Plus size={15} /> Add PIN codes</Button></>}
+          {filtered ? <><strong>{t('noPinsMatch')}</strong><span>{t('tryDifferent')}</span></>
+            : <><strong>{t('noPinsYet')}</strong><span>{t('noPinsHint')}</span><Button className="primary-button" onClick={() => open('one')}><Plus size={15} /> {t('addPinCodes')}</Button></>}
         </div></TableCell></TableRow>}
       </TableBody>
     </Table></div>
-    {state.result.total > 0 && <div className="table-footer"><span>{state.result.total} {filtered ? 'matching' : ''} PIN {state.result.total === 1 ? 'code' : 'codes'}</span><div><TablePagination page={Math.min(page, pageCount)} pageCount={pageCount} onPageChange={setPage} /></div></div>}
+    {state.result.total > 0 && <div className="table-footer"><span>{t(state.result.total === 1 ? 'pinsTotalOne' : 'pinsTotalMany', { count: state.result.total, matching: filtered ? t('matching') : '' })}</span><div><TablePagination page={Math.min(page, pageCount)} pageCount={pageCount} onPageChange={setPage} /></div></div>}
     </div>}
 
     {editor && <PinCodeEditor area={area} slots={slots} mode={editor.mode} editing={editor.editing} onClose={() => setEditor(null)} onSaved={saved} />}

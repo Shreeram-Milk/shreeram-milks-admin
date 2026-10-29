@@ -8,47 +8,52 @@ import type { LucideIcon } from 'lucide-react'
 import { Button as AdminButton } from '@/components/ui/button'
 import { InfoTip } from '@/components/shared/InfoTip'
 import { useAuth } from '@/features/auth/AuthProvider'
-import { SETUP_HELP } from '@/features/configuration/help'
+import { setupHelp, type SetupScreen } from '@/features/configuration/help'
+import { translator } from '@/lib/i18n/core'
+import { layoutMessages } from './messages'
 
-/** `also`: other pages that belong to this menu item (it stays highlighted there). */
-type NavEntry = { label: string; href: string; icon: LucideIcon; also?: string[] }
+const t = translator(layoutMessages)
+type LabelKey = keyof typeof layoutMessages.en
+
+/** `also`: other pages that belong to this menu item (it stays highlighted there). `help`: the setup screen it explains. */
+type NavEntry = { label: LabelKey; href: string; icon: LucideIcon; also?: string[]; help?: SetupScreen }
 
 /** The things done every day, in the order a day goes. */
 const dailyItems: NavEntry[] = [
-  { label: 'Orders', href: '/orders', icon: ShoppingBag },
-  { label: 'Mark deliveries', href: '/deliveries', icon: PackageCheck },
-  { label: 'Production plan', href: '/production-planning', icon: Factory },
-  { label: 'Subscriptions', href: '/subscriptions', icon: Repeat, also: ['/trials'] },
-  { label: 'Support tickets', href: '/support', icon: LifeBuoy },
+  { label: 'orders', href: '/orders', icon: ShoppingBag },
+  { label: 'markDeliveries', href: '/deliveries', icon: PackageCheck },
+  { label: 'productionPlan', href: '/production-planning', icon: Factory },
+  { label: 'subscriptions', href: '/subscriptions', icon: Repeat, also: ['/trials'] },
+  { label: 'supportTickets', href: '/support', icon: LifeBuoy },
 ]
 const peopleItems: NavEntry[] = [
-  { label: 'Customers', href: '/customers', icon: Users },
-  { label: 'Money', href: '/prepaid-adjustments', icon: Wallet, also: ['/credit-accounts', '/online-payments'] },
-  { label: 'Products', href: '/products', icon: Package },
+  { label: 'customers', href: '/customers', icon: Users },
+  { label: 'money', href: '/prepaid-adjustments', icon: Wallet, also: ['/credit-accounts', '/online-payments'] },
+  { label: 'products', href: '/products', icon: Package },
 ]
 /** Reusable setup lists that products read from. Made once, changed rarely. */
 const setupItems: NavEntry[] = [
-  { label: 'Categories', href: '/configuration/categories', icon: Tags },
-  { label: 'Delivery Slots', href: '/operations/delivery-slots', icon: Truck },
-  { label: 'Delivery Areas', href: '/operations/service-areas', icon: MapPin },
-  { label: 'Order-by Times', href: '/operations/cutoff-rules', icon: Timer },
-  { label: 'Trial Plans', href: '/configuration/trial-plans', icon: Package },
-  { label: 'Subscription Rules', href: '/configuration/subscription-rules', icon: Settings },
+  { label: 'categories', href: '/configuration/categories', icon: Tags, help: 'categories' },
+  { label: 'deliverySlots', href: '/operations/delivery-slots', icon: Truck, help: 'deliverySlots' },
+  { label: 'deliveryAreas', href: '/operations/service-areas', icon: MapPin, help: 'deliveryAreas' },
+  { label: 'orderByTimes', href: '/operations/cutoff-rules', icon: Timer, help: 'orderByTimes' },
+  { label: 'trialPlans', href: '/configuration/trial-plans', icon: Package, help: 'trialPlans' },
+  { label: 'subscriptionRules', href: '/configuration/subscription-rules', icon: Settings, help: 'subscriptionRules' },
 ]
 /** What customers see in the phone app. */
 const appItems: NavEntry[] = [
-  { label: 'Banners', href: '/content/banners', icon: Image },
-  { label: 'Offers', href: '/content/offers', icon: Percent },
-  { label: 'Help Center', href: '/content/faqs', icon: CircleHelp },
-  { label: 'Legal & Policies', href: '/content/policies', icon: Scale },
-  { label: 'Onboarding', href: '/content/onboarding', icon: GalleryHorizontal },
-  { label: 'Automatic messages', href: '/notifications/templates', icon: Bell },
-  { label: 'Send a message', href: '/notifications/broadcasts', icon: Megaphone },
-  { label: 'App Settings', href: '/content/app-settings', icon: SlidersHorizontal },
+  { label: 'banners', href: '/content/banners', icon: Image },
+  { label: 'offers', href: '/content/offers', icon: Percent },
+  { label: 'helpCenter', href: '/content/faqs', icon: CircleHelp },
+  { label: 'legalPolicies', href: '/content/policies', icon: Scale },
+  { label: 'onboarding', href: '/content/onboarding', icon: GalleryHorizontal },
+  { label: 'automaticMessages', href: '/notifications/templates', icon: Bell },
+  { label: 'sendMessage', href: '/notifications/broadcasts', icon: Megaphone },
+  { label: 'appSettings', href: '/content/app-settings', icon: SlidersHorizontal },
 ]
 /** The public website (shreerammilk.com). Only the Home page is edited here. */
 const websiteItems: NavEntry[] = [
-  { label: 'Home page', href: '/website/home', icon: Globe },
+  { label: 'homePage', href: '/website/home', icon: Globe },
 ]
 
 const isOn = (pathname: string, item: NavEntry) => [item.href, ...(item.also ?? [])].some(href => pathname.startsWith(href))
@@ -65,30 +70,30 @@ export function AdminSidebar({ collapsed, mobileOpen, onToggleCollapse, onCloseM
   const NavLink = ({ nested = false, ...item }: NavEntry & { nested?: boolean }) => {
     const active = isOn(pathname, item)
     const Icon = item.icon
+    const label = t(item.label)
     const link = (
       <Link className={`nav-item ${nested ? 'nav-item-nested' : ''} ${active ? 'active' : ''}`} href={item.href} onClick={onCloseMobile} aria-current={active ? 'page' : undefined}>
-        <Icon size={17} /><span>{item.label}</span>
+        <Icon size={17} /><span>{label}</span>
       </Link>
     )
-    const help = SETUP_HELP[item.label]
-    if (!help) return link
+    if (!item.help) return link
     // The "i" button sits beside the link, not inside it: a button inside a link is not valid and not keyboard friendly.
-    return <div className="nav-row">{link}<InfoTip label={item.label} text={help} className="nav-info-tip" /></div>
+    return <div className="nav-row">{link}<InfoTip label={label} text={setupHelp(item.help)} className="nav-info-tip" /></div>
   }
   return <aside className={`sidebar ${collapsed ? 'collapsed' : ''} ${mobileOpen ? 'mobile-open' : ''}`}>
-    <div className="brand-block"><div className="brand-mark">SR</div><div className="brand-copy"><p className="brand-name">ShreeRam Milks</p><p className="brand-subtitle">Admin panel</p></div><AdminButton className="brand-collapse" aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'} onClick={onToggleCollapse}>{collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}</AdminButton></div>
-    <nav className="sidebar-nav" aria-label="Main navigation">
-      <Link className={`nav-item ${pathname === '/' ? 'active' : ''}`} href="/" onClick={onCloseMobile} aria-current={pathname === '/' ? 'page' : undefined}><LayoutDashboard size={17} /><span>Dashboard</span></Link>
-      <p className="nav-label">Every day</p>
+    <div className="brand-block"><div className="brand-mark">SR</div><div className="brand-copy"><p className="brand-name">ShreeRam Milks</p><p className="brand-subtitle">{t('adminPanel')}</p></div><AdminButton className="brand-collapse" aria-label={collapsed ? t('expandSidebar') : t('collapseSidebar')} onClick={onToggleCollapse}>{collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}</AdminButton></div>
+    <nav className="sidebar-nav" aria-label={t('mainNavigation')}>
+      <Link className={`nav-item ${pathname === '/' ? 'active' : ''}`} href="/" onClick={onCloseMobile} aria-current={pathname === '/' ? 'page' : undefined}><LayoutDashboard size={17} /><span>{t('dashboard')}</span></Link>
+      <p className="nav-label">{t('everyDay')}</p>
       {dailyItems.map(item => <NavLink key={item.href} {...item} />)}
-      <p className="nav-label">Customers & shop</p>
+      <p className="nav-label">{t('customersShop')}</p>
       {peopleItems.map(item => <NavLink key={item.href} {...item} />)}
-      <p className="nav-label">Settings</p>
-      <NavGroup id="setup-group" label="Setup" icon={Database} items={setupItems} pathname={pathname} collapsed={collapsed} render={item => <NavLink key={item.href} {...item} nested />} />
-      <NavGroup id="app-group" label="Phone app" icon={Smartphone} items={appItems} pathname={pathname} collapsed={collapsed} render={item => <NavLink key={item.href} {...item} nested />} />
-      <NavGroup id="website-group" label="Website" icon={Globe} items={websiteItems} pathname={pathname} collapsed={collapsed} render={item => <NavLink key={item.href} {...item} nested />} />
+      <p className="nav-label">{t('settings')}</p>
+      <NavGroup id="setup-group" label={t('setup')} icon={Database} items={setupItems} pathname={pathname} collapsed={collapsed} render={item => <NavLink key={item.href} {...item} nested />} />
+      <NavGroup id="app-group" label={t('phoneApp')} icon={Smartphone} items={appItems} pathname={pathname} collapsed={collapsed} render={item => <NavLink key={item.href} {...item} nested />} />
+      <NavGroup id="website-group" label={t('website')} icon={Globe} items={websiteItems} pathname={pathname} collapsed={collapsed} render={item => <NavLink key={item.href} {...item} nested />} />
     </nav>
-    <div className="profile-block"><div className="avatar" aria-hidden="true">{admin.email.slice(0, 2).toUpperCase()}</div><div className="profile-copy"><p title={admin.email}>{admin.email}</p><span>Administrator</span></div><AdminButton variant="ghost" size="icon" className="sign-out-button" aria-label="Sign out" title="Sign out" onClick={() => { void signOut() }}><LogOut size={16} /></AdminButton></div>
+    <div className="profile-block"><div className="avatar" aria-hidden="true">{admin.email.slice(0, 2).toUpperCase()}</div><div className="profile-copy"><p title={admin.email}>{admin.email}</p><span>{t('administrator')}</span></div><AdminButton variant="ghost" size="icon" className="sign-out-button" aria-label={t('signOut')} title={t('signOut')} onClick={() => { void signOut() }}><LogOut size={16} /></AdminButton></div>
   </aside>
 }
 

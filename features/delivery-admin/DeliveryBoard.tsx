@@ -14,19 +14,21 @@ import { PageSkeleton } from '@/components/shared/PageSkeleton'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { useUrlListState } from '@/hooks/useUrlListState'
 import { describeApiError } from '@/lib/api-errors'
+import { tc } from '@/lib/i18n/common'
 import { addDays, formatWeekdayDate, isIsoDate, todayInBusinessZone } from '@/lib/business-time'
 import { configApi, type DeliverySlot } from '../configuration/api'
 import { ORDER_STATUS_LABELS, ORDER_STATUS_TONE, orderAdminApi, type AdminOrder } from '../order-admin/api'
+import { t, type DeliveryKey } from './messages'
 
 /** The most orders one day and window can show at once (the server's limit for a page and for one bulk step). */
 const DAY_LIMIT = 200
 const FILTERS = { date: 'free', slotId: 'free' } as const
 const ALL = '__all__'
 type BulkStep = 'out_for_delivery' | 'delivered' | 'missed'
-const STEP_TEXT: Record<BulkStep, { button: string; consequence: string }> = {
-  out_for_delivery: { button: 'Mark out for delivery', consequence: 'Customers can no longer cancel these orders. Nothing changes about payments.' },
-  delivered: { button: 'Mark delivered', consequence: 'This is final for each order. Only orders that are out for delivery can be marked delivered; others are left as they are.' },
-  missed: { button: 'Mark missed', consequence: 'This is final for each order. No money is returned by itself: open an order and use "Return money" if a customer should get theirs back.' },
+const STEP_TEXT: Record<BulkStep, { button: DeliveryKey; consequence: DeliveryKey }> = {
+  out_for_delivery: { button: 'outButton', consequence: 'outConsequence' },
+  delivered: { button: 'deliveredButton', consequence: 'deliveredConsequence' },
+  missed: { button: 'missedButton', consequence: 'missedConsequence' },
 }
 /** Which orders a step can move. The server checks again and reports any it refuses. */
 const CAN_TAKE: Record<BulkStep, ReadonlyArray<AdminOrder['status']>> = { out_for_delivery: ['placed'], delivered: ['out_for_delivery'], missed: ['placed', 'out_for_delivery'] }
@@ -64,9 +66,9 @@ export function DeliveryBoard() {
     if (state.status !== 'ready') return []
     const byKey = new Map<string, { key: string; title: string; orders: AdminOrder[] }>()
     for (const order of state.orders.filter(item => item.status !== 'cancelled')) {
-      const window = order.slot ? `${order.slot.name} (${order.slot.startTime}–${order.slot.endTime})` : order.deliveryMethod === 'shipping' ? 'Courier' : 'No window'
+      const window = order.slot ? `${order.slot.name} (${order.slot.startTime}–${order.slot.endTime})` : order.deliveryMethod === 'shipping' ? t('courier') : t('noWindow')
       const key = `${window}|${order.pinCode}`
-      const group = byKey.get(key) ?? { key, title: `${window} · PIN ${order.pinCode}${order.city ? ` · ${order.city}` : ''}`, orders: [] }
+      const group = byKey.get(key) ?? { key, title: `${window} · ${t('pin', { pin: order.pinCode })}${order.city ? ` · ${order.city}` : ''}`, orders: [] }
       group.orders.push(order)
       byKey.set(key, group)
     }
@@ -74,7 +76,7 @@ export function DeliveryBoard() {
   }, [state])
 
   if (state.status === 'loading') return <PageSkeleton />
-  if (state.status === 'error') return <div className="product-state" role="alert"><strong>Deliveries could not be loaded</strong><span>{state.message}</span><Button className="secondary-button" variant="outline" onClick={() => { setState({ status: 'loading' }); setReloadKey(count => count + 1) }}>Try again</Button></div>
+  if (state.status === 'error') return <div className="product-state" role="alert"><strong>{t('loadFailed')}</strong><span>{state.message}</span><Button className="secondary-button" variant="outline" onClick={() => { setState({ status: 'loading' }); setReloadKey(count => count + 1) }}>{tc('tryAgain')}</Button></div>
 
   const open = groups.flatMap(group => group.orders).filter(order => order.status === 'placed' || order.status === 'out_for_delivery')
   const toggle = (ids: string[], on: boolean) => setPicked(current => { const next = new Set(current); for (const id of ids) { if (on) next.add(id); else next.delete(id) } return next })
@@ -87,8 +89,8 @@ export function DeliveryBoard() {
     setBusy(true)
     try {
       const result = await orderAdminApi.bulkStatus(ids, step)
-      toast.success(`${result.updated} ${result.updated === 1 ? 'order' : 'orders'} ${ORDER_STATUS_LABELS[step].toLowerCase()}.`)
-      if (result.failed.length > 0) toast.error(`${result.failed.length} could not change (their status changed meanwhile). The list is refreshed.`)
+      toast.success(t(result.updated === 1 ? 'movedOne' : 'movedMany', { count: result.updated, status: ORDER_STATUS_LABELS[step].toLowerCase() }))
+      if (result.failed.length > 0) toast.error(t('someFailed', { count: result.failed.length }))
       setStep(null)
       setReloadKey(count => count + 1)
     } catch (failure) { toast.error(describeApiError(failure)) }
@@ -97,37 +99,38 @@ export function DeliveryBoard() {
 
   return <div className="workspace-page products-page">
     <header className="page-header">
-      <div><PageBreadcrumbs items={[{ label: 'Operations' }, { label: 'Deliveries' }]} /><h1>Deliveries</h1><p className="page-description">Every order for one day, by window and PIN code: one-off orders and subscription deliveries together. Tick orders to move them all at once.</p></div>
+      <div><PageBreadcrumbs items={[{ label: t('operations') }, { label: t('deliveries') }]} /><h1>{t('deliveries')}</h1><p className="page-description">{t('boardDescription')}</p></div>
       <div className="header-actions">
-        {(['out_for_delivery', 'delivered', 'missed'] as const).map(item => <Button key={item} className={item === 'missed' ? 'secondary-button' : 'primary-button'} variant={item === 'missed' ? 'outline' : 'default'} disabled={chosen(item).length === 0} onClick={() => setStep(item)}>{STEP_TEXT[item].button}{chosen(item).length > 0 ? ` (${chosen(item).length})` : ''}</Button>)}
+        <Button variant="outline" className="secondary-button" asChild><Link href={`/deliveries/rider-sheet?date=${date}${slotId ? `&slotId=${slotId}` : ''}`}>{t('riderSheet')}</Link></Button>
+        {(['out_for_delivery', 'delivered', 'missed'] as const).map(item => <Button key={item} className={item === 'missed' ? 'secondary-button' : 'primary-button'} variant={item === 'missed' ? 'outline' : 'default'} disabled={chosen(item).length === 0} onClick={() => setStep(item)}>{t(STEP_TEXT[item].button)}{chosen(item).length > 0 ? ` (${chosen(item).length})` : ''}</Button>)}
       </div>
     </header>
     <section className="product-list-section">
       <div className="product-filter-row">
-        <DatePickerField label="Delivery day" value={date} onChange={value => update({ date: value })} />
-        <Button className="secondary-button" variant="outline" onClick={() => update({ date: addDays(date, -1) })}>Previous day</Button>
-        <Button className="secondary-button" variant="outline" onClick={() => update({ date: todayInBusinessZone() })}>Today</Button>
-        <Button className="secondary-button" variant="outline" onClick={() => update({ date: addDays(date, 1) })}>Next day</Button>
-        <SelectField label="Window" className="product-select-trigger" value={slotId || ALL} onChange={value => update({ slotId: value === ALL ? null : value })} placeholder="All windows" options={[{ value: ALL, label: 'All windows' }, ...slots.map(slot => ({ value: slot.id, label: `${slot.name} (${slot.startTime}–${slot.endTime})` }))]} />
+        <DatePickerField label={tc('deliveryDay')} value={date} onChange={value => update({ date: value })} />
+        <Button className="secondary-button" variant="outline" onClick={() => update({ date: addDays(date, -1) })}>{tc('previousDay')}</Button>
+        <Button className="secondary-button" variant="outline" onClick={() => update({ date: todayInBusinessZone() })}>{tc('today')}</Button>
+        <Button className="secondary-button" variant="outline" onClick={() => update({ date: addDays(date, 1) })}>{tc('nextDay')}</Button>
+        <SelectField label={t('window')} className="product-select-trigger" value={slotId || ALL} onChange={value => update({ slotId: value === ALL ? null : value })} placeholder={t('allWindows')} options={[{ value: ALL, label: t('allWindows') }, ...slots.map(slot => ({ value: slot.id, label: `${slot.name} (${slot.startTime}–${slot.endTime})` }))]} />
       </div>
-      {state.total > DAY_LIMIT ? <div className="setup-note attention" role="status"><div><strong>Showing the first {DAY_LIMIT} of {state.total} orders</strong>Choose one window to see the rest.</div></div> : null}
+      {state.total > DAY_LIMIT ? <div className="setup-note attention" role="status"><div><strong>{t('showingFirst', { limit: DAY_LIMIT, total: state.total })}</strong>{t('chooseOneWindow')}</div></div> : null}
       {groups.length === 0
-        ? <div className="product-state"><strong>No deliveries on {formatWeekdayDate(date)}</strong><span>{cancelledCount > 0 ? `${cancelledCount} cancelled ${cancelledCount === 1 ? 'order is' : 'orders are'} hidden. ` : ''}Subscription deliveries appear here up to three days ahead.</span></div>
+        ? <div className="product-state"><strong>{t('noDeliveriesOn', { day: formatWeekdayDate(date) })}</strong><span>{cancelledCount > 0 ? t(cancelledCount === 1 ? 'cancelledHiddenOne' : 'cancelledHiddenMany', { count: cancelledCount }) : ''}{t('subscriptionsAhead')}</span></div>
         : <>
-          <label className="pin-checklist-all"><Checkbox checked={open.length > 0 && open.every(order => picked.has(order.id))} onCheckedChange={checked => toggle(open.map(order => order.id), checked === true)} aria-label="Tick every open order of the day" /><span><strong>{picked.size}</strong> of {open.length} open orders ticked{cancelledCount > 0 ? ` · ${cancelledCount} cancelled hidden` : ''}</span></label>
+          <label className="pin-checklist-all"><Checkbox checked={open.length > 0 && open.every(order => picked.has(order.id))} onCheckedChange={checked => toggle(open.map(order => order.id), checked === true)} aria-label={t('tickAll')} /><span><strong>{picked.size}</strong> {t('tickedOf', { count: open.length })}{cancelledCount > 0 ? t('cancelledHidden', { count: cancelledCount }) : ''}</span></label>
           {groups.map(group => {
             const groupOpen = group.orders.filter(order => order.status === 'placed' || order.status === 'out_for_delivery')
             return <div className="table-card product-list-table-card" key={group.key}>
               <Table className="config-table">
                 <TableHeader><TableRow>
-                  <TableHead><Checkbox disabled={groupOpen.length === 0} checked={groupOpen.length > 0 && groupOpen.every(order => picked.has(order.id))} onCheckedChange={checked => toggle(groupOpen.map(order => order.id), checked === true)} aria-label={`Tick every open order in ${group.title}`} /></TableHead>
-                  <TableHead colSpan={4}>{group.title} · {group.orders.length} {group.orders.length === 1 ? 'order' : 'orders'}</TableHead>
+                  <TableHead><Checkbox disabled={groupOpen.length === 0} checked={groupOpen.length > 0 && groupOpen.every(order => picked.has(order.id))} onCheckedChange={checked => toggle(groupOpen.map(order => order.id), checked === true)} aria-label={t('tickGroup', { group: group.title })} /></TableHead>
+                  <TableHead colSpan={4}>{group.title} · {t(group.orders.length === 1 ? 'orderCountOne' : 'orderCountMany', { count: group.orders.length })}</TableHead>
                 </TableRow></TableHeader>
                 <TableBody>{group.orders.map(order => {
                   const canPick = order.status === 'placed' || order.status === 'out_for_delivery'
                   return <TableRow key={order.id}>
-                    <TableCell><Checkbox disabled={!canPick} checked={picked.has(order.id)} onCheckedChange={checked => toggle([order.id], checked === true)} aria-label={`Tick ${order.orderNumber}`} /></TableCell>
-                    <TableCell><Link className="product-name-link" href={`/orders/${order.id}`}>{order.orderNumber}</Link>{order.subscriptionId ? <><br /><small>{order.items[0]?.purchaseMethod === 'trial' ? 'Trial' : 'Subscription'}</small></> : null}</TableCell>
+                    <TableCell><Checkbox disabled={!canPick} checked={picked.has(order.id)} onCheckedChange={checked => toggle([order.id], checked === true)} aria-label={t('tickOrder', { number: order.orderNumber })} /></TableCell>
+                    <TableCell><Link className="product-name-link" href={`/orders/${order.id}`}>{order.orderNumber}</Link>{order.subscriptionId ? <><br /><small>{order.items[0]?.purchaseMethod === 'trial' ? t('trial') : t('subscription')}</small></> : null}</TableCell>
                     <TableCell>{order.recipientName} · {order.recipientPhone}<br /><small>{[order.addressLine1, order.addressLine2, order.landmark].filter(Boolean).join(', ')}{order.doorstepNote ? ` · ${order.doorstepNote}` : ''}</small></TableCell>
                     <TableCell>{order.items.map(item => `${item.productName} ${item.variantName} × ${item.quantity}`).join(', ')}</TableCell>
                     <TableCell><StatusBadge status={ORDER_STATUS_TONE[order.status]}>{ORDER_STATUS_LABELS[order.status]}</StatusBadge></TableCell>
@@ -142,10 +145,10 @@ export function DeliveryBoard() {
       {step && <AlertDialogContent className="confirm-dialog">
         <AlertDialogHeader>
           <p className="eyebrow">{ORDER_STATUS_LABELS[step]}</p>
-          <AlertDialogTitle>{STEP_TEXT[step].button}: {chosen(step).length} {chosen(step).length === 1 ? 'order' : 'orders'}?</AlertDialogTitle>
-          <AlertDialogDescription>{STEP_TEXT[step].consequence}</AlertDialogDescription>
+          <AlertDialogTitle>{t('confirmTitle', { step: t(STEP_TEXT[step].button), count: chosen(step).length, orders: chosen(step).length === 1 ? t('orderWord') : t('ordersWord') })}</AlertDialogTitle>
+          <AlertDialogDescription>{t(STEP_TEXT[step].consequence)}</AlertDialogDescription>
         </AlertDialogHeader>
-        <AlertDialogFooter className="dialog-actions"><AlertDialogCancel asChild><Button variant="outline" className="secondary-button" disabled={busy}>Not now</Button></AlertDialogCancel><AlertDialogAction asChild><Button className={step === 'missed' ? 'primary-button destructive-button' : 'primary-button'} disabled={busy} onClick={event => { event.preventDefault(); void apply() }}>{busy ? 'Saving…' : STEP_TEXT[step].button}</Button></AlertDialogAction></AlertDialogFooter>
+        <AlertDialogFooter className="dialog-actions"><AlertDialogCancel asChild><Button variant="outline" className="secondary-button" disabled={busy}>{tc('notNow')}</Button></AlertDialogCancel><AlertDialogAction asChild><Button className={step === 'missed' ? 'primary-button destructive-button' : 'primary-button'} disabled={busy} onClick={event => { event.preventDefault(); void apply() }}>{busy ? tc('saving') : t(STEP_TEXT[step].button)}</Button></AlertDialogAction></AlertDialogFooter>
       </AlertDialogContent>}
     </AlertDialog>
   </div>

@@ -1,3 +1,5 @@
+import { currentLanguage } from '@/lib/i18n/core'
+
 export type SupportCategory = 'delivery_missing' | 'late_delivery' | 'wrong_product' | 'quality_issue' | 'payment_issue' | 'subscription_issue' | 'address_issue' | 'other'
 
 export type SupportCategoryInfo = { id: SupportCategory; labelEn: string; labelGu: string; iconKey: string; sortOrder: number }
@@ -18,4 +20,5 @@ export const SUPPORT_CATEGORIES: SupportCategoryInfo[] = [
 ]
 
 export const SUPPORT_CATEGORY_IDS = SUPPORT_CATEGORIES.map(category => category.id) as [SupportCategory, ...SupportCategory[]]
-export const SUPPORT_CATEGORY_LABELS = Object.fromEntries(SUPPORT_CATEGORIES.map(category => [category.id, category.labelEn])) as Record<SupportCategory, string>
+/** Each category's name in the admin's language (Gujarati or English), read when used. */
+export const SUPPORT_CATEGORY_LABELS = Object.defineProperties({}, Object.fromEntries(SUPPORT_CATEGORIES.map(category => [category.id, { enumerable: true, get: () => (currentLanguage() === 'gu' ? category.labelGu : category.labelEn) }]))) as Readonly<Record<SupportCategory, string>>

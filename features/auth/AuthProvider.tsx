@@ -5,6 +5,8 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { Button } from '@/components/ui/button'
 import { ApiError, UNAUTHENTICATED_EVENT } from '@/lib/api-client'
 import { describeApiError } from '@/lib/api-errors'
+import { useT } from '@/lib/i18n/LanguageProvider'
+import { authMessages } from './messages'
 import { authApi, type SignedInAdmin } from './service'
 
 type AuthContextValue = { admin: SignedInAdmin; signOut: () => Promise<void> }
@@ -28,6 +30,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
   const pathname = usePathname()
   const [state, setState] = useState<State>({ status: 'checking' })
   const [attempt, setAttempt] = useState(0)
+  const t = useT(authMessages)
 
   const goToLogin = useCallback(() => { router.replace(`/login?next=${encodeURIComponent(pathname)}`) }, [router, pathname])
 
@@ -58,8 +61,8 @@ export function AuthGate({ children }: { children: ReactNode }) {
   const value = useMemo(() => (state.status === 'signedIn' ? { admin: state.admin, signOut } : null), [state, signOut])
 
   if (state.status === 'unreachable') {
-    return <main className="auth-state" role="alert"><strong>We couldn’t check your sign-in</strong><p>{state.message}</p><Button className="primary-button" onClick={() => { setState({ status: 'checking' }); setAttempt(count => count + 1) }}>Try again</Button></main>
+    return <main className="auth-state" role="alert"><strong>{t('couldNotCheck')}</strong><p>{state.message}</p><Button className="primary-button" onClick={() => { setState({ status: 'checking' }); setAttempt(count => count + 1) }}>{t('tryAgain')}</Button></main>
   }
-  if (!value) return <main className="auth-state" aria-busy="true"><p>Checking your sign-in…</p></main>
+  if (!value) return <main className="auth-state" aria-busy="true"><p>{t('checkingSignIn')}</p></main>
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

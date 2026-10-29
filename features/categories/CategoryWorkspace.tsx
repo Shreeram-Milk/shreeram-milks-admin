@@ -15,7 +15,9 @@ import { SelectField } from '@/components/ui/select-field'
 import { ApiError } from '@/lib/api-client'
 import { describeApiError } from '@/lib/api-errors'
 import { InfoTip } from '@/components/shared/InfoTip'
-import { SETUP_HELP } from '../configuration/help'
+import { setupHelp } from '../configuration/help'
+import { tc } from '@/lib/i18n/common'
+import { t } from './messages'
 import { readUsages } from '../configuration/format'
 import { DeleteRecordDialog } from '../configuration/components/DeleteRecordDialog'
 import { InUseDialog } from '../configuration/components/InUseDialog'
@@ -53,7 +55,7 @@ export function CategoryWorkspace() {
   const switchStatus = async (category: CategoryRecord, next: RecordStatus, confirmInUse = false) => {
     try {
       await categoryApi.setStatus(category.id, next, confirmInUse)
-      toast.success(`${category.name} ${next === 'active' ? 'activated' : 'deactivated'}.`)
+      toast.success(t(next === 'active' ? 'activated' : 'deactivated', { name: category.name }))
       setPending(null)
     } catch (failure) {
       if (failure instanceof ApiError && failure.code === 'IN_USE') { setPending({ category, usages: readUsages(failure.details) }); return }
@@ -63,35 +65,35 @@ export function CategoryWorkspace() {
   }
 
   if (state.status === 'loading') return <PageSkeleton />
-  if (state.status === 'error') return <div className="product-state" role="alert"><strong>Categories could not be loaded</strong><span>{state.message}</span><Button className="secondary-button" onClick={() => { setState({ status: 'loading' }); refresh() }}>Try again</Button></div>
+  if (state.status === 'error') return <div className="product-state" role="alert"><strong>{t('loadFailed')}</strong><span>{state.message}</span><Button className="secondary-button" onClick={() => { setState({ status: 'loading' }); refresh() }}>{tc('tryAgain')}</Button></div>
 
   const pageCount = Math.max(1, Math.ceil(state.total / PAGE_SIZE))
   const filtered = Boolean(search || status)
   return <div className="workspace-page">
     <header className="page-header">
-      <div><PageBreadcrumbs items={[{ label: 'Master Data' }, { label: 'Categories' }]} /><h1 className="title-with-tip">Categories<InfoTip label="Categories" text={SETUP_HELP.Categories} /></h1><p className="page-description">Group products so staff and customers can find them quickly.</p></div>
-      <Button className="primary-button" onClick={() => setEditing(null)}><Plus size={16} /> Add Category</Button>
+      <div><PageBreadcrumbs items={[{ label: t('masterData') }, { label: t('categories') }]} /><h1 className="title-with-tip">{t('categories')}<InfoTip label={t('categories')} text={setupHelp('categories')} /></h1><p className="page-description">{t('description')}</p></div>
+      <Button className="primary-button" onClick={() => setEditing(null)}><Plus size={16} /> {t('addCategory')}</Button>
     </header>
     <section className="config-section">
-      <ListSearchInput label="Search categories" value={search} onCommit={value => { setSearch(value); setPage(1) }} placeholder="Search categories..." />
-      <div className="config-filter-row"><SelectField label="Filter by status" className="config-select product-select-trigger" value={status || ALL} onChange={value => { setStatus(value === ALL ? '' : value as RecordStatus); setPage(1) }} placeholder="All statuses" options={[{ value: ALL, label: 'All statuses' }, { value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }]} /><span className="record-count">{state.total} categories</span></div>
+      <ListSearchInput label={t('searchCategories')} value={search} onCommit={value => { setSearch(value); setPage(1) }} placeholder={t('searchPlaceholder')} />
+      <div className="config-filter-row"><SelectField label={tc('filterByStatus')} className="config-select product-select-trigger" value={status || ALL} onChange={value => { setStatus(value === ALL ? '' : value as RecordStatus); setPage(1) }} placeholder={tc('allStatuses')} options={[{ value: ALL, label: tc('allStatuses') }, { value: 'active', label: tc('active') }, { value: 'inactive', label: tc('inactive') }]} /><span className="record-count">{t('countCategories', { count: state.total })}</span></div>
       <div className="table-card"><div className="table-scroll"><Table>
-        <TableHeader><TableRow><TableHead>Category</TableHead><TableHead>Gujarati</TableHead><TableHead>Order</TableHead><TableHead>Status</TableHead><TableHead scope="col" aria-label="Actions" /></TableRow></TableHeader>
+        <TableHeader><TableRow><TableHead>{t('category')}</TableHead><TableHead>{t('gujarati')}</TableHead><TableHead>{t('order')}</TableHead><TableHead>{t('status')}</TableHead><TableHead scope="col" aria-label={t('actions')} /></TableRow></TableHeader>
         <TableBody>
           {state.rows.map(item => <TableRow key={item.id}>
             <TableCell><Button variant="ghost" className="table-link" onClick={() => setEditing(item)}>{item.name}</Button></TableCell>
             <TableCell>{item.nameGu || '—'}</TableCell>
             <TableCell>{item.sortOrder}</TableCell>
-            <TableCell><StatusBadge status={item.status}>{item.status === 'active' ? 'Active' : 'Inactive'}</StatusBadge></TableCell>
+            <TableCell><StatusBadge status={item.status}>{item.status === 'active' ? tc('active') : tc('inactive')}</StatusBadge></TableCell>
             <TableCell><RecordRowActions name={item.name} active={item.status === 'active'} onEdit={() => setEditing(item)} onToggle={() => void switchStatus(item, item.status === 'active' ? 'inactive' : 'active')} onDelete={() => setDeleting(item)} /></TableCell>
           </TableRow>)}
-          {state.rows.length === 0 && <TableRow><TableCell colSpan={5}><div className="empty-table">{filtered ? 'No categories match your search and filters.' : 'No categories yet.'}{!filtered && <Button variant="link" className="text-button" onClick={() => setEditing(null)}>Create the first category</Button>}</div></TableCell></TableRow>}
+          {state.rows.length === 0 && <TableRow><TableCell colSpan={5}><div className="empty-table">{filtered ? t('noMatch') : t('noneYet')}{!filtered && <Button variant="link" className="text-button" onClick={() => setEditing(null)}>{t('createFirst')}</Button>}</div></TableCell></TableRow>}
         </TableBody>
       </Table></div>
-      <div className="table-footer"><span>Showing {state.total ? (page - 1) * PAGE_SIZE + 1 : 0}–{Math.min(page * PAGE_SIZE, state.total)} of {state.total}</span><div><TablePagination page={Math.min(page, pageCount)} pageCount={pageCount} onPageChange={setPage} /></div></div></div>
+      <div className="table-footer"><span>{t('showing', { from: state.total ? (page - 1) * PAGE_SIZE + 1 : 0, to: Math.min(page * PAGE_SIZE, state.total), total: state.total })}</span><div><TablePagination page={Math.min(page, pageCount)} pageCount={pageCount} onPageChange={setPage} /></div></div></div>
     </section>
     {editing !== undefined && <CategoryDialog key={editing?.id ?? 'new'} category={editing} nextSortOrder={state.rows.length ? Math.max(...state.rows.map(item => item.sortOrder)) + 1 : 1} onClose={() => setEditing(undefined)} onDone={refresh} />}
-    {deleting && <DeleteRecordDialog target={deleting} noun="category" remove={id => categoryApi.remove(id)} deactivate={id => categoryApi.setStatus(id, 'inactive', true)} onClose={() => setDeleting(null)} onChanged={refresh} />}
+    {deleting && <DeleteRecordDialog target={deleting} noun={t('noun')} remove={id => categoryApi.remove(id)} deactivate={id => categoryApi.setStatus(id, 'inactive', true)} onClose={() => setDeleting(null)} onChanged={refresh} />}
     <InUseDialog name={pending?.category.name ?? ''} usages={pending?.usages ?? []} open={Boolean(pending)} onCancel={() => setPending(null)} onConfirm={() => { if (pending) void switchStatus(pending.category, 'inactive', true) }} />
   </div>
 }

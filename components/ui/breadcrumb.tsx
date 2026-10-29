@@ -1,5 +1,6 @@
 import * as React from "react"
 import { cn } from "cn"
+import { tc } from "@/lib/i18n/common"
 import { ChevronRight, MoreHorizontal } from "lucide-react"
 import { Slot } from "radix-ui"
 
@@ -92,7 +93,7 @@ function BreadcrumbEllipsis({
       {...props}
     >
       <MoreHorizontal className="size-4" />
-      <span className="sr-only">More</span>
+      <span className="sr-only">{tc('more')}</span>
     </span>
   )
 }

@@ -16,12 +16,14 @@ import { windowState } from '@/lib/active-window'
 import { describeApiError } from '@/lib/api-errors'
 import { formatDisplayDate, todayInBusinessZone } from '@/lib/business-time'
 import { bannerApi } from './api'
+import { tc } from '@/lib/i18n/common'
+import { t } from './messages'
 import { useLinkTargets } from './links'
 import { BANNER_AUDIENCE_LABELS, BANNER_TAB_LABELS, BANNER_TYPES, BANNER_TYPE_DESCRIPTIONS, BANNER_TYPE_LABELS, isBannerType, type Banner, type BannerType } from './types'
 
 const schedule = (banner: Banner) => {
-  if (!banner.startDate && !banner.endDate) return 'Always'
-  return `${banner.startDate ? formatDisplayDate(banner.startDate) : 'Now'} – ${banner.endDate ? formatDisplayDate(banner.endDate) : 'No end'}`
+  if (!banner.startDate && !banner.endDate) return t('always')
+  return `${banner.startDate ? formatDisplayDate(banner.startDate) : t('now')} – ${banner.endDate ? formatDisplayDate(banner.endDate) : t('noEnd')}`
 }
 
 type LoadState = { status: 'loading' } | { status: 'error'; message: string } | { status: 'ready'; banners: Banner[] }
@@ -57,7 +59,7 @@ export function BannerWorkspace() {
   }
 
   if (state.status === 'loading') return <PageSkeleton />
-  if (state.status === 'error') return <div className="product-state" role="alert"><strong>Banners could not be loaded</strong><span>{state.message}</span><Button className="secondary-button" onClick={() => { setState({ status: 'loading' }); reload() }}>Try again</Button></div>
+  if (state.status === 'error') return <div className="product-state" role="alert"><strong>{t('loadFailed')}</strong><span>{state.message}</span><Button className="secondary-button" onClick={() => { setState({ status: 'loading' }); reload() }}>{tc('tryAgain')}</Button></div>
 
   const { banners } = state
   const today = todayInBusinessZone()
@@ -66,17 +68,17 @@ export function BannerWorkspace() {
   const label = BANNER_TYPE_LABELS[activeType]
   const switchTab = (type: string) => { setQuery(''); setStatus('all'); router.replace(`/content/banners?type=${type}`) }
   const toggle = (banner: Banner) => {
-    if (banner.status === 'inactive') void changeStatus(banner, 'active', `${label} activated.`)
+    if (banner.status === 'inactive') void changeStatus(banner, 'active', t('activated', { label }))
     else setDeactivating(banner)
   }
 
   return <div className="workspace-page">
     <header className="page-header">
-      <div><PageBreadcrumbs items={[{ label: 'Content' }, { label: 'Banners' }]} /><h1>Banners</h1><p className="page-description">Promotions and notices shown on the customer app’s home screen. Each type has its own tab.</p></div>
-      <Link className="primary-button" href={`/content/banners/new?type=${activeType}`}><Plus size={16} /> Add {label}</Link>
+      <div><PageBreadcrumbs items={[{ label: t('content') }, { label: t('banners') }]} /><h1>{t('banners')}</h1><p className="page-description">{t('description')}</p></div>
+      <Link className="primary-button" href={`/content/banners/new?type=${activeType}`}><Plus size={16} /> {t('addLabel', { label })}</Link>
     </header>
     <Tabs value={activeType} onValueChange={switchTab}>
-      <TabsList aria-label="Banner types">
+      <TabsList aria-label={t('bannerTypes')}>
         {BANNER_TYPES.map(type => <TabsTrigger key={type} value={type}>{BANNER_TAB_LABELS[type]} <span className="tab-count">{banners.filter(item => item.type === type).length}</span></TabsTrigger>)}
       </TabsList>
       <TabsContent value={activeType}>
@@ -84,10 +86,10 @@ export function BannerWorkspace() {
           <p className="product-hint">{BANNER_TYPE_DESCRIPTIONS[activeType]}</p>
           <RecordListToolbar noun={BANNER_TAB_LABELS[activeType].toLowerCase()} query={query} onQueryChange={setQuery} status={status} onStatusChange={setStatus} count={filtered.length} />
           <div className="table-card"><div className="table-scroll"><Table>
-            <TableHeader><TableRow><TableHead>Banner</TableHead><TableHead>Shown to</TableHead><TableHead>Opens</TableHead><TableHead>Runs</TableHead><TableHead>Order</TableHead><TableHead>Status</TableHead><TableHead scope="col" aria-label="Actions" /></TableRow></TableHeader>
+            <TableHeader><TableRow><TableHead>{t('banner')}</TableHead><TableHead>{t('shownTo')}</TableHead><TableHead>{t('opens')}</TableHead><TableHead>{t('runs')}</TableHead><TableHead>{t('order')}</TableHead><TableHead>{t('status')}</TableHead><TableHead scope="col" aria-label={t('actions')} /></TableRow></TableHeader>
             <TableBody>
               {filtered.map(item => <TableRow key={item.id}>
-                <TableCell><Link className="table-link" href={`/content/banners/${item.id}/edit`}>{item.titleEn}</Link><small className="cell-note">{item.titleGu ? 'English + Gujarati' : 'English only'}</small></TableCell>
+                <TableCell><Link className="table-link" href={`/content/banners/${item.id}/edit`}>{item.titleEn}</Link><small className="cell-note">{item.titleGu ? t('englishGujarati') : t('englishOnly')}</small></TableCell>
                 <TableCell>{BANNER_AUDIENCE_LABELS[item.audience]}</TableCell>
                 <TableCell>{linkTargets.label(item)}</TableCell>
                 <TableCell>{schedule(item)}</TableCell>
@@ -95,12 +97,12 @@ export function BannerWorkspace() {
                 <TableCell><WindowStatusBadge state={windowState(item, today)} /></TableCell>
                 <TableCell><RecordRowActions name={item.titleEn} active={item.status === 'active'} onEdit={() => router.push(`/content/banners/${item.id}/edit`)} onToggle={() => toggle(item)} /></TableCell>
               </TableRow>)}
-              {filtered.length === 0 && <TableRow><TableCell colSpan={7}><div className="empty-table">{inTab.length ? `No ${BANNER_TAB_LABELS[activeType].toLowerCase()} match your search and filters.` : `No ${BANNER_TAB_LABELS[activeType].toLowerCase()} yet.`}{inTab.length === 0 && <Link className="text-button" href={`/content/banners/new?type=${activeType}`}>Add the first {label.toLowerCase()}</Link>}</div></TableCell></TableRow>}
+              {filtered.length === 0 && <TableRow><TableCell colSpan={7}><div className="empty-table">{inTab.length ? t('noMatch', { noun: BANNER_TAB_LABELS[activeType].toLowerCase() }) : t('noneYet', { noun: BANNER_TAB_LABELS[activeType].toLowerCase() })}{inTab.length === 0 && <Link className="text-button" href={`/content/banners/new?type=${activeType}`}>{t('addFirst', { label: label.toLowerCase() })}</Link>}</div></TableCell></TableRow>}
             </TableBody>
           </Table></div></div>
         </section>
       </TabsContent>
     </Tabs>
-    <DeactivateDialog open={Boolean(deactivating)} noun={label.toLowerCase()} name={deactivating?.titleEn ?? ''} onCancel={() => setDeactivating(null)} onConfirm={() => { const target = deactivating; setDeactivating(null); if (target) void changeStatus(target, 'inactive', `${label} deactivated.`) }} consequence="It disappears from the customer app’s home screen straight away. You can activate it again any time." />
+    <DeactivateDialog open={Boolean(deactivating)} noun={label.toLowerCase()} name={deactivating?.titleEn ?? ''} onCancel={() => setDeactivating(null)} onConfirm={() => { const target = deactivating; setDeactivating(null); if (target) void changeStatus(target, 'inactive', t('deactivated', { label })) }} consequence={t('deactivateConsequence')} />
   </div>
 }

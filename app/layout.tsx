@@ -1,6 +1,8 @@
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 import { Geist, Plus_Jakarta_Sans } from 'next/font/google'
+import { LanguageProvider } from '@/lib/i18n/LanguageProvider'
+import { requestLanguage } from '@/lib/i18n/server'
 import './globals.css'
 
 const plusJakartaSans = Plus_Jakarta_Sans({
@@ -37,15 +39,17 @@ export const viewport: Viewport = {
   ],
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  // The language comes from this browser's cookie, so the first page is drawn in it (no English flash before Gujarati).
+  const language = await requestLanguage()
   return (
-    <html lang="en" className={`${geist.variable} ${plusJakartaSans.variable}`}>
+    <html lang={language} className={`${geist.variable} ${plusJakartaSans.variable}`}>
       <body className="antialiased" suppressHydrationWarning>
-        {children}
+        <LanguageProvider initial={language}>{children}</LanguageProvider>
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>

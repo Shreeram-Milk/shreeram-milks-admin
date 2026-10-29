@@ -10,6 +10,8 @@ import { PageSkeleton } from '@/components/shared/PageSkeleton'
 import { describeApiError } from '@/lib/api-errors'
 import { notificationApi, type MessageTemplate } from './api'
 import { TemplateDialog } from './components/TemplateDialog'
+import { tc } from '@/lib/i18n/common'
+import { eventText, t } from './messages'
 
 type LoadState = { status: 'loading' } | { status: 'error'; message: string } | { status: 'ready'; templates: MessageTemplate[] }
 
@@ -38,7 +40,7 @@ export function TemplatesWorkspace() {
     try {
       const updated = await notificationApi.saveTemplate(template.key, { title: template.title, titleGujarati: template.titleGujarati, body: template.body, bodyGujarati: template.bodyGujarati, enabled: !template.enabled })
       replace(updated)
-      toast.success(updated.enabled ? `"${template.label}" is on.` : `"${template.label}" is off. Customers will not receive it.`)
+      toast.success(updated.enabled ? t('isOn', { name: eventText(template).label }) : t('isOff', { name: eventText(template).label }))
     } catch (failure) {
       toast.error(describeApiError(failure))
     } finally {
@@ -47,22 +49,22 @@ export function TemplatesWorkspace() {
   }
 
   if (state.status === 'loading') return <PageSkeleton />
-  if (state.status === 'error') return <div className="product-state" role="alert"><strong>Messages could not be loaded</strong><span>{state.message}</span><Button className="secondary-button" variant="outline" onClick={() => { setState({ status: 'loading' }); setReloadKey(count => count + 1) }}>Try again</Button></div>
+  if (state.status === 'error') return <div className="product-state" role="alert"><strong>{t('loadFailed')}</strong><span>{state.message}</span><Button className="secondary-button" variant="outline" onClick={() => { setState({ status: 'loading' }); setReloadKey(count => count + 1) }}>{tc('tryAgain')}</Button></div>
 
   return <div className="workspace-page">
     <header className="page-header">
-      <div><PageBreadcrumbs items={[{ label: 'Notifications' }, { label: 'Automatic messages' }]} /><h1>Automatic messages</h1><p className="page-description">What customers are told when something happens. You can change the words and switch a message off. Customers also see every message in the bell inside the app.</p></div>
+      <div><PageBreadcrumbs items={[{ label: t('notifications') }, { label: t('automaticMessages') }]} /><h1>{t('automaticMessages')}</h1><p className="page-description">{t('templatesDescription')}</p></div>
     </header>
     <section className="config-section">
       <div className="table-card"><div className="table-scroll"><Table>
-        <TableHeader><TableRow><TableHead>When it is sent</TableHead><TableHead>What customers read</TableHead><TableHead>Gujarati</TableHead><TableHead>On</TableHead><TableHead scope="col" aria-label="Actions" /></TableRow></TableHeader>
+        <TableHeader><TableRow><TableHead>{t('whenSent')}</TableHead><TableHead>{t('whatRead')}</TableHead><TableHead>{t('gujarati')}</TableHead><TableHead>{t('on')}</TableHead><TableHead scope="col" aria-label={t('actions')} /></TableRow></TableHeader>
         <TableBody>
           {state.templates.map(item => <TableRow key={item.key}>
-            <TableCell><strong>{item.label}</strong><small className="cell-note">{item.trigger}</small></TableCell>
+            <TableCell><strong>{eventText(item).label}</strong><small className="cell-note">{eventText(item).trigger}</small></TableCell>
             <TableCell><strong>{item.title}</strong><small className="cell-note">{item.body}</small></TableCell>
-            <TableCell>{item.titleGujarati && item.bodyGujarati ? 'Added' : 'English is used'}</TableCell>
-            <TableCell><Switch checked={item.enabled} disabled={saving === item.key} onCheckedChange={() => void toggle(item)} aria-label={`${item.label} is ${item.enabled ? 'on' : 'off'}`} /></TableCell>
-            <TableCell><Button variant="outline" className="secondary-button" onClick={() => setEditing(item)}>Edit words</Button></TableCell>
+            <TableCell>{item.titleGujarati && item.bodyGujarati ? t('added') : t('englishUsed')}</TableCell>
+            <TableCell><Switch checked={item.enabled} disabled={saving === item.key} onCheckedChange={() => void toggle(item)} aria-label={t('switchState', { name: eventText(item).label, state: item.enabled ? t('stateOn') : t('stateOff') })} /></TableCell>
+            <TableCell><Button variant="outline" className="secondary-button" onClick={() => setEditing(item)}>{t('editWords')}</Button></TableCell>
           </TableRow>)}
         </TableBody>
       </Table></div></div>

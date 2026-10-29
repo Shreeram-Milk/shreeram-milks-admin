@@ -1,4 +1,6 @@
 import { apiRequest } from '@/lib/api-client'
+import { liveLabels } from '@/lib/i18n/core'
+import { t, type PaymentKey } from './messages'
 import type { ListResult } from '../configuration/api'
 
 export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded' | 'partially_refunded'
@@ -24,33 +26,33 @@ export type PaymentDetail = OnlinePayment & {
 /** How a payment was made, as PhonePe reported it. Null until it is paid (and for payments made before this was recorded). */
 export type PaymentMethod = { mode: string; instrument: string; bank: string; bankReference: string }
 
-const MODE_LABELS: Record<string, string> = {
-  UPI_INTENT: 'UPI app', UPI_COLLECT: 'UPI request', UPI_QR: 'UPI QR code', CARD: 'Card', NET_BANKING: 'Net banking', TOKEN: 'Saved card', WALLET: 'PhonePe wallet', TEST: 'Test payment (no money moved)',
-}
-const INSTRUMENT_LABELS: Record<string, string> = { DEBIT_CARD: 'Debit card', CREDIT_CARD: 'Credit card', ACCOUNT: 'Bank account', NET_BANKING: 'Net banking', WALLET: 'Wallet' }
+const MODE_LABELS: Readonly<Record<string, string>> = liveLabels(t, {
+  UPI_INTENT: 'modeUpiIntent', UPI_COLLECT: 'modeUpiCollect', UPI_QR: 'modeUpiQr', CARD: 'modeCard', NET_BANKING: 'modeNetBanking', TOKEN: 'modeToken', WALLET: 'modeWallet', TEST: 'modeTest',
+})
+const INSTRUMENT_LABELS: Readonly<Record<string, string>> = liveLabels(t, { DEBIT_CARD: 'instDebit', CREDIT_CARD: 'instCredit', ACCOUNT: 'instAccount', NET_BANKING: 'instNetBanking', WALLET: 'instWallet' })
 
 /** "Debit card", "UPI app · Bank account", "Net banking · HDFC Bank": how a payment was made, in plain words. */
 export function describeMethod(mode: string | null | undefined, instrument?: string | null, bank?: string | null): string {
-  if (!mode) return 'Not recorded'
+  if (!mode) return t('notRecorded')
   const how = mode === 'CARD' && instrument && INSTRUMENT_LABELS[instrument] ? INSTRUMENT_LABELS[instrument] : (MODE_LABELS[mode] ?? mode.replaceAll('_', ' ').toLowerCase())
   const through = mode.startsWith('UPI') && instrument && INSTRUMENT_LABELS[instrument] ? INSTRUMENT_LABELS[instrument] : ''
   return [how, through, bank ?? ''].filter(Boolean).join(' · ')
 }
 /** What the bank's reference is called for this method. */
-export const bankReferenceLabel = (mode: string | null | undefined): string => (mode?.startsWith('UPI') ? 'UTR (bank reference)' : 'Bank reference')
+export const bankReferenceLabel = (mode: string | null | undefined): string => (mode?.startsWith('UPI') ? t('utr') : t('bankReference'))
 
 export type PaymentListParams = { search: string; status: string; purpose: string; page: number; pageSize: number }
 
-export const STATUS_LABELS: Record<PaymentStatus, string> = { pending: 'Waiting for PhonePe', paid: 'Paid', failed: 'Failed', refunded: 'Refunded', partially_refunded: 'Partly refunded' }
+export const STATUS_LABELS = liveLabels(t, { pending: 'statusPending', paid: 'statusPaid', failed: 'statusFailed', refunded: 'statusRefunded', partially_refunded: 'statusPartly' } satisfies Record<PaymentStatus, PaymentKey>)
 export const STATUS_TONE: Record<PaymentStatus, 'pending' | 'delivered' | 'cancelled'> = { pending: 'pending', paid: 'delivered', failed: 'cancelled', refunded: 'cancelled', partially_refunded: 'pending' }
-export const PURPOSE_LABELS: Record<PaymentPurpose, string> = { order: 'Order', credit_settlement: 'Credit payment request', subscription: 'Subscription or trial (paid upfront)' }
-export const FULFILMENT_LABELS: Record<Fulfilment, string> = { none: '—', fulfilled: 'Delivered (orders placed / request settled)', refund_due: 'Refund needed' }
+export const PURPOSE_LABELS = liveLabels(t, { order: 'purposeOrder', credit_settlement: 'purposeCredit', subscription: 'purposeSubscription' } satisfies Record<PaymentPurpose, PaymentKey>)
+export const FULFILMENT_LABELS = liveLabels(t, { none: 'fulfilNone', fulfilled: 'fulfilDone', refund_due: 'fulfilRefund' } satisfies Record<Fulfilment, PaymentKey>)
 /** Each step of a payment's history, in plain words. */
-export const ACTIVITY_LABELS: Record<ActivityKind, string> = {
-  started: 'Customer started paying', provider_order_created: 'PhonePe payment created', provider_error: 'PhonePe could not be reached',
-  status_checked: 'Checked with PhonePe', webhook_received: 'PhonePe sent a notification', paid: 'PhonePe confirmed the payment',
-  failed: 'Payment failed', fulfilled: 'Orders placed / request settled', refund_due: 'Refund needed (see Money → Owed to customers)',
-}
+export const ACTIVITY_LABELS = liveLabels(t, {
+  started: 'actStarted', provider_order_created: 'actProviderOrder', provider_error: 'actProviderError',
+  status_checked: 'actStatusChecked', webhook_received: 'actWebhook', paid: 'actPaid',
+  failed: 'actFailed', fulfilled: 'actFulfilled', refund_due: 'actRefundDue',
+} satisfies Record<ActivityKind, PaymentKey>)
 
 export const paymentAdminApi = {
   list({ search, status, purpose, page, pageSize }: PaymentListParams): Promise<ListResult<OnlinePayment>> {

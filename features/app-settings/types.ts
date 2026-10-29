@@ -1,3 +1,4 @@
+import { appSettingsMessages, t } from './messages'
 /**
  * Switches for features the app already has. They show or hide an existing capability; they cannot add new
  * native functionality. WhatsApp is controlled in the Support section (`whatsappEnabled`), so it is not repeated here.
@@ -11,12 +12,15 @@ export type FeatureFlags = {
   showSeasonalBanner: boolean
 }
 
-export const FEATURE_FLAG_LABELS: Record<keyof FeatureFlags, { label: string; detail: string }> = {
-  showTrials: { label: 'Trial packs', detail: 'Lets customers start a trial from a product page.' },
-  showSubscriptions: { label: 'Subscriptions', detail: 'Lets customers subscribe, and shows the Subscriptions tab.' },
-  showOffers: { label: 'Offers and discounts', detail: 'Shows offers and discount lines in the app.' },
-  showQualityReports: { label: 'Quality reports', detail: 'Shows lab reports and certificates.' },
-  showSeasonalBanner: { label: 'Home banners', detail: 'Shows promotions and notices on the home screen.' },
+type FlagKey = keyof typeof appSettingsMessages.en
+// The words are read when used, so they follow the admin's language.
+const flag = (label: FlagKey, detail: FlagKey) => ({ get label() { return t(label) }, get detail() { return t(detail) } })
+export const FEATURE_FLAG_LABELS: Record<keyof FeatureFlags, { readonly label: string; readonly detail: string }> = {
+  showTrials: flag('flagTrials', 'flagTrialsDetail'),
+  showSubscriptions: flag('flagSubscriptions', 'flagSubscriptionsDetail'),
+  showOffers: flag('flagOffers', 'flagOffersDetail'),
+  showQualityReports: flag('flagQuality', 'flagQualityDetail'),
+  showSeasonalBanner: flag('flagBanners', 'flagBannersDetail'),
 }
 export const FEATURE_FLAG_KEYS = Object.keys(FEATURE_FLAG_LABELS) as Array<keyof FeatureFlags>
 

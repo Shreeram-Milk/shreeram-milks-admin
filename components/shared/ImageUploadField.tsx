@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { ImagePlus, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { describeApiError } from '@/lib/api-errors'
+import { tc } from '@/lib/i18n/common'
 import { MEDIA_RULES, imageProblem, uploadImage, type MediaPurpose } from '@/lib/media-upload'
 
 type Props = {
@@ -50,7 +51,7 @@ export function ImageUploadField({ purpose, label, hint, currentUrl, hasImage, o
       if (onPreview) onPreview(id, url)
       else setPreview(url)
       setRemoved(false)
-      toast.success(`${label} uploaded. Save to keep it.`)
+      toast.success(tc('imageUploaded', { label }))
     } catch (failure) {
       const message = describeApiError(failure)
       setError(message)
@@ -61,7 +62,7 @@ export function ImageUploadField({ purpose, label, hint, currentUrl, hasImage, o
       if (input.current) input.current.value = ''
     }
   }
-  const remove = () => { setPreview(null); setRemoved(true); setError(''); onChange(null); toast.success(`${label} removed. Save to apply this.`) }
+  const remove = () => { setPreview(null); setRemoved(true); setError(''); onChange(null); toast.success(tc('imageRemoved', { label })) }
   const shownError = error || fieldError
 
   return <div className="banner-image-field">
@@ -69,12 +70,12 @@ export function ImageUploadField({ purpose, label, hint, currentUrl, hasImage, o
     <div className="banner-image-box">
       {/* A plain <img>: the source is a local preview or a short-lived signed link, which next/image cannot optimise. */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      {shown ? <img src={shown} alt={`${label} preview`} className="banner-image-preview" /> : <span className="banner-image-empty"><ImagePlus size={22} aria-hidden="true" />No {noun}</span>}
+      {shown ? <img src={shown} alt={tc('imagePreview', { label })} className="banner-image-preview" /> : <span className="banner-image-empty"><ImagePlus size={22} aria-hidden="true" />{tc('noImage', { noun })}</span>}
     </div>
     <div className="banner-image-actions">
-      <input ref={input} type="file" accept={MEDIA_RULES[purpose].types.join(',')} hidden onChange={event => void choose(event.target.files?.[0])} aria-label={`Choose a ${noun}`} />
-      <Button type="button" variant="outline" className="secondary-button" disabled={uploading} onClick={() => input.current?.click()}>{uploading ? 'Uploading…' : shown || hasImage ? `Change ${noun}` : `Choose ${noun}`}</Button>
-      {removable && (shown || (hasImage && !removed)) && <Button type="button" variant="outline" className="secondary-button" disabled={uploading} onClick={remove}><Trash2 size={15} /> Remove</Button>}
+      <input ref={input} type="file" accept={MEDIA_RULES[purpose].types.join(',')} hidden onChange={event => void choose(event.target.files?.[0])} aria-label={tc('chooseAImage', { noun })} />
+      <Button type="button" variant="outline" className="secondary-button" disabled={uploading} onClick={() => input.current?.click()}>{uploading ? tc('uploading') : shown || hasImage ? tc('changeImage', { noun }) : tc('chooseImage', { noun })}</Button>
+      {removable && (shown || (hasImage && !removed)) && <Button type="button" variant="outline" className="secondary-button" disabled={uploading} onClick={remove}><Trash2 size={15} /> {tc('remove')}</Button>}
     </div>
     <p className="product-hint">{hint}</p>
     {shownError && <p className="field-error" role="alert">{shownError}</p>}

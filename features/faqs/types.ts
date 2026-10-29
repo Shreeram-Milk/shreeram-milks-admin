@@ -1,8 +1,10 @@
+import { liveLabels } from '@/lib/i18n/core'
+import { t } from './messages'
 import type { SupportCategory } from '../support-tickets/categories'
 
 export type FaqStatus = 'draft' | 'published' | 'inactive'
 
-export const FAQ_STATUS_LABELS: Record<FaqStatus, string> = { draft: 'Draft', published: 'Published', inactive: 'Inactive' }
+export const FAQ_STATUS_LABELS = liveLabels(t, { draft: 'statusDraft', published: 'statusPublished', inactive: 'statusInactive' })
 /** Most featured questions the app's Help screen can highlight. */
 export const MAX_FEATURED_FAQS = 5
 export const MAX_KEYWORDS = 10

@@ -17,6 +17,8 @@ import { SUPPORT_CATEGORIES, SUPPORT_CATEGORY_LABELS, type SupportCategory } fro
 import { FaqDialog } from './components/FaqDialog'
 import { faqApi } from './api'
 import { FAQ_STATUS_LABELS, type Faq, type FaqStatus } from './types'
+import { tc } from '@/lib/i18n/common'
+import { t } from './messages'
 
 const PAGE_SIZE = 10
 const ALL = '__all__'
@@ -53,42 +55,42 @@ export function FaqWorkspace() {
   }
 
   if (state.status === 'loading') return <PageSkeleton />
-  if (state.status === 'error') return <div className="product-state" role="alert"><strong>Questions could not be loaded</strong><span>{state.message}</span><Button className="secondary-button" onClick={() => { setState({ status: 'loading' }); refresh() }}>Try again</Button></div>
+  if (state.status === 'error') return <div className="product-state" role="alert"><strong>{t('loadFailed')}</strong><span>{state.message}</span><Button className="secondary-button" onClick={() => { setState({ status: 'loading' }); refresh() }}>{tc('tryAgain')}</Button></div>
 
   const { result } = state
   const pageCount = Math.max(1, Math.ceil(result.total / PAGE_SIZE))
   const filtered = Boolean(search || topic || status)
   return <div className="workspace-page products-page">
     <header className="page-header">
-      <div><PageBreadcrumbs items={[{ label: 'Content' }, { label: 'Help Center' }]} /><h1>Help Center</h1><p className="page-description">Questions and answers in the customer app’s Help &amp; Support screen, in English and Gujarati.</p></div>
-      <Button className="primary-button" onClick={() => setEditing(null)}><Plus size={15} /> Add Question</Button>
+      <div><PageBreadcrumbs items={[{ label: t('content') }, { label: t('title') }]} /><h1>{t('title')}</h1><p className="page-description">{t('description')}</p></div>
+      <Button className="primary-button" onClick={() => setEditing(null)}><Plus size={15} /> {t('addQuestion')}</Button>
     </header>
     <section className="product-list-section">
-      <ListSearchInput label="Search questions" value={search} onCommit={value => { setSearch(value); setPage(1) }} placeholder="Search by question, answer, or keyword..." />
+      <ListSearchInput label={t('searchQuestions')} value={search} onCommit={value => { setSearch(value); setPage(1) }} placeholder={t('searchPlaceholder')} />
       <div className="product-filter-row">
-        <SelectField label="Topic" className="product-select-trigger" value={topic} onChange={value => { setTopic(value === ALL ? '' : value as SupportCategory); setPage(1) }} placeholder="All topics" options={[{ value: ALL, label: 'All topics' }, ...SUPPORT_CATEGORIES.map(category => ({ value: category.id, label: category.labelEn }))]} />
-        <SelectField label="Status" className="product-select-trigger" value={status} onChange={value => { setStatus(value === ALL ? '' : value as FaqStatus); setPage(1) }} placeholder="All statuses" options={[{ value: ALL, label: 'All statuses' }, ...(Object.keys(FAQ_STATUS_LABELS) as FaqStatus[]).map(value => ({ value, label: FAQ_STATUS_LABELS[value] }))]} />
+        <SelectField label={t('topic')} className="product-select-trigger" value={topic} onChange={value => { setTopic(value === ALL ? '' : value as SupportCategory); setPage(1) }} placeholder={t('allTopics')} options={[{ value: ALL, label: t('allTopics') }, ...SUPPORT_CATEGORIES.map(category => ({ value: category.id, label: SUPPORT_CATEGORY_LABELS[category.id] }))]} />
+        <SelectField label={t('status')} className="product-select-trigger" value={status} onChange={value => { setStatus(value === ALL ? '' : value as FaqStatus); setPage(1) }} placeholder={t('allStatuses')} options={[{ value: ALL, label: t('allStatuses') }, ...(Object.keys(FAQ_STATUS_LABELS) as FaqStatus[]).map(value => ({ value, label: FAQ_STATUS_LABELS[value] }))]} />
       </div>
       {result.total === 0
-        ? <div className="product-state"><strong>{filtered ? 'No questions match these filters' : 'No questions yet'}</strong><span>{filtered ? 'Try changing your search or filters.' : 'Add the first question customers are likely to ask.'}</span></div>
+        ? <div className="product-state"><strong>{filtered ? t('noMatch') : t('noneYet')}</strong><span>{filtered ? t('tryChanging') : t('addFirst')}</span></div>
         : <>
           <div className="table-card product-list-table-card"><Table className="config-table">
-            <TableHeader><TableRow><TableHead>Question</TableHead><TableHead>Topic</TableHead><TableHead>Order</TableHead><TableHead>Gujarati</TableHead><TableHead>Status</TableHead><TableHead scope="col" aria-label="Actions" /></TableRow></TableHeader>
+            <TableHeader><TableRow><TableHead>{t('question')}</TableHead><TableHead>{t('topic')}</TableHead><TableHead>{t('order')}</TableHead><TableHead>{t('gujarati')}</TableHead><TableHead>{t('status')}</TableHead><TableHead scope="col" aria-label={t('actions')} /></TableRow></TableHeader>
             <TableBody>{result.rows.map(faq => <TableRow key={faq.id}>
-              <TableCell><Button variant="ghost" className="table-link" onClick={() => setEditing(faq)}>{faq.featured && <Star size={13} aria-label="Featured" />}{faq.questionEn}</Button>{faq.searchKeywords.length > 0 && <small className="cell-note">{faq.searchKeywords.join(', ')}</small>}</TableCell>
+              <TableCell><Button variant="ghost" className="table-link" onClick={() => setEditing(faq)}>{faq.featured && <Star size={13} aria-label={t('featured')} />}{faq.questionEn}</Button>{faq.searchKeywords.length > 0 && <small className="cell-note">{faq.searchKeywords.join(', ')}</small>}</TableCell>
               <TableCell>{SUPPORT_CATEGORY_LABELS[faq.topic]}</TableCell>
               <TableCell>{faq.sortOrder}</TableCell>
-              <TableCell>{faq.questionGu && faq.answerGu ? 'Added' : 'Missing'}</TableCell>
+              <TableCell>{faq.questionGu && faq.answerGu ? t('added') : t('missing')}</TableCell>
               <TableCell><StatusBadge status={BADGE_STATUS[faq.status]}>{FAQ_STATUS_LABELS[faq.status]}</StatusBadge></TableCell>
-              <TableCell><div className="row-actions"><DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="row-menu" aria-label={`Actions for ${faq.questionEn}`}><MoreHorizontal size={16} /></Button></DropdownMenuTrigger>
+              <TableCell><div className="row-actions"><DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="row-menu" aria-label={t('actionsFor', { name: faq.questionEn })}><MoreHorizontal size={16} /></Button></DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onSelect={() => setEditing(faq)}><Edit2 /> Edit</DropdownMenuItem>
-                  {faq.status !== 'published' && <DropdownMenuItem onSelect={() => void setFaqStatus(faq, 'published', 'Question published.')}><Send /> Publish</DropdownMenuItem>}
-                  {faq.status === 'published' && <DropdownMenuItem onSelect={() => void setFaqStatus(faq, 'inactive', 'Question hidden from the app.')}><EyeOff /> Hide from app</DropdownMenuItem>}
+                  <DropdownMenuItem onSelect={() => setEditing(faq)}><Edit2 /> {t('edit')}</DropdownMenuItem>
+                  {faq.status !== 'published' && <DropdownMenuItem onSelect={() => void setFaqStatus(faq, 'published', t('published'))}><Send /> {t('publish')}</DropdownMenuItem>}
+                  {faq.status === 'published' && <DropdownMenuItem onSelect={() => void setFaqStatus(faq, 'inactive', t('hidden'))}><EyeOff /> {t('hide')}</DropdownMenuItem>}
                 </DropdownMenuContent></DropdownMenu></div></TableCell>
             </TableRow>)}</TableBody>
           </Table></div>
-          <div className="product-pagination"><span>{result.total} {result.total === 1 ? 'question' : 'questions'} · Page {Math.min(page, pageCount)} of {pageCount}</span><TablePagination page={Math.min(page, pageCount)} pageCount={pageCount} onPageChange={setPage} /></div>
+          <div className="product-pagination"><span>{t(result.total === 1 ? 'countOne' : 'countMany', { count: result.total })}{t('pageOf', { page: Math.min(page, pageCount), count: pageCount })}</span><TablePagination page={Math.min(page, pageCount)} pageCount={pageCount} onPageChange={setPage} /></div>
         </>}
     </section>
     {editing !== undefined && <FaqDialog key={editing?.id ?? 'new'} faq={editing} nextSortOrder={0} onClose={() => setEditing(undefined)} onDone={refresh} />}

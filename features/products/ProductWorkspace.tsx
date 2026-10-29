@@ -11,11 +11,13 @@ import { productApi } from './api'
 import { ProductDetail } from './components/ProductDetail'
 import { ProductForm, type ProductReferences } from './components/ProductForm'
 import { ProductList } from './components/ProductList'
+import { t } from './messages'
+import { tc } from '@/lib/i18n/common'
 
 /** Shows the loading skeleton or a retry message until `state` is ready, then hands the data to `children`. */
 function WhenReady<T>({ state, reload, children }: { state: Loaded<T>; reload: () => void; children: (data: T) => ReactNode }) {
   if (state.status === 'loading') return <PageSkeleton />
-  if (state.status === 'error') return <div className="product-state" role="alert"><strong>The product could not be loaded</strong><span>{state.message}</span><Button className="secondary-button" onClick={reload}>Try again</Button><Link className="secondary-button" href="/products">Back to products</Link></div>
+  if (state.status === 'error') return <div className="product-state" role="alert"><strong>{t('productFailed')}</strong><span>{state.message}</span><Button className="secondary-button" onClick={reload}>{tc('tryAgain')}</Button><Link className="secondary-button" href="/products">{t('backToProducts')}</Link></div>
   return <>{children(state.data)}</>
 }
 

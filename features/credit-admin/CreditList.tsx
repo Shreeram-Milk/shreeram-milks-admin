@@ -10,10 +10,12 @@ import { PageSkeleton } from '@/components/shared/PageSkeleton'
 import { TablePagination } from '@/components/shared/TablePagination'
 import { useUrlListState } from '@/hooks/useUrlListState'
 import { describeApiError } from '@/lib/api-errors'
+import { tc } from '@/lib/i18n/common'
 import { formatTimestamp } from '@/lib/business-time'
 import { formatINR } from '@/lib/money'
 import { MoneyHeader } from '../money/MoneyHeader'
 import { creditAdminApi, type CreditAccount } from './api'
+import { t } from './messages'
 
 const PAGE_SIZE = 15
 const FILTERS = { show: ['owing'] } as const
@@ -37,28 +39,28 @@ export function CreditList() {
   }, [search, filters.show, page, reloadKey])
 
   if (state.status === 'loading') return <PageSkeleton />
-  if (state.status === 'error') return <div className="product-state" role="alert"><strong>Credit accounts could not be loaded</strong><span>{state.message}</span><Button className="secondary-button" variant="outline" onClick={() => { setState({ status: 'loading' }); setReloadKey(count => count + 1) }}>Try again</Button></div>
+  if (state.status === 'error') return <div className="product-state" role="alert"><strong>{t('listFailed')}</strong><span>{state.message}</span><Button className="secondary-button" variant="outline" onClick={() => { setState({ status: 'loading' }); setReloadKey(count => count + 1) }}>{tc('tryAgain')}</Button></div>
 
   const pageCount = Math.max(1, Math.ceil(state.total / PAGE_SIZE))
   return <div className="workspace-page products-page">
-    <MoneyHeader tab="credit" description="Customers who order now and pay later, up to a limit you set. To make someone a pay-later customer, change their type on their customer page." />
+    <MoneyHeader tab="credit" description={t('listDescription')} />
     <section className="product-list-section">
-      <ListSearchInput label="Search credit accounts" value={search} onCommit={value => update({ search: value })} placeholder="Search by name or phone..." />
-      <div className="product-filter-row"><SelectField label="Show" className="product-select-trigger" value={filters.show || ALL} onChange={value => update({ show: value === ALL ? null : value })} placeholder="All pay-later customers" options={[{ value: ALL, label: 'All pay-later customers' }, { value: 'owing', label: 'Only those who owe' }]} /></div>
+      <ListSearchInput label={t('searchAccounts')} value={search} onCommit={value => update({ search: value })} placeholder={t('searchPlaceholder')} />
+      <div className="product-filter-row"><SelectField label={t('show')} className="product-select-trigger" value={filters.show || ALL} onChange={value => update({ show: value === ALL ? null : value })} placeholder={t('allPayLater')} options={[{ value: ALL, label: t('allPayLater') }, { value: 'owing', label: t('onlyOwing') }]} /></div>
       {state.total === 0
-        ? <div className="product-state"><strong>{hasActiveFilters ? 'No credit accounts match' : 'No credit customers yet'}</strong><span>{hasActiveFilters ? 'Try changing your search or filter.' : 'Open a customer on the Customers page and set their type to Credit.'}</span>{hasActiveFilters ? <Button className="secondary-button" variant="outline" onClick={clear}>Clear filters</Button> : <Link className="secondary-button" href="/customers">Go to Customers</Link>}</div>
+        ? <div className="product-state"><strong>{hasActiveFilters ? t('noMatch') : t('noneYet')}</strong><span>{hasActiveFilters ? t('tryChanging') : t('howToAdd')}</span>{hasActiveFilters ? <Button className="secondary-button" variant="outline" onClick={clear}>{tc('clearFilters')}</Button> : <Link className="secondary-button" href="/customers">{t('goToCustomers')}</Link>}</div>
         : <>
           <div className="table-card product-list-table-card"><Table className="config-table">
-            <TableHeader><TableRow><TableHead>Customer</TableHead><TableHead>Owes</TableHead><TableHead>Limit</TableHead><TableHead>Room left</TableHead><TableHead>Last payment</TableHead></TableRow></TableHeader>
+            <TableHeader><TableRow><TableHead>{t('customer')}</TableHead><TableHead>{t('owes')}</TableHead><TableHead>{t('limit')}</TableHead><TableHead>{t('roomLeft')}</TableHead><TableHead>{t('lastPayment')}</TableHead></TableRow></TableHeader>
             <TableBody>{state.rows.map(account => <TableRow key={account.customerId}>
-              <TableCell><Link className="product-name-link" href={`/credit-accounts/${account.customerId}`}>{account.name.trim() || 'No name'}</Link><br /><small>{account.phone}{account.status === 'blocked' ? ' · Blocked' : ''}</small></TableCell>
+              <TableCell><Link className="product-name-link" href={`/credit-accounts/${account.customerId}`}>{account.name.trim() || t('noName')}</Link><br /><small>{account.phone}{account.status === 'blocked' ? t('blocked') : ''}</small></TableCell>
               <TableCell>{formatINR(account.owedPaise)}</TableCell>
-              <TableCell>{account.limitPaise === 0 ? <strong className="field-error">No limit set</strong> : formatINR(account.limitPaise)}</TableCell>
+              <TableCell>{account.limitPaise === 0 ? <strong className="field-error">{t('noLimit')}</strong> : formatINR(account.limitPaise)}</TableCell>
               <TableCell>{formatINR(account.remainingPaise)}</TableCell>
-              <TableCell>{account.lastPaymentAt ? formatTimestamp(account.lastPaymentAt) : 'None yet'}</TableCell>
+              <TableCell>{account.lastPaymentAt ? formatTimestamp(account.lastPaymentAt) : t('noneYetShort')}</TableCell>
             </TableRow>)}</TableBody>
           </Table></div>
-          <div className="product-pagination"><span>{state.total} {state.total === 1 ? 'account' : 'accounts'} · Page {page} of {pageCount}</span><TablePagination page={Math.min(page, pageCount)} pageCount={pageCount} onPageChange={next => update({ page: next })} /></div>
+          <div className="product-pagination"><span>{t(state.total === 1 ? 'accountOne' : 'accountMany', { count: state.total })}{t('pageOf', { page, count: pageCount })}</span><TablePagination page={Math.min(page, pageCount)} pageCount={pageCount} onPageChange={next => update({ page: next })} /></div>
         </>}
     </section>
   </div>

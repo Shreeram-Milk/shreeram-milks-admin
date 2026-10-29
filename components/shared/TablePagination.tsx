@@ -3,6 +3,7 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import type { MouseEvent } from 'react'
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination'
+import { tc } from '@/lib/i18n/common'
 
 type TablePaginationProps = {
   page: number
@@ -25,8 +26,8 @@ export function TablePagination({ page, pageCount, onPageChange, density = 'defa
       <PaginationContent>
         {density === 'compact' ? (
           <>
-            <PaginationItem><PaginationLink href="#" size="icon" aria-label="Previous page" aria-disabled={previousDisabled} tabIndex={previousDisabled ? -1 : 0} className={`mini-action ${previousDisabled ? disabledClass : ''}`} onClick={event => changePage(event, page - 1, previousDisabled)}><ChevronLeft size={16} /></PaginationLink></PaginationItem>
-            <PaginationItem><PaginationLink href="#" size="icon" aria-label="Next page" aria-disabled={nextDisabled} tabIndex={nextDisabled ? -1 : 0} className={`mini-action ${nextDisabled ? disabledClass : ''}`} onClick={event => changePage(event, page + 1, nextDisabled)}><ChevronRight size={16} /></PaginationLink></PaginationItem>
+            <PaginationItem><PaginationLink href="#" size="icon" aria-label={tc('previousPage')} aria-disabled={previousDisabled} tabIndex={previousDisabled ? -1 : 0} className={`mini-action ${previousDisabled ? disabledClass : ''}`} onClick={event => changePage(event, page - 1, previousDisabled)}><ChevronLeft size={16} /></PaginationLink></PaginationItem>
+            <PaginationItem><PaginationLink href="#" size="icon" aria-label={tc('nextPage')} aria-disabled={nextDisabled} tabIndex={nextDisabled ? -1 : 0} className={`mini-action ${nextDisabled ? disabledClass : ''}`} onClick={event => changePage(event, page + 1, nextDisabled)}><ChevronRight size={16} /></PaginationLink></PaginationItem>
           </>
         ) : (
           <>

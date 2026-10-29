@@ -1,4 +1,5 @@
 import { format } from 'date-fns'
+import { localeOf } from './i18n/core'
 
 /** All delivery/cut-off/schedule logic runs in this zone, never the machine's local zone. */
 export const BUSINESS_TIMEZONE = 'Asia/Kolkata'
@@ -31,15 +32,16 @@ export const diffInDays = (from: IsoDate, to: IsoDate): number => Math.round((to
 /** 0 = Sunday … 6 = Saturday. */
 export const weekdayOf = (date: IsoDate): number => new Date(toUtcMs(date)).getUTCDay()
 
+/** A calendar date as words in the admin's language ("30 Oct 2026", "30 ઑક્ટો, 2026"). It has no time, so no zone applies. */
+const calendarWords = (date: IsoDate, options: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat(localeOf(), { ...options, timeZone: 'UTC' }).format(new Date(toUtcMs(date)))
+
 export function formatDisplayDate(date: IsoDate): string {
   if (!isIsoDate(date)) return '—'
-  const [year, month, day] = date.split('-').map(Number)
-  return format(new Date(year, month - 1, day), 'd MMM yyyy')
+  return calendarWords(date, { day: 'numeric', month: 'short', year: 'numeric' })
 }
 export function formatWeekdayDate(date: IsoDate): string {
   if (!isIsoDate(date)) return '—'
-  const [year, month, day] = date.split('-').map(Number)
-  return format(new Date(year, month - 1, day), 'EEE, d MMM yyyy')
+  return calendarWords(date, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })
 }
 export function formatTime12h(time: string): string {
   const [hours, minutes] = time.split(':').map(Number)
@@ -53,9 +55,9 @@ export function formatTimestamp(timestamp: string): string {
 /** "Sat 17 Oct, 9:00 pm": a moment in business time, for deadlines where the hour matters. */
 export function formatDateTime(timestamp: string): string {
   const parsed = new Date(timestamp)
-  return Number.isNaN(parsed.getTime()) ? '—' : new Intl.DateTimeFormat('en-IN', { timeZone: BUSINESS_TIMEZONE, weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }).format(parsed)
+  return Number.isNaN(parsed.getTime()) ? '—' : new Intl.DateTimeFormat(localeOf(), { timeZone: BUSINESS_TIMEZONE, weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }).format(parsed)
 }
-const formatShortDate = (value: Date) => new Intl.DateTimeFormat('en-IN', { timeZone: BUSINESS_TIMEZONE, day: 'numeric', month: 'short', year: 'numeric' }).format(value)
+const formatShortDate = (value: Date) => new Intl.DateTimeFormat(localeOf(), { timeZone: BUSINESS_TIMEZONE, day: 'numeric', month: 'short', year: 'numeric' }).format(value)
 
 /** Bridge between the `yyyy-MM-dd` domain value and the Date objects react-day-picker works with. */
 export function isoToCalendarDate(date: IsoDate): Date | undefined {
@@ -82,6 +84,5 @@ export function shiftMonth(month: IsoMonth, delta: number): IsoMonth {
 }
 export function formatMonthLabel(month: IsoMonth): string {
   if (!isIsoMonth(month)) return '—'
-  const [year, monthNumber] = month.split('-').map(Number)
-  return format(new Date(year, monthNumber - 1, 1), 'MMMM yyyy')
+  return calendarWords(`${month}-01`, { month: 'long', year: 'numeric' })
 }

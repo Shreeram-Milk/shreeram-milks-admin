@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { t } from './messages'
 import type { CoverageType, CutoffRule, DayRelation, DeliverySlot, FeatureKey, FeatureRecord, RecordStatus, ServiceArea, SubscriptionRule, SubscriptionType, TrialPlan } from './api'
 
 export type FormValues = {
@@ -26,38 +27,38 @@ const deadlineMinutes = (dayRelation: DayRelation, time: string) => {
 
 export function buildSchema(feature: FeatureKey) {
   return z.object({
-    name: z.string().trim().min(1, 'Enter a name.').max(80, 'Keep the name under 80 characters.'), description: z.string().trim().max(300, 'Keep the description under 300 characters.'), status: z.enum(['active', 'inactive']),
+    name: z.string().trim().min(1, t('errName')).max(80, t('errNameLong')), description: z.string().trim().max(300, t('errDescriptionLong')), status: z.enum(['active', 'inactive']),
     durationDays: z.coerce.number().optional(), systemType: z.enum(['daily', 'alternate_days', 'custom_weekdays']).optional(), lengthOptions: z.string().optional(), minDays: z.coerce.number().optional(), maxDays: z.coerce.number().optional(), startTime: z.string().optional(), endTime: z.string().optional(),
     coverageType: z.enum(['pin_code', 'state', 'pan_india']).optional(), state: z.string().optional(), city: z.string().optional(),
     conditions: z.array(z.object({ deliverySlotId: z.string(), dayRelation: z.enum(['same_day', 'previous_day']), cutoffTime: z.string(), cancelDayRelation: z.enum(['', 'same_day', 'previous_day']), cancelTime: z.string() })).optional(),
   }).superRefine((value, ctx) => {
-    if (feature === 'trial-plans' && (!Number.isInteger(value.durationDays) || !value.durationDays || value.durationDays <= 0)) ctx.addIssue({ code: 'custom', path: ['durationDays'], message: 'Duration must be a positive whole number.' })
+    if (feature === 'trial-plans' && (!Number.isInteger(value.durationDays) || !value.durationDays || value.durationDays <= 0)) ctx.addIssue({ code: 'custom', path: ['durationDays'], message: t('errDuration') })
     if (feature === 'subscription-rules') {
       const lengths = parseLengths(value.lengthOptions ?? '')
-      if (!lengths) ctx.addIssue({ code: 'custom', path: ['lengthOptions'], message: 'Enter 1 to 6 whole numbers from 1 to 365, like 15, 30.' })
+      if (!lengths) ctx.addIssue({ code: 'custom', path: ['lengthOptions'], message: t('errLengths') })
       const { minDays, maxDays } = value
-      if (!Number.isInteger(minDays) || !minDays || minDays < 1 || minDays > 365) ctx.addIssue({ code: 'custom', path: ['minDays'], message: 'Enter a whole number of days from 1 to 365.' })
-      if (!Number.isInteger(maxDays) || !maxDays || maxDays < 1 || maxDays > 730) ctx.addIssue({ code: 'custom', path: ['maxDays'], message: 'Enter a whole number of days from 1 to 730.' })
-      else if (minDays && maxDays < minDays) ctx.addIssue({ code: 'custom', path: ['maxDays'], message: 'The longest plan cannot be shorter than the shortest.' })
+      if (!Number.isInteger(minDays) || !minDays || minDays < 1 || minDays > 365) ctx.addIssue({ code: 'custom', path: ['minDays'], message: t('errMinDays') })
+      if (!Number.isInteger(maxDays) || !maxDays || maxDays < 1 || maxDays > 730) ctx.addIssue({ code: 'custom', path: ['maxDays'], message: t('errMaxDays') })
+      else if (minDays && maxDays < minDays) ctx.addIssue({ code: 'custom', path: ['maxDays'], message: t('errMaxBelowMin') })
     }
     if (feature === 'delivery-slots') {
-      if (!value.startTime) ctx.addIssue({ code: 'custom', path: ['startTime'], message: 'Choose a start time.' })
-      if (!value.endTime) ctx.addIssue({ code: 'custom', path: ['endTime'], message: 'Choose an end time.' })
-      if (value.startTime && value.endTime && value.endTime <= value.startTime) ctx.addIssue({ code: 'custom', path: ['endTime'], message: 'End time must be after start time.' })
+      if (!value.startTime) ctx.addIssue({ code: 'custom', path: ['startTime'], message: t('errStart') })
+      if (!value.endTime) ctx.addIssue({ code: 'custom', path: ['endTime'], message: t('errEnd') })
+      if (value.startTime && value.endTime && value.endTime <= value.startTime) ctx.addIssue({ code: 'custom', path: ['endTime'], message: t('errEndBeforeStart') })
     }
     if (feature === 'service-areas') {
-      if (value.coverageType !== 'pan_india' && !value.state?.trim()) ctx.addIssue({ code: 'custom', path: ['state'], message: 'Enter a state.' })
-      if (value.coverageType === 'pin_code' && !value.city?.trim()) ctx.addIssue({ code: 'custom', path: ['city'], message: 'Enter a city.' })
+      if (value.coverageType !== 'pan_india' && !value.state?.trim()) ctx.addIssue({ code: 'custom', path: ['state'], message: t('errState') })
+      if (value.coverageType === 'pin_code' && !value.city?.trim()) ctx.addIssue({ code: 'custom', path: ['city'], message: t('errCity') })
     }
     if (feature === 'cutoff-rules') {
       const conditions = value.conditions ?? []
-      if (!conditions.length) ctx.addIssue({ code: 'custom', path: ['conditions'], message: 'Add at least one slot condition.' })
-      if (new Set(conditions.map(condition => condition.deliverySlotId)).size !== conditions.length) ctx.addIssue({ code: 'custom', path: ['conditions'], message: 'Each delivery slot can only appear once.' })
+      if (!conditions.length) ctx.addIssue({ code: 'custom', path: ['conditions'], message: t('errNoConditions') })
+      if (new Set(conditions.map(condition => condition.deliverySlotId)).size !== conditions.length) ctx.addIssue({ code: 'custom', path: ['conditions'], message: t('errDuplicateSlot') })
       conditions.forEach((condition, index) => {
-        if (!condition.deliverySlotId) ctx.addIssue({ code: 'custom', path: ['conditions', index, 'deliverySlotId'], message: 'Choose an active slot.' })
-        if (!condition.cutoffTime) ctx.addIssue({ code: 'custom', path: ['conditions', index, 'cutoffTime'], message: 'Choose a cut-off time.' })
-        if (condition.cancelDayRelation && !condition.cancelTime) ctx.addIssue({ code: 'custom', path: ['conditions', index, 'cancelTime'], message: 'Choose until what time customers can cancel.' })
-        if (condition.cancelDayRelation && condition.cancelTime && condition.cutoffTime && deadlineMinutes(condition.cancelDayRelation, condition.cancelTime) > deadlineMinutes(condition.dayRelation, condition.cutoffTime)) ctx.addIssue({ code: 'custom', path: ['conditions', index, 'cancelTime'], message: 'Cancelling must close at or before the order cut-off.' })
+        if (!condition.deliverySlotId) ctx.addIssue({ code: 'custom', path: ['conditions', index, 'deliverySlotId'], message: t('errChooseSlot') })
+        if (!condition.cutoffTime) ctx.addIssue({ code: 'custom', path: ['conditions', index, 'cutoffTime'], message: t('errCutoffTime') })
+        if (condition.cancelDayRelation && !condition.cancelTime) ctx.addIssue({ code: 'custom', path: ['conditions', index, 'cancelTime'], message: t('errCancelTime') })
+        if (condition.cancelDayRelation && condition.cancelTime && condition.cutoffTime && deadlineMinutes(condition.cancelDayRelation, condition.cancelTime) > deadlineMinutes(condition.dayRelation, condition.cutoffTime)) ctx.addIssue({ code: 'custom', path: ['conditions', index, 'cancelTime'], message: t('errCancelAfterCutoff') })
       })
     }
   })

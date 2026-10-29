@@ -12,6 +12,8 @@ import { describeApiError } from '@/lib/api-errors'
 import { onboardingApi } from './api'
 import { SlideDialog } from './components/SlideDialog'
 import { MAX_ACTIVE_SLIDES, type OnboardingSlideRecord } from './types'
+import { tc } from '@/lib/i18n/common'
+import { t } from './messages'
 
 type LoadState = { status: 'loading' } | { status: 'error'; message: string } | { status: 'ready'; slides: OnboardingSlideRecord[] }
 
@@ -39,33 +41,33 @@ export function OnboardingWorkspace() {
   }
 
   if (state.status === 'loading') return <PageSkeleton />
-  if (state.status === 'error') return <div className="product-state" role="alert"><strong>Onboarding could not be loaded</strong><span>{state.message}</span><Button className="secondary-button" onClick={() => { setState({ status: 'loading' }); reload() }}>Try again</Button></div>
+  if (state.status === 'error') return <div className="product-state" role="alert"><strong>{t('loadFailed')}</strong><span>{state.message}</span><Button className="secondary-button" onClick={() => { setState({ status: 'loading' }); reload() }}>{tc('tryAgain')}</Button></div>
 
   const { slides } = state
   return <div className="workspace-page products-page">
     <header className="page-header">
-      <div><PageBreadcrumbs items={[{ label: 'Content' }, { label: 'Onboarding' }]} /><h1>Onboarding</h1><p className="page-description">The slides new customers see when they first open the app. Each slide has its own picture, headline and text. Up to {MAX_ACTIVE_SLIDES} can be active; the app keeps a built-in introduction as a fallback.</p></div>
-      <Button className="primary-button" onClick={() => setEditing(null)}><Plus size={15} /> Add Slide</Button>
+      <div><PageBreadcrumbs items={[{ label: t('content') }, { label: t('title') }]} /><h1>{t('title')}</h1><p className="page-description">{t('description', { max: MAX_ACTIVE_SLIDES })}</p></div>
+      <Button className="primary-button" onClick={() => setEditing(null)}><Plus size={15} /> {t('addSlide')}</Button>
     </header>
     <section className="product-list-section">
       {slides.length === 0
-        ? <div className="product-state"><strong>No slides yet</strong><span>Add a slide to replace the app’s built-in introduction.</span></div>
+        ? <div className="product-state"><strong>{t('noneYet')}</strong><span>{t('noneYetDetail')}</span></div>
         : <div className="table-card product-list-table-card"><Table className="config-table">
-          <TableHeader><TableRow><TableHead>Order</TableHead><TableHead>Picture</TableHead><TableHead>Slide</TableHead><TableHead>Gujarati</TableHead><TableHead>Status</TableHead><TableHead scope="col" aria-label="Actions" /></TableRow></TableHeader>
+          <TableHeader><TableRow><TableHead>{t('order')}</TableHead><TableHead>{t('picture')}</TableHead><TableHead>{t('slide')}</TableHead><TableHead>{t('gujarati')}</TableHead><TableHead>{t('status')}</TableHead><TableHead scope="col" aria-label={t('actions')} /></TableRow></TableHeader>
           <TableBody>{slides.map((slide, index) => <TableRow key={slide.id}>
             <TableCell><span className="reorder-cell">{slide.sortOrder}
-              <Button variant="ghost" size="icon" className="row-edit-action" aria-label={`Move ${slide.titleEn} up`} disabled={index === 0} onClick={() => void run(() => onboardingApi.move(slide.id, 'up'))}><ArrowUp size={14} /></Button>
-              <Button variant="ghost" size="icon" className="row-edit-action" aria-label={`Move ${slide.titleEn} down`} disabled={index === slides.length - 1} onClick={() => void run(() => onboardingApi.move(slide.id, 'down'))}><ArrowDown size={14} /></Button></span></TableCell>
+              <Button variant="ghost" size="icon" className="row-edit-action" aria-label={t('moveUp', { name: slide.titleEn })} disabled={index === 0} onClick={() => void run(() => onboardingApi.move(slide.id, 'up'))}><ArrowUp size={14} /></Button>
+              <Button variant="ghost" size="icon" className="row-edit-action" aria-label={t('moveDown', { name: slide.titleEn })} disabled={index === slides.length - 1} onClick={() => void run(() => onboardingApi.move(slide.id, 'down'))}><ArrowDown size={14} /></Button></span></TableCell>
             <TableCell>{slide.imageUrl
               // A plain <img>: a short-lived signed link, which next/image cannot optimise.
               // eslint-disable-next-line @next/next/no-img-element
               ? <img src={slide.imageUrl} alt="" className="slide-thumb" />
-              : <ImageOff size={18} aria-label="Picture missing" />}</TableCell>
+              : <ImageOff size={18} aria-label={t('pictureMissing')} />}</TableCell>
             <TableCell><Button variant="ghost" className="table-link" onClick={() => setEditing(slide)}>{slide.titleEn}</Button><small className="cell-note">{slide.descriptionEn}</small></TableCell>
-            <TableCell>{slide.titleGu && slide.descriptionGu ? 'Added' : 'Missing'}</TableCell>
-            <TableCell><StatusBadge status={slide.status}>{slide.status === 'active' ? 'Active' : 'Inactive'}</StatusBadge></TableCell>
+            <TableCell>{slide.titleGu && slide.descriptionGu ? t('added') : t('missing')}</TableCell>
+            <TableCell><StatusBadge status={slide.status}>{slide.status === 'active' ? tc('active') : tc('inactive')}</StatusBadge></TableCell>
             <TableCell><div className="row-actions">
-              <Button variant="ghost" size="icon" className="row-edit-action" aria-label={`Edit ${slide.titleEn}`} onClick={() => setEditing(slide)}><Edit2 size={15} /></Button>
+              <Button variant="ghost" size="icon" className="row-edit-action" aria-label={tc('editName', { name: slide.titleEn })} onClick={() => setEditing(slide)}><Edit2 size={15} /></Button>
             </div></TableCell>
           </TableRow>)}</TableBody>
         </Table></div>}

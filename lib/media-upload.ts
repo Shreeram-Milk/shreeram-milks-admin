@@ -1,4 +1,5 @@
 import { ApiError, apiRequest } from './api-client'
+import { tc } from './i18n/common'
 
 /** `banner` = a promotion photo, `banner_icon` = a small SVG on a notice, `onboarding` = a first-run slide picture, `product` = a photo of something you sell. */
 export type MediaPurpose = 'banner' | 'banner_icon' | 'onboarding' | 'product'
@@ -7,11 +8,11 @@ const KB = 1024
 const PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp']
 
 /** What each purpose accepts. The backend checks the same rules again, so these only give instant feedback. */
-export const MEDIA_RULES: Record<MediaPurpose, { types: string[]; maxBytes: number; typeMessage: string; sizeMessage: string }> = {
-  banner: { types: PHOTO_TYPES, maxBytes: 2 * KB * KB, typeMessage: 'Use a JPEG, PNG or WebP picture.', sizeMessage: 'Keep the picture under 2 MB.' },
-  product: { types: PHOTO_TYPES, maxBytes: 2 * KB * KB, typeMessage: 'Use a JPEG, PNG or WebP picture.', sizeMessage: 'Keep the picture under 2 MB.' },
-  onboarding: { types: PHOTO_TYPES, maxBytes: 2 * KB * KB, typeMessage: 'Use a JPEG, PNG or WebP picture.', sizeMessage: 'Keep the picture under 2 MB.' },
-  banner_icon: { types: ['image/svg+xml'], maxBytes: 100 * KB, typeMessage: 'Icons must be SVG files.', sizeMessage: 'Keep the icon under 100 KB.' },
+export const MEDIA_RULES: Record<MediaPurpose, { types: string[]; maxBytes: number; typeMessage: 'photoType' | 'iconType'; sizeMessage: 'photoSize' | 'iconSize' }> = {
+  banner: { types: PHOTO_TYPES, maxBytes: 2 * KB * KB, typeMessage: 'photoType', sizeMessage: 'photoSize' },
+  product: { types: PHOTO_TYPES, maxBytes: 2 * KB * KB, typeMessage: 'photoType', sizeMessage: 'photoSize' },
+  onboarding: { types: PHOTO_TYPES, maxBytes: 2 * KB * KB, typeMessage: 'photoType', sizeMessage: 'photoSize' },
+  banner_icon: { types: ['image/svg+xml'], maxBytes: 100 * KB, typeMessage: 'iconType', sizeMessage: 'iconSize' },
 }
 
 /** A photo picked from a phone camera can be several MB. It is shrunk before upload, so the limit on what can be picked is generous. */
@@ -25,9 +26,9 @@ const isPhoto = (purpose: MediaPurpose) => purpose !== 'banner_icon'
 /** A plain-language reason a file cannot be used for this purpose, or null when it is fine. */
 export function imageProblem(file: Pick<File, 'type' | 'size'>, purpose: MediaPurpose): string | null {
   const rule = MEDIA_RULES[purpose]
-  if (!rule.types.includes(file.type)) return rule.typeMessage
-  if (file.size === 0) return 'That file is empty.'
-  if (file.size > (isPhoto(purpose) ? MAX_PICKED_PHOTO_BYTES : rule.maxBytes)) return isPhoto(purpose) ? 'Choose a picture under 15 MB.' : rule.sizeMessage
+  if (!rule.types.includes(file.type)) return tc(rule.typeMessage)
+  if (file.size === 0) return tc('fileEmpty')
+  if (file.size > (isPhoto(purpose) ? MAX_PICKED_PHOTO_BYTES : rule.maxBytes)) return isPhoto(purpose) ? tc('photoTooBig') : tc(rule.sizeMessage)
   return null
 }
 
@@ -73,7 +74,7 @@ export async function uploadImage(picked: File, purpose: MediaPurpose): Promise<
   if (problem) throw new ApiError(400, 'INVALID_IMAGE', problem)
   const file = await compressPhoto(picked, purpose)
   // The stored picture must fit the server's limit; a photo that is still too large after shrinking is refused here with a clear message.
-  if (file.size > MEDIA_RULES[purpose].maxBytes) throw new ApiError(400, 'INVALID_IMAGE', MEDIA_RULES[purpose].sizeMessage)
+  if (file.size > MEDIA_RULES[purpose].maxBytes) throw new ApiError(400, 'INVALID_IMAGE', tc(MEDIA_RULES[purpose].sizeMessage))
   const { asset, upload } = await apiRequest<UploadStart>('/admin/media/uploads', { method: 'POST', body: { purpose, contentType: file.type, sizeBytes: file.size } })
   let response: Response
   try {

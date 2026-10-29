@@ -7,6 +7,7 @@ import { ListSearchInput } from '@/components/shared/ListSearchInput'
 import { describeApiError } from '@/lib/api-errors'
 import { customerRecordApi, type CustomerRecord } from '../../customers/api'
 import { MAX_CHOSEN_CUSTOMERS } from '../schema'
+import { t } from '../messages'
 
 const RESULTS = 8
 
@@ -23,7 +24,7 @@ export function CustomerPicker({ selected, onChange }: { selected: CustomerRecor
     if (search.length < 2) return
     let cancelled = false
     customerRecordApi.list({ search, status: 'active', customerType: '', page: 1, pageSize: RESULTS }).then(
-      result => { if (!cancelled) { setResults(result.rows); setMessage(result.rows.length === 0 ? 'No active customer matches.' : '') } },
+      result => { if (!cancelled) { setResults(result.rows); setMessage(result.rows.length === 0 ? t('noMatch') : '') } },
       failure => { if (!cancelled) setMessage(describeApiError(failure)) },
     )
     return () => { cancelled = true }
@@ -34,15 +35,15 @@ export function CustomerPicker({ selected, onChange }: { selected: CustomerRecor
     if (chosen.has(customer.id)) onChange(selected.filter(item => item.id !== customer.id))
     else if (selected.length < MAX_CHOSEN_CUSTOMERS) onChange([...selected, customer])
   }
-  const label = (customer: CustomerRecord) => `${customer.name.trim() || 'No name'}${customer.phone ? ` · ${customer.phone}` : ''}`
+  const label = (customer: CustomerRecord) => `${customer.name.trim() || t('noName')}${customer.phone ? ` · ${customer.phone}` : ''}`
   return <div className="customer-picker">
-    <ListSearchInput label="Find customers" value={search} onCommit={setSearch} placeholder="Type at least 2 letters of a name or phone number..." />
+    <ListSearchInput label={t('findCustomers')} value={search} onCommit={setSearch} placeholder={t('findPlaceholder')} />
     {search.length >= 2 && <ul className="customer-picker-results">
       {results.map(customer => <li key={customer.id}><label><Checkbox checked={chosen.has(customer.id)} onCheckedChange={() => toggle(customer)} /> <span>{label(customer)}</span></label></li>)}
       {message && <li className="help-text">{message}</li>}
     </ul>}
-    {selected.length > 0 && <div className="customer-picker-chosen" aria-label="Chosen customers">
-      {selected.map(customer => <button type="button" key={customer.id} className="day-chip is-active" onClick={() => toggle(customer)} aria-label={`Remove ${label(customer)}`}>{label(customer)} <X size={12} aria-hidden="true" /></button>)}
+    {selected.length > 0 && <div className="customer-picker-chosen" aria-label={t('chosenCustomers')}>
+      {selected.map(customer => <button type="button" key={customer.id} className="day-chip is-active" onClick={() => toggle(customer)} aria-label={t('remove', { name: label(customer) })}>{label(customer)} <X size={12} aria-hidden="true" /></button>)}
     </div>}
   </div>
 }

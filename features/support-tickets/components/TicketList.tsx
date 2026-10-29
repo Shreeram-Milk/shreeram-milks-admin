@@ -18,6 +18,8 @@ import { formatTicketNumber, supportTicketApi, type SupportTicketRecord } from '
 import type { SupportCategory } from '../categories'
 import { TICKET_CATEGORY_LABELS, TICKET_STATUS_LABELS, type TicketStatus } from '../types'
 import { TicketStatusBadge } from './TicketStatusBadge'
+import { tc } from '@/lib/i18n/common'
+import { t } from '../messages'
 
 const PAGE_SIZE = 10
 const ALL = '__all__'
@@ -42,37 +44,37 @@ export function TicketList() {
   }, [search, filters.status, filters.category, filters.customer, page, reloadKey])
 
   if (state.status === 'loading') return <PageSkeleton />
-  if (state.status === 'error') return <div className="product-state" role="alert"><strong>Tickets could not be loaded</strong><span>{state.message}</span><Button className="secondary-button" variant="outline" onClick={() => { setState({ status: 'loading' }); setReloadKey(count => count + 1) }}>Try again</Button></div>
+  if (state.status === 'error') return <div className="product-state" role="alert"><strong>{t('listFailed')}</strong><span>{state.message}</span><Button className="secondary-button" variant="outline" onClick={() => { setState({ status: 'loading' }); setReloadKey(count => count + 1) }}>{tc('tryAgain')}</Button></div>
 
   const pageCount = Math.max(1, Math.ceil(state.total / PAGE_SIZE))
   const set = (key: string) => (value: string) => update({ [key]: value === ALL ? null : value })
   return <div className="workspace-page products-page">
     <header className="page-header">
-      <div><PageBreadcrumbs items={[{ label: 'Operations' }, { label: 'Support Tickets' }]} /><h1>Support Tickets</h1><p className="page-description">Problems customers report from the app. Open one to read it, reply and close it.</p></div>
+      <div><PageBreadcrumbs items={[{ label: t('operations') }, { label: t('title') }]} /><h1>{t('title')}</h1><p className="page-description">{t('description')}</p></div>
     </header>
     <section className="product-list-section">
-      <ListSearchInput label="Search tickets" value={search} onCommit={value => update({ search: value })} placeholder="Search by ticket number, customer name, or phone..." />
+      <ListSearchInput label={t('searchTickets')} value={search} onCommit={value => update({ search: value })} placeholder={t('searchPlaceholder')} />
       <div className="product-filter-row">
-        <SelectField label="Status" className="product-select-trigger" value={filters.status || ALL} onChange={set('status')} placeholder="All statuses" options={[{ value: ALL, label: 'All statuses' }, ...(Object.keys(TICKET_STATUS_LABELS) as TicketStatus[]).map(value => ({ value, label: TICKET_STATUS_LABELS[value] }))]} />
-        <SelectField label="Category" className="product-select-trigger" value={filters.category || ALL} onChange={set('category')} placeholder="All categories" options={[{ value: ALL, label: 'All categories' }, ...(Object.keys(TICKET_CATEGORY_LABELS) as SupportCategory[]).map(value => ({ value, label: TICKET_CATEGORY_LABELS[value] }))]} />
+        <SelectField label={t('status')} className="product-select-trigger" value={filters.status || ALL} onChange={set('status')} placeholder={t('allStatuses')} options={[{ value: ALL, label: t('allStatuses') }, ...(Object.keys(TICKET_STATUS_LABELS) as TicketStatus[]).map(value => ({ value, label: TICKET_STATUS_LABELS[value] }))]} />
+        <SelectField label={t('category')} className="product-select-trigger" value={filters.category || ALL} onChange={set('category')} placeholder={t('allCategories')} options={[{ value: ALL, label: t('allCategories') }, ...(Object.keys(TICKET_CATEGORY_LABELS) as SupportCategory[]).map(value => ({ value, label: TICKET_CATEGORY_LABELS[value] }))]} />
       </div>
-      {filters.customer && <p className="product-hint">Showing tickets for one customer. <Button type="button" variant="link" className="inline-link" onClick={() => update({ customer: null })}>Show all customers</Button></p>}
+      {filters.customer && <p className="product-hint">{t('oneCustomer')} <Button type="button" variant="link" className="inline-link" onClick={() => update({ customer: null })}>{t('showAll')}</Button></p>}
       {state.total === 0
-        ? <div className="product-state"><strong>{hasActiveFilters ? 'No tickets match these filters' : 'No tickets yet'}</strong><span>{hasActiveFilters ? 'Try changing your search or filters.' : 'Tickets from the app appear here as soon as a customer reports a problem.'}</span></div>
+        ? <div className="product-state"><strong>{hasActiveFilters ? t('noMatch') : t('noneYet')}</strong><span>{hasActiveFilters ? t('tryChanging') : t('appearHere')}</span></div>
         : <>
           <div className="table-card product-list-table-card"><Table className="config-table">
-            <TableHeader><TableRow><TableHead>Ticket</TableHead><TableHead>Customer</TableHead><TableHead>Category</TableHead><TableHead>Assigned to</TableHead><TableHead>Messages</TableHead><TableHead>Status</TableHead><TableHead>Updated</TableHead></TableRow></TableHeader>
+            <TableHeader><TableRow><TableHead>{t('ticket')}</TableHead><TableHead>{t('customer')}</TableHead><TableHead>{t('category')}</TableHead><TableHead>{t('assignedTo')}</TableHead><TableHead>{t('messages')}</TableHead><TableHead>{t('status')}</TableHead><TableHead>{t('updated')}</TableHead></TableRow></TableHeader>
             <TableBody>{state.rows.map(ticket => <TableRow key={ticket.id}>
               <TableCell><Link className="product-name-link" href={`/support/${ticket.id}`}>{formatTicketNumber(ticket.ticketNumber)}</Link></TableCell>
               <TableCell><span className="identity-cell"><InitialsAvatar name={ticket.customerName || formatCustomerPhone(ticket.customerPhone)} /><span>{ticket.customerName || formatCustomerPhone(ticket.customerPhone)}</span></span></TableCell>
               <TableCell>{TICKET_CATEGORY_LABELS[ticket.category]}</TableCell>
-              <TableCell>{ticket.assigneeEmail ?? 'Unassigned'}</TableCell>
+              <TableCell>{ticket.assigneeEmail ?? t('unassigned')}</TableCell>
               <TableCell>{ticket.messageCount}</TableCell>
               <TableCell><TicketStatusBadge status={ticket.status} /></TableCell>
               <TableCell>{formatTimestamp(ticket.updatedAt)}</TableCell>
             </TableRow>)}</TableBody>
           </Table></div>
-          <div className="product-pagination"><span>{state.total} {state.total === 1 ? 'ticket' : 'tickets'} · Page {Math.min(page, pageCount)} of {pageCount}</span><TablePagination page={Math.min(page, pageCount)} pageCount={pageCount} onPageChange={next => update({ page: next })} /></div>
+          <div className="product-pagination"><span>{t(state.total === 1 ? 'ticketOne' : 'ticketMany', { count: state.total })}{t('pageOf', { page: Math.min(page, pageCount), count: pageCount })}</span><TablePagination page={Math.min(page, pageCount)} pageCount={pageCount} onPageChange={next => update({ page: next })} /></div>
         </>}
     </section>
   </div>

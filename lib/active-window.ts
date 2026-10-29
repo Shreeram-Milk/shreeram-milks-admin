@@ -1,4 +1,5 @@
 import type { IsoDate } from './business-time'
+import { tc } from './i18n/common'
 
 export type WindowState = 'inactive' | 'scheduled' | 'live' | 'expired'
 
@@ -13,9 +14,10 @@ export function windowState(record: { status: 'active' | 'inactive'; startDate: 
   return 'live'
 }
 
-export const WINDOW_STATE_LABELS: Record<WindowState, string> = { inactive: 'Inactive', scheduled: 'Scheduled', live: 'Live', expired: 'Expired' }
+/** Inactive / Scheduled / Live / Expired, in the admin's language. */
+export const windowStateLabel = (state: WindowState): string => tc(state)
 
 /** Returns an error message when the end date is before the start date. */
 export function windowError(startDate: IsoDate | '' | null, endDate: IsoDate | '' | null): string | null {
-  return startDate && endDate && endDate < startDate ? 'The end date must be on or after the start date.' : null
+  return startDate && endDate && endDate < startDate ? tc('endBeforeStart') : null
 }
