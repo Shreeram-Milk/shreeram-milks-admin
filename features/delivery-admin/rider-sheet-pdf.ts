@@ -9,22 +9,57 @@ export type RiderPart = { riderName: string; areas: RiderArea[]; load: RiderItem
 type Rgb = [number, number, number]
 const BRAND: Rgb = [240, 120, 17]
 const INK: Rgb = [17, 24, 39]
+const BODY: Rgb = [55, 65, 81]
 const MUTED: Rgb = [107, 114, 128]
-const LINE: Rgb = [229, 231, 235]
-const MINT: Rgb = [225, 245, 238]
+const GRID: Rgb = [218, 222, 228]
+const MINT: Rgb = [236, 248, 243]
 const MINT_INK: Rgb = [8, 80, 65]
 const AMBER: Rgb = [146, 64, 14]
 const AMBER_BG: Rgb = [254, 243, 199]
-const SOFT: Rgb = [246, 247, 249]
+const SOFT: Rgb = [247, 248, 250]
 const WHITE: Rgb = [255, 255, 255]
-const MARGIN = 12
+const MARGIN = 14
 /** Up to this many product sizes each get their own number column; more than that are written out in one "Give" column. */
 const MAX_PRODUCT_COLUMNS = 3
 
+/** The admin's own font (Plus Jakarta Sans), served from /public and fetched only when someone downloads a sheet. */
+const FONT = 'PlusJakarta'
+const FONT_FILES = [
+  { url: '/fonts/pdf/PlusJakartaSans-Regular.ttf', file: 'PlusJakartaSans-Regular.ttf', style: 'normal' },
+  { url: '/fonts/pdf/PlusJakartaSans-Bold.ttf', file: 'PlusJakartaSans-Bold.ttf', style: 'bold' },
+] as const
+
 /**
- * The PDF uses the built-in Helvetica font, so the file stays small and nothing is downloaded for fonts. Helvetica only has Latin
- * letters: typographic punctuation is swapped for plain ASCII, and any other letters (for example Gujarati) become "?" and are
- * counted, so the screen can warn that those houses need checking.
+ * Adds Plus Jakarta Sans to the PDF. If the font cannot be fetched (for example offline), the sheet still downloads with the
+ * built-in Helvetica, so the rider always gets a sheet.
+ */
+async function loadBrandFont(doc: JsPdf): Promise<string> {
+  try {
+    const files = await Promise.all(FONT_FILES.map(async font => {
+      const response = await fetch(font.url)
+      if (!response.ok) throw new Error(`Font ${font.url}: ${response.status}`)
+      return { ...font, data: toBase64(await response.arrayBuffer()) }
+    }))
+    for (const font of files) {
+      doc.addFileToVFS(font.file, font.data)
+      doc.addFont(font.file, FONT, font.style)
+    }
+    return FONT
+  } catch {
+    return 'helvetica'
+  }
+}
+
+function toBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer)
+  let binary = ''
+  for (let index = 0; index < bytes.length; index += 0x8000) binary += String.fromCharCode(...bytes.subarray(index, index + 0x8000))
+  return btoa(binary)
+}
+
+/**
+ * The font only has Latin letters: typographic punctuation is swapped for plain ASCII, and any other letters (for example Gujarati)
+ * become "?" and are counted, so the screen can warn that those houses need checking.
  */
 function plainText(value: string, unsupported: { count: number }): string {
   const swapped = value
@@ -49,28 +84,29 @@ export function riderSheetFileName(sheet: RiderSheet, riderName: string): string
 }
 
 /**
- * Builds the rider sheet PDF in the browser (nothing runs on the server) and saves it. Each rider starts on a new page with what to
- * load, then one table of houses in visiting order. Each product size is named once, as a column, so a row only carries numbers;
- * each PIN code is a coloured divider row with its own totals. Long addresses wrap and the row grows, so nothing overlaps.
+ * Builds the rider sheet PDF in the browser (nothing runs on the server) and saves it. Each rider starts on a new page: a short
+ * header, one line saying what to load, then one table of houses in visiting order. Each product size is named once, as a column,
+ * so a row only carries numbers; each PIN code is a tinted divider row with its own totals. Long addresses wrap and the row grows.
  * Returns how many characters could not be shown.
  */
 export async function downloadRiderSheetPdf(sheet: RiderSheet, parts: RiderPart[], fileName: string): Promise<{ unsupported: number }> {
   // Loaded only when someone downloads, so the page itself stays light.
   const [{ jsPDF }, { autoTable }] = await Promise.all([import('jspdf'), import('jspdf-autotable')])
   const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true })
+  const font = await loadBrandFont(doc)
   const unsupported = { count: 0 }
   const text = (value: string) => plainText(value, unsupported)
-  const windowLabel = text(`${sheet.slot.name}, ${formatTime12h(sheet.slot.startTime)} to ${formatTime12h(sheet.slot.endTime)}`)
+  const windowLabel = text(`${sheet.slot.name}, ${formatTime12h(sheet.slot.startTime)} - ${formatTime12h(sheet.slot.endTime)}`)
   const date = englishDate(sheet.date)
 
   parts.forEach((part, partIndex) => {
     if (partIndex > 0) doc.addPage()
     const houses = part.areas.reduce((sum, area) => sum + area.stops.length, 0)
-    let y = drawHeader(doc, { title: text(part.riderName) || windowLabel, subtitle: part.riderName ? `${windowLabel}   |   ${date}` : date, isFinal: sheet.status === 'final' })
-    y = drawLoad(doc, y, part.load.map(item => ({ count: item.quantity, name: text(item.productName), size: text(item.variantName) })), `${plural(part.areas.length, 'area', 'areas')}  ·  ${plural(houses, 'house', 'houses')}`)
+    let y = drawHeader(doc, font, { title: text(part.riderName) || windowLabel, subtitle: part.riderName ? `${windowLabel}  ·  ${date}` : date, isFinal: sheet.status === 'final' })
+    y = drawLoad(doc, font, y, text(part.load.map(item => `${item.quantity} x ${item.productName} ${item.variantName}`).join('    ·    ')), `${plural(part.areas.length, 'area', 'areas')}  ·  ${plural(houses, 'house', 'houses')}`)
 
     // Product sizes this rider carries, in load order. With few of them each gets a number column; otherwise one text column.
-    const products = part.load.map(item => ({ key: keyOf(item), label: text(`${item.productName}\n${item.variantName}`) }))
+    const products = part.load.map(item => ({ key: keyOf(item), label: text(`${item.productName} ${item.variantName}`) }))
     const asColumns = products.length <= MAX_PRODUCT_COLUMNS
     const giveColumns = asColumns ? products.length : 1
     const doneColumn = 3 + giveColumns
@@ -86,23 +122,22 @@ export async function downloadRiderSheetPdf(sheet: RiderSheet, parts: RiderPart[
     const body: RowInput[] = []
     let number = 1
     for (const area of part.areas) {
-      const band = { fillColor: MINT, textColor: MINT_INK, fontStyle: 'bold' as const, minCellHeight: 9, valign: 'middle' as const }
+      const band = { fillColor: MINT, textColor: MINT_INK, fontStyle: 'bold' as const, fontSize: 8.5, valign: 'middle' as const, cellPadding: { top: 2, bottom: 2, left: 2.5, right: 2.5 } }
       body.push([
-        { content: text(`PIN ${area.pinCode}${area.city ? `  ·  ${area.city}` : ''}     ${plural(area.stops.length, 'house', 'houses')}`), colSpan: 3, styles: { ...band, fontSize: 10.5 } },
+        { content: text(`PIN ${area.pinCode}${area.city ? `  ·  ${area.city}` : ''}  ·  ${plural(area.stops.length, 'house', 'houses')}`), colSpan: 3, styles: band },
         ...(asColumns
-          ? products.map(product => ({ content: String(countOf(area.load, product.key) || ''), styles: { ...band, halign: 'center' as const, fontSize: 11 } }))
-          : [{ content: text(area.load.map(item => `${item.quantity} x ${item.productName} ${item.variantName}`).join(',  ')), styles: { ...band, fontSize: 9 } }]),
+          ? products.map(product => ({ content: String(countOf(area.load, product.key) || ''), styles: { ...band, halign: 'center' as const } }))
+          : [{ content: text(area.load.map(item => `${item.quantity} x ${item.productName} ${item.variantName}`).join(',  ')), styles: band }]),
         { content: '', styles: band },
       ])
       for (const stop of area.stops) {
-        const address = [stop.addressLine1, stop.addressLine2, stop.landmark].filter(Boolean).join(', ')
         const give: CellInput[] = asColumns
-          ? products.map(product => ({ content: String(countOf(stop.items, product.key) || ''), styles: { halign: 'center' as const, fontSize: 15, fontStyle: 'bold' as const } }))
-          : [{ content: text(stop.items.map(item => `${item.quantity} x ${item.productName} ${item.variantName}`).join('\n')), styles: { fontStyle: 'bold' as const } }]
+          ? products.map(product => ({ content: String(countOf(stop.items, product.key) || ''), styles: { halign: 'center' as const, valign: 'middle' as const, fontSize: 11, fontStyle: 'bold' as const, textColor: INK } }))
+          : [{ content: text(stop.items.map(item => `${item.quantity} x ${item.productName} ${item.variantName}`).join('\n')), styles: { fontStyle: 'bold' as const, textColor: INK } }]
         body.push([
           { content: String(number), styles: { halign: 'center', textColor: MUTED } },
-          { content: text(`${stop.recipientName}${stop.recipientPhone ? `\n${stop.recipientPhone}` : ''}${stop.kind === 'trial' ? '\nTRIAL' : ''}`) },
-          { content: text(address) },
+          { content: text(`${stop.recipientName}${stop.recipientPhone ? `\n${stop.recipientPhone}` : ''}${stop.kind === 'trial' ? '\nTrial' : ''}`), styles: { fontStyle: 'bold', textColor: INK } },
+          { content: text([stop.addressLine1, stop.addressLine2, stop.landmark].filter(Boolean).join(', ')) },
           ...give,
           '',
         ])
@@ -112,129 +147,119 @@ export async function downloadRiderSheetPdf(sheet: RiderSheet, parts: RiderPart[
 
     autoTable(doc, {
       startY: y,
-      margin: { left: MARGIN, right: MARGIN, top: MARGIN + 6, bottom: 14 },
+      margin: { left: MARGIN, right: MARGIN, top: MARGIN, bottom: 14 },
       head: [head],
       body,
-      theme: 'plain',
+      theme: 'grid',
       rowPageBreak: 'avoid',
       showHead: 'everyPage',
-      styles: { font: 'helvetica', fontSize: 9.5, textColor: INK, valign: 'top', overflow: 'linebreak', cellPadding: { top: 3, bottom: 3, left: 2.2, right: 2.2 }, lineColor: LINE },
-      headStyles: { fontSize: 8, fontStyle: 'bold', textColor: MUTED, fillColor: SOFT, valign: 'middle' },
+      styles: { font, fontSize: 8.5, textColor: BODY, valign: 'top', overflow: 'linebreak', lineColor: GRID, lineWidth: 0.2, cellPadding: { top: 2.4, bottom: 2.4, left: 2.5, right: 2.5 } },
+      headStyles: { font, fontSize: 7.5, fontStyle: 'bold', textColor: MUTED, fillColor: SOFT, valign: 'middle' },
+      bodyStyles: { fillColor: WHITE },
       columnStyles: {
-        0: { cellWidth: 9 },
-        1: { cellWidth: 42 },
+        0: { cellWidth: 8 },
+        1: { cellWidth: 40 },
         2: { cellWidth: 'auto' },
-        ...Object.fromEntries(Array.from({ length: giveColumns }, (_, index) => [3 + index, { cellWidth: asColumns ? 22 : 52 }])),
-        [doneColumn]: { cellWidth: 14 },
-      },
-      didParseCell: data => {
-        // The customer's name stands out; the phone and any trial mark under it are smaller.
-        if (data.section === 'body' && data.column.index === 1 && data.cell.colSpan === 1) data.cell.styles.fontStyle = 'bold'
+        ...Object.fromEntries(Array.from({ length: giveColumns }, (_, index) => [3 + index, { cellWidth: asColumns ? 22 : 50 }])),
+        [doneColumn]: { cellWidth: 13 },
       },
       didDrawCell: data => {
-        if (data.section !== 'body') return
-        const isBand = Array.isArray(data.cell.styles.fillColor) && data.cell.styles.fillColor[0] === MINT[0]
-        if (!isBand) underline(doc, data.cell.x, data.cell.y + data.cell.height, data.cell.width)
-        if (isBand) return
-        if (data.column.index === 1) quietLines(doc, data.cell, 1, MUTED)
+        if (data.section !== 'body' || isBand(data.cell)) return
+        // The phone and any trial mark under a name are smaller and grey, so the name stands out.
+        if (data.column.index === 1) quietLines(doc, font, data.cell, 1, MUTED)
         if (data.column.index === doneColumn) {
-          doc.setDrawColor(...MUTED).setLineWidth(0.35)
-          doc.roundedRect(data.cell.x + (data.cell.width - 6) / 2, data.cell.y + 3, 6, 6, 1, 1)
+          doc.setDrawColor(...MUTED).setLineWidth(0.3)
+          doc.roundedRect(data.cell.x + (data.cell.width - 4.5) / 2, data.cell.y + (data.cell.height - 4.5) / 2, 4.5, 4.5, 0.8, 0.8)
         }
       },
     })
 
-    let end = lastY(doc) + 6
-    if (end > doc.internal.pageSize.getHeight() - 24) { doc.addPage(); end = MARGIN + 6 }
-    doc.setFont('helvetica', 'normal').setFontSize(9).setTextColor(...MUTED)
-    doc.text('Tick the box when delivered. Not delivered? Write the reason beside the box: not home, refused or wrong address.', MARGIN, end, { maxWidth: doc.internal.pageSize.getWidth() - MARGIN * 2 })
+    let end = lastY(doc) + 5
+    if (end > doc.internal.pageSize.getHeight() - 22) { doc.addPage(); end = MARGIN + 4 }
+    doc.setFont(font, 'normal').setFontSize(7.5).setTextColor(...MUTED)
+    doc.text('Tick the box when delivered. Not delivered? Write the reason next to it: not home, refused or wrong address.', MARGIN, end, { maxWidth: doc.internal.pageSize.getWidth() - MARGIN * 2 })
   })
 
-  drawFooters(doc, windowLabel, date)
+  drawFooters(doc, font, windowLabel, date)
   doc.save(fileName)
   return { unsupported: unsupported.count }
 }
 
-function drawHeader(doc: JsPdf, info: { title: string; subtitle: string; isFinal: boolean }): number {
+/** Brand line, the rider's name, the window and day, and whether the sheet is final. */
+function drawHeader(doc: JsPdf, font: string, info: { title: string; subtitle: string; isFinal: boolean }): number {
   const pageWidth = doc.internal.pageSize.getWidth()
   doc.setFillColor(...BRAND)
-  doc.rect(0, 0, pageWidth, 2.5, 'F')
-  doc.setFont('helvetica', 'bold').setFontSize(9).setTextColor(...BRAND)
-  doc.text('SHREERAM MILKS', MARGIN, 11)
-  doc.setFont('helvetica', 'normal').setTextColor(...MUTED)
-  doc.text('RIDER SHEET', MARGIN + doc.getTextWidth('SHREERAM MILKS') + 3, 11)
+  doc.rect(0, 0, pageWidth, 1.6, 'F')
+  doc.setFont(font, 'bold').setFontSize(7.5).setTextColor(...BRAND)
+  doc.text('SHREERAM MILKS', MARGIN, 10)
+  doc.setFont(font, 'normal').setTextColor(...MUTED)
+  doc.text('Rider sheet', MARGIN + doc.getTextWidth('SHREERAM MILKS') + 2.5, 10)
 
-  doc.setFont('helvetica', 'bold').setFontSize(22).setTextColor(...INK)
-  doc.text(info.title, MARGIN, 21)
-  doc.setFont('helvetica', 'normal').setFontSize(11).setTextColor(...MUTED)
-  doc.text(info.subtitle, MARGIN, 28)
+  doc.setFont(font, 'bold').setFontSize(15).setTextColor(...INK)
+  doc.text(info.title, MARGIN, 17.5)
+  doc.setFont(font, 'normal').setFontSize(9).setTextColor(...MUTED)
+  doc.text(info.subtitle, MARGIN, 22.5)
 
   // Final or draft, top right: a draft can still change, so riders must not trust it.
-  const label = info.isFinal ? 'FINAL' : 'DRAFT - may change'
-  doc.setFont('helvetica', 'bold').setFontSize(10)
-  const width = doc.getTextWidth(label) + 8
+  const label = info.isFinal ? 'Final' : 'Draft - may change'
+  doc.setFont(font, 'bold').setFontSize(8)
+  const width = doc.getTextWidth(label) + 7
   doc.setFillColor(...(info.isFinal ? MINT : AMBER_BG))
-  doc.roundedRect(pageWidth - MARGIN - width, 14, width, 8, 2, 2, 'F')
+  doc.roundedRect(pageWidth - MARGIN - width, 13, width, 6, 3, 3, 'F')
   doc.setTextColor(...(info.isFinal ? MINT_INK : AMBER))
-  doc.text(label, pageWidth - MARGIN - width / 2, 19.4, { align: 'center' })
-  return 34
+  doc.text(label, pageWidth - MARGIN - width / 2, 16.9, { align: 'center' })
+
+  doc.setDrawColor(...GRID).setLineWidth(0.2)
+  doc.line(MARGIN, 27, pageWidth - MARGIN, 27)
+  return 31
 }
 
-/** "Load in the vehicle": one tile per product size with its count in large figures, and the areas and houses on the right. */
-function drawLoad(doc: JsPdf, y: number, items: Array<{ count: number; name: string; size: string }>, note: string): number {
+/** One quiet box: "Load" and everything to put in the vehicle on one line, with the areas and houses on the right. */
+function drawLoad(doc: JsPdf, font: string, y: number, load: string, note: string): number {
   const width = doc.internal.pageSize.getWidth() - MARGIN * 2
-  doc.setFont('helvetica', 'bold').setFontSize(8).setTextColor(...MUTED)
-  doc.text('LOAD IN THE VEHICLE', MARGIN, y + 3)
-  doc.setFont('helvetica', 'normal')
-  doc.text(note, MARGIN + width, y + 3, { align: 'right' })
-  y += 6
-  const perRow = Math.min(Math.max(items.length, 1), 3)
-  const gap = 4
-  const tileWidth = (width - gap * (perRow - 1)) / perRow
-  items.forEach((item, index) => {
-    const x = MARGIN + (index % perRow) * (tileWidth + gap)
-    const top = y + Math.floor(index / perRow) * 20
-    doc.setFillColor(...SOFT)
-    doc.roundedRect(x, top, tileWidth, 17, 2, 2, 'F')
-    doc.setFont('helvetica', 'bold').setFontSize(22).setTextColor(...INK)
-    doc.text(String(item.count), x + 5, top + 11.5)
-    const textX = x + 7 + doc.getTextWidth(String(item.count))
-    doc.setFontSize(10.5).text(item.name, textX, top + 7.5, { maxWidth: tileWidth - (textX - x) - 3 })
-    doc.setFont('helvetica', 'normal').setFontSize(9.5).setTextColor(...MUTED)
-    doc.text(item.size, textX, top + 12.5)
-  })
-  return y + Math.ceil(items.length / perRow) * 20 + 2
+  doc.setFont(font, 'normal').setFontSize(8)
+  const noteWidth = doc.getTextWidth(note) + 4
+  doc.setFont(font, 'bold').setFontSize(9)
+  const lines = doc.splitTextToSize(load, width - 22 - noteWidth) as string[]
+  const height = Math.max(9, lines.length * 4.4 + 4.6)
+  doc.setFillColor(...SOFT)
+  doc.roundedRect(MARGIN, y, width, height, 1.5, 1.5, 'F')
+  doc.setFont(font, 'normal').setFontSize(7.5).setTextColor(...MUTED)
+  doc.text('LOAD', MARGIN + 3.5, y + 5.6)
+  doc.setFont(font, 'bold').setFontSize(9).setTextColor(...INK)
+  doc.text(lines, MARGIN + 16, y + 5.8)
+  doc.setFont(font, 'normal').setFontSize(8).setTextColor(...MUTED)
+  doc.text(note, MARGIN + width - 3.5, y + 5.6, { align: 'right' })
+  return y + height + 5
 }
+
+/** PIN code divider rows are the ones painted mint. */
+const isBand = (cell: Cell) => Array.isArray(cell.styles.fillColor) && cell.styles.fillColor.every((value, index) => value === MINT[index])
 
 /**
- * autoTable draws a cell in one colour. The lines from `from` on (the phone and any trial mark under a name) are painted over
- * smaller and in a quieter colour, at the place autoTable put them, so the name stands out.
+ * autoTable draws a cell in one colour. The lines from `from` on are painted over smaller and in a quieter colour, at the place
+ * autoTable put them.
  */
-function quietLines(doc: JsPdf, cell: Cell, from: number, colour: Rgb) {
+function quietLines(doc: JsPdf, font: string, cell: Cell, from: number, colour: Rgb) {
   if (from >= cell.text.length) return
   const lineHeight = (cell.styles.fontSize * doc.getLineHeightFactor()) / doc.internal.scaleFactor
   const top = cell.y + cell.padding('top')
   const left = cell.x + cell.padding('left')
   const lines = cell.text.slice(from)
   doc.setFillColor(...WHITE)
-  doc.rect(left - 0.3, top + from * lineHeight - 0.2, cell.width - cell.padding('horizontal') + 0.6, lines.length * lineHeight + 0.6, 'F')
-  doc.setFont('helvetica', 'normal').setFontSize(cell.styles.fontSize - 1).setTextColor(...colour)
+  doc.rect(left - 0.3, top + from * lineHeight - 0.2, cell.width - cell.padding('horizontal') + 0.4, lines.length * lineHeight + 0.4, 'F')
+  doc.setFont(font, 'normal').setFontSize(cell.styles.fontSize - 0.5).setTextColor(...colour)
   lines.forEach((line, index) => doc.text(line, left, top + (from + index) * lineHeight, { baseline: 'top' }))
 }
 
-function underline(doc: JsPdf, x: number, y: number, width: number) {
-  doc.setDrawColor(...LINE).setLineWidth(0.25)
-  doc.line(x, y, x + width, y)
-}
-
-function drawFooters(doc: JsPdf, windowLabel: string, date: string) {
+function drawFooters(doc: JsPdf, font: string, windowLabel: string, date: string) {
   const pages = doc.getNumberOfPages()
   const pageWidth = doc.internal.pageSize.getWidth()
   const bottom = doc.internal.pageSize.getHeight() - 7
   for (let page = 1; page <= pages; page += 1) {
     doc.setPage(page)
-    doc.setFont('helvetica', 'normal').setFontSize(8).setTextColor(...MUTED)
-    doc.text(`ShreeRam Milks  |  ${windowLabel}  |  ${date}`, MARGIN, bottom)
+    doc.setFont(font, 'normal').setFontSize(7).setTextColor(...MUTED)
+    doc.text(`ShreeRam Milks  ·  ${windowLabel}  ·  ${date}`, MARGIN, bottom)
     doc.text(`Page ${page} of ${pages}`, pageWidth - MARGIN, bottom, { align: 'right' })
   }
 }
