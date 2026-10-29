@@ -31,7 +31,12 @@ jobs:
 
       - name: Upload admin source
         run: |
-          rsync -az \
+          # --delete removes files that were deleted from the repository; without it, an old file left on the server still gets built
+          # and can fail the type check. Settings, the build folder and the lock file on the server are protected from deletion.
+          rsync -az --delete \
+            --filter='P .env*' \
+            --filter='P .next/' \
+            --filter='P package-lock.json' \
             --exclude='.env' \
             --exclude='node_modules/' \
             --exclude='.git/' \
