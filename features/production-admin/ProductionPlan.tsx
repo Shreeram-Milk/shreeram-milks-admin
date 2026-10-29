@@ -12,7 +12,6 @@ import { useUrlListState } from '@/hooks/useUrlListState'
 import { describeApiError } from '@/lib/api-errors'
 import { addDays, formatTime12h, formatTimestamp, formatWeekdayDate, todayInBusinessZone } from '@/lib/business-time'
 import { tc } from '@/lib/i18n/common'
-import { KitchenSheet } from './KitchenSheet'
 import { t, warningText } from './messages'
 import { TYPE_PARTS, describeTotals, planToCsv, productionAdminApi, sumTotals, type PlannedSlot, type ProductionPlan as Plan, type TypeSplit } from './api'
 
@@ -98,7 +97,6 @@ function PlanView() {
     <header className="page-header">
       <div><PageBreadcrumbs items={[{ label: t('operations') }, { label: t('title') }]} /><h1>{t('title')}</h1><p className="page-description">{t('description', { day: formatWeekdayDate(date) })}</p></div>
       <div className="header-actions">{state.status === 'ready' && slots.length > 0 ? <>
-        <Button className="primary-button" onClick={() => window.print()}>{t('printKitchen')}</Button>
         <Button variant="outline" className="secondary-button" onClick={() => downloadCsv(`production-plan-${date}.csv`, planToCsv(date, slots))}>{t('downloadCsv')}</Button>
       </> : null}
         <Button variant="outline" className="secondary-button" onClick={reload}>{tc('refresh')}</Button></div>
@@ -190,7 +188,6 @@ function PlanView() {
             </Fragment>)}
           </Fragment>)}</TableBody>
         </Table></div>}
-      {slots.length > 0 ? <KitchenSheet date={date} slots={slots} /> : null}
     </>}
   </div>
 }

@@ -2,7 +2,8 @@
 
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
-import { ArrowDown, ArrowUp, Printer, Trash2 } from 'lucide-react'
+import { toast } from 'sonner'
+import { ArrowDown, ArrowUp, Download, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { SelectField } from '@/components/ui/select-field'
@@ -13,11 +14,11 @@ import { PageSkeleton } from '@/components/shared/PageSkeleton'
 import { useUrlListState } from '@/hooks/useUrlListState'
 import { describeApiError } from '@/lib/api-errors'
 import { tc } from '@/lib/i18n/common'
-import { addDays, formatTime12h, formatTimestamp, formatWeekdayDate, isIsoDate, todayInBusinessZone } from '@/lib/business-time'
+import { BUSINESS_TIMEZONE, addDays, formatTime12h, formatTimestamp, formatWeekdayDate, isIsoDate, todayInBusinessZone } from '@/lib/business-time'
 import { configApi, type DeliverySlot } from '../configuration/api'
 import { riderSheetApi, sumLoad, type RiderSheet as Sheet } from '../production-admin/api'
 import { warningText } from '../production-admin/messages'
-import { RiderSheetPrint } from './RiderSheetPrint'
+import { downloadRiderSheetPdf, riderSheetFileName, type RiderPart } from './rider-sheet-pdf'
 import { t } from './messages'
 
 const FILTERS = { date: 'free', slotId: 'free' } as const
@@ -25,16 +26,22 @@ const MAX_RIDERS = 20
 
 /** What was loaded for one day, window and refresh (`key`); a different key means that answer is still on its way. */
 type LoadState = { key: string; status: 'error'; message: string } | { key: string; status: 'ready'; sheet: Sheet }
-/** Which rider's sheet is being printed (one rider by position, or every rider). `id` is new on every press, so pressing Print twice prints twice. */
-type Printing = { target: number | 'all'; id: number } | null
 
 const riderLabel = (names: string[], index: number) => names[index]?.trim() || t('riderNumber', { number: index + 1 })
+/** The window to open on: today, the first one not yet over; any other day, the first one. */
+function defaultSlotId(slots: DeliverySlot[], date: string): string {
+  const active = slots.filter(slot => slot.status === 'active').sort((a, b) => a.startTime.localeCompare(b.startTime))
+  if (date !== todayInBusinessZone()) return active[0]?.id ?? ''
+  const now = new Intl.DateTimeFormat('en-GB', { timeZone: BUSINESS_TIMEZONE, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date())
+  return (active.find(slot => slot.endTime.slice(0, 5) > now) ?? active[active.length - 1])?.id ?? ''
+}
+
 /** The name printed on a sheet: none when one person does every delivery and typed no name, since "Rider 1" would say nothing. */
 const printedName = (names: string[], index: number) => (names.length === 1 && !names[0]?.trim() ? '' : riderLabel(names, index))
 
 /**
  * The rider sheet for one delivery window: staff give each PIN code to a rider (one rider keeps them all), set the order the
- * areas are visited in, and print each rider's sheet, or all of them, from the browser ("Save as PDF" makes the file to send).
+ * areas are visited in, and download each rider's sheet, or all of them, as a PDF to send. The PDF is made in the browser.
  */
 export function RiderSheet() {
   const { filters, update } = useUrlListState(FILTERS)
@@ -49,7 +56,7 @@ export function RiderSheet() {
   // Rider position per PIN code; a PIN code not listed belongs to the first rider.
   const [assigned, setAssigned] = useState<Record<string, number>>({})
   const [pinOrder, setPinOrder] = useState<string[]>([])
-  const [printing, setPrinting] = useState<Printing>(null)
+  const [downloading, setDownloading] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -75,14 +82,12 @@ export function RiderSheet() {
     return () => { cancelled = true }
   }, [date, slotId, loadKey])
 
-  // Printing waits for the chosen sheets to be on the page, then hands over to the browser's print dialog.
+  // With no window chosen (for example after pressing Today), open on the sensible one instead of an empty page.
   useEffect(() => {
-    if (printing === null) return
-    const done = () => setPrinting(null)
-    window.addEventListener('afterprint', done)
-    window.print()
-    return () => window.removeEventListener('afterprint', done)
-  }, [printing])
+    if (slotId || slots.length === 0) return
+    const pick = defaultSlotId(slots, date)
+    if (pick) update({ slotId: pick })
+  }, [slotId, slots, date, update])
 
   const state = !slotId ? 'idle' : loaded?.key === loadKey ? loaded : 'loading'
   const sheet = typeof state === 'object' && state.status === 'ready' ? state.sheet : null
@@ -112,8 +117,25 @@ export function RiderSheet() {
   const riderOptions = riders.map((_, index) => ({ value: String(index), label: riderLabel(riders, index) }))
   const withHouses = perRider.filter(rider => rider.areas.length > 0)
 
+  const download = async (target: number | 'all') => {
+    if (!sheet || downloading) return
+    const chosen = withHouses.filter(rider => target === 'all' || rider.index === target)
+    if (chosen.length === 0) return
+    const parts: RiderPart[] = chosen.map(rider => ({ riderName: printedName(riders, rider.index), areas: rider.areas, load: rider.load }))
+    const name = riderSheetFileName(sheet, chosen.length === 1 ? parts[0].riderName : '')
+    setDownloading(true)
+    try {
+      const { unsupported } = await downloadRiderSheetPdf(sheet, parts, name)
+      if (unsupported > 0) toast.warning(t('pdfUnsupported'))
+    } catch (failure) {
+      toast.error(t('pdfFailed'), { description: failure instanceof Error ? failure.message : undefined })
+    } finally {
+      setDownloading(false)
+    }
+  }
+
   return <div className="workspace-page products-page">
-    <header className="page-header no-print">
+    <header className="page-header">
       <div><PageBreadcrumbs items={[{ label: t('operations') }, { label: t('deliveries'), href: '/deliveries' }, { label: t('riderSheet') }]} /><h1>{t('riderSheet')}</h1><p className="page-description">{t('sheetDescription')}</p></div>
       <div className="header-actions">
         <Button variant="outline" className="secondary-button" asChild><Link href={`/deliveries?date=${date}${slotId ? `&slotId=${slotId}` : ''}`}>{t('backToDeliveries')}</Link></Button>
@@ -121,7 +143,7 @@ export function RiderSheet() {
       </div>
     </header>
 
-    <section className="product-list-section no-print">
+    <section className="product-list-section">
       <div className="product-filter-row">
         <DatePickerField label={t('deliveryDay')} value={date} onChange={value => update({ date: value })} />
         <Button className="secondary-button" variant="outline" onClick={() => update({ date: todayInBusinessZone() })}>{tc('today')}</Button>
@@ -138,7 +160,7 @@ export function RiderSheet() {
         {sheet.status === 'final'
           ? <div className="setup-note success" role="status"><div><strong>{t('finalTitle')}</strong>{t('finalDetail', { window: sheet.slot.name, day: formatWeekdayDate(sheet.date) })}</div></div>
           : <div className="setup-note attention" role="status"><div><strong>{t('draftTitle')}</strong>{t('draftDetail', { until: sheet.closesAt ? t('until', { time: formatTimestamp(sheet.closesAt) }) : '' })}</div></div>}
-        {sheet.warnings.map(warning => <div key={warning.code} className="setup-note attention" role="alert"><div><strong>{t('checkBeforePrint')}</strong>{warningText(warning)}</div></div>)}
+        {sheet.warnings.map(warning => <div key={warning.code} className="setup-note attention" role="alert"><div><strong>{t('checkBeforeDownload')}</strong>{warningText(warning)}</div></div>)}
         {sheet.truncated && <div className="setup-note attention" role="alert"><div><strong>{t('onlyFirst', { count: sheet.stopCount })}</strong>{t('tooMany')}</div></div>}
 
         {sheet.areas.length === 0
@@ -173,23 +195,19 @@ export function RiderSheet() {
                   <label className="rider-name"><span>{t('riderNumber', { number: index + 1 })}</span><Input value={name} maxLength={40} placeholder={t('nameOptional')} onChange={event => setRiders(current => current.map((value, position) => (position === index ? event.target.value : value)))} /></label>
                   <p>{mine && mine.areas.length > 0 ? `${t(mine.areas.length === 1 ? 'areaOne' : 'areaMany', { count: mine.areas.length })} · ${t(houses === 1 ? 'houseOne' : 'houseMany', { count: houses })}` : t('noPinsYet')}</p>
                   <div className="rider-card-actions">
-                    <Button className="secondary-button" variant="outline" disabled={!mine || mine.areas.length === 0} onClick={() => setPrinting({ target: index, id: Date.now() })}><Printer size={14} /> {t('print')}</Button>
+                    <Button className="secondary-button" variant="outline" disabled={!mine || mine.areas.length === 0 || downloading} onClick={() => void download(index)}><Download size={14} /> {t('downloadPdf')}</Button>
                     {riders.length > 1 ? <Button variant="outline" size="icon" className="icon-button" aria-label={t('removeRider', { name: riderLabel(riders, index) })} onClick={() => removeRider(index)}><Trash2 size={14} /></Button> : null}
                   </div>
                 </div>
               })}
               <div className="rider-card-actions">
                 <Button className="secondary-button" variant="outline" disabled={riders.length >= MAX_RIDERS} onClick={() => setRiders(current => [...current, ''])}>{t('addRider')}</Button>
-                <Button className="primary-button" onClick={() => setPrinting({ target: 'all', id: Date.now() })}><Printer size={14} /> {withHouses.length > 1 ? t('printAll', { count: withHouses.length }) : t('printSheet')}</Button>
+                <Button className="primary-button" disabled={downloading} onClick={() => void download('all')}><Download size={14} /> {downloading ? t('preparingPdf') : withHouses.length > 1 ? t('downloadAll', { count: withHouses.length }) : t('downloadSheet')}</Button>
               </div>
             </div>
           </div>}
       </>}
     </section>
 
-    {sheet && withHouses.length > 0 && <section className="rider-preview" aria-label={t('printPreview')}>
-      <h2 className="no-print">{t('preview')}</h2>
-      {withHouses.map(rider => <RiderSheetPrint key={rider.index} sheet={sheet} riderName={printedName(riders, rider.index)} areas={rider.areas} load={rider.load} hidden={printing !== null && printing.target !== 'all' && printing.target !== rider.index} />)}
-    </section>}
   </div>
 }
