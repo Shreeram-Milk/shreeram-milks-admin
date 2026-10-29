@@ -83,5 +83,26 @@ Backend `npm run check` (typecheck, lint, tests): **123 tests pass**. Admin `npm
 ## Open items for the owner / DevOps
 RDS encryption, private network and backups confirmed; rotate all shared credentials; Google Cloud OAuth setup; PhonePe merchant sandbox credentials; MSG91 DLT registration (documents in chat: PAN, GST, ID, address proof, authorisation letter; MSG91 DLT premium support ₹1,500 + GST); hosting target (ECS / App Runner / EC2); iPhone at launch or Android first.
 
+## Fixing the live Android app without a new Play Store build (OTA updates)
+Only for any coding agent who picks this up later. The owner is not technical: do the work, explain it in plain words.
+
+**Where it lives:** `Frontend/` (Expo app). `app.json` has `runtimeVersion: appVersion` and the Expo update URL; `app.config.js` picks the update channel from `$env:APP_CHANNEL`. Full detail: `Frontend/STORE-COMPLIANCE.md`, section D, "Over-the-air updates".
+
+**An OTA update can change** JavaScript, screens, text, styles and images inside the app. **It cannot change** native code: new permissions, new native packages, app icon or name, Firebase or Google sign-in settings, or the Expo SDK. Those need a new build (new AAB, higher `versionCode`) uploaded to Play.
+
+**To ship a fix:**
+1. Fix the code in `Frontend/` and test it. Do not change `version` in `app.json`. A different `version` makes a different runtime and the live app would not receive the update.
+2. Publish to the `preview` channel first: `npx eas-cli@latest update --channel preview --message "what changed"`. Open the tester build, check the Settings screen shows the new update id, and test the fix.
+3. Then publish the same to `production`: `npx eas-cli@latest update --channel production --message "what changed"`.
+4. Phones fetch the update on the next app open and apply it on the open after that, so tell the owner "close and open the app twice".
+
+**To undo a bad update:** publish the previous good code again to the same channel (`eas update:rollback` also exists). Never leave a broken update live.
+
+**Rules:**
+- The Play Store build must have been made with the `production` channel (or none set). A build made with `preview` will never receive production updates.
+- Keep `shreeram-upload.jks` and its password safe. Every new Play build must be signed with it.
+- Do not use an OTA update to change what the app does in a way Google or Apple would see as a different app (new payment methods, new data collection). Those need the store forms updated and, for new data, a new build.
+- A closed-test or production release on Play does not need a new build for a JavaScript-only fix, so Play does not see or review OTA updates.
+
 ## Starter message for the new chat
 "Read D:\ShreeRam Milks\admin\HANDOFF.md, then continue with step 1 of 'Current step': build the backend for delivery slots, cut-off rules, service areas with PINs, fulfilment profiles, trial plans, subscription rules and categories. Migration 0007 is already run."
