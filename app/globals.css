@@ -46,7 +46,7 @@ body {
   margin: 0;
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-geist), Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist), var(--font-noto-sans-gujarati), Arial, Helvetica, sans-serif;
   font-size: 14px;
   -webkit-font-smoothing: antialiased;
 }
@@ -54,7 +54,7 @@ h1, h2, h3, h4, h5, h6,
 .font-number,
 .amount,
 .stat-card strong,
-.insight-card strong { font-family: var(--font-plus-jakarta-sans), var(--font-geist), sans-serif; }
+.insight-card strong { font-family: var(--font-plus-jakarta-sans), var(--font-geist), var(--font-noto-sans-gujarati), sans-serif; }
 button, input { font: inherit; }
 button { cursor: pointer; }
 
@@ -384,7 +384,7 @@ button:focus-visible,input:focus-visible { outline: 2px solid #496784; outline-o
 .form-card > h2,
 .summary-card h2 {
   color: #0a0a0a;
-  font-family: var(--font-plus-jakarta-sans), var(--font-geist), sans-serif;
+  font-family: var(--font-plus-jakarta-sans), var(--font-geist), var(--font-noto-sans-gujarati), sans-serif;
   font-size: 20px;
   font-weight: 700;
   letter-spacing: -0.025em;
@@ -469,7 +469,7 @@ button:focus-visible,input:focus-visible { outline: 2px solid #496784; outline-o
 .variant-name-cell { color: #0a0a0a !important; font-weight: 600 !important; }
 .value-emphasis {
   color: #0a0a0a !important;
-  font-family: var(--font-plus-jakarta-sans), var(--font-geist), sans-serif;
+  font-family: var(--font-plus-jakarta-sans), var(--font-geist), var(--font-noto-sans-gujarati), sans-serif;
   font-weight: 600 !important;
 }
 .variant-row-actions { min-width: 164px; justify-content: flex-end; gap: 8px; }
@@ -502,7 +502,7 @@ button:focus-visible,input:focus-visible { outline: 2px solid #496784; outline-o
 .record-editor-dialog::-webkit-scrollbar { display: none; }
 .record-editor-dialog [data-slot="dialog-title"] {
   color: #0a0a0a;
-  font-family: var(--font-plus-jakarta-sans), var(--font-geist), sans-serif;
+  font-family: var(--font-plus-jakarta-sans), var(--font-geist), var(--font-noto-sans-gujarati), sans-serif;
   font-size: 18px;
   font-weight: 600;
 }
@@ -1167,7 +1167,7 @@ dl.product-detail-rows dd { margin: 0; color: #344256; font-weight: 600; text-al
 .code-input { position: relative; }
 .code-input-native { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; border: 0; background: transparent; color: transparent; caret-color: transparent; font-size: 16px; outline: none; opacity: .01; }
 .code-input-slots { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; }
-.code-input-slot { display: grid; place-items: center; height: 58px; border: 1px solid #d0d5dd; border-radius: 12px; background: #fff; color: var(--login-ink); font-family: var(--font-plus-jakarta-sans), sans-serif; font-size: 24px; font-weight: 700; box-shadow: 0 1px 2px rgba(16, 24, 40, .05); transition: border-color .15s ease, box-shadow .15s ease; }
+.code-input-slot { display: grid; place-items: center; height: 58px; border: 1px solid #d0d5dd; border-radius: 12px; background: #fff; color: var(--login-ink); font-family: var(--font-plus-jakarta-sans), var(--font-noto-sans-gujarati), sans-serif; font-size: 24px; font-weight: 700; box-shadow: 0 1px 2px rgba(16, 24, 40, .05); transition: border-color .15s ease, box-shadow .15s ease; }
 .code-input-slot[data-filled="true"] { border-color: #98a2b3; }
 .code-input:focus-within .code-input-slot[data-active="true"] { border-color: var(--login-brand); box-shadow: 0 0 0 4px var(--login-focus); }
 .code-input:has(input[aria-invalid="true"]) .code-input-slot { border-color: var(--danger); }

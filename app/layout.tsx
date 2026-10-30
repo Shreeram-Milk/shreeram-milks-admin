@@ -1,6 +1,6 @@
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
-import { Geist, Plus_Jakarta_Sans } from 'next/font/google'
+import { Geist, Noto_Sans_Gujarati, Plus_Jakarta_Sans } from 'next/font/google'
 import { LanguageProvider } from '@/lib/i18n/LanguageProvider'
 import { requestLanguage } from '@/lib/i18n/server'
 import './globals.css'
@@ -14,6 +14,13 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 const geist = Geist({
   subsets: ['latin'],
   variable: '--font-geist',
+  display: 'swap',
+})
+
+// Gujarati letters: the two fonts above have none. The browser downloads this one only when a page shows Gujarati.
+const notoSansGujarati = Noto_Sans_Gujarati({
+  subsets: ['gujarati'],
+  variable: '--font-noto-sans-gujarati',
   display: 'swap',
 })
 
@@ -47,7 +54,7 @@ export default async function RootLayout({
   // The language comes from this browser's cookie, so the first page is drawn in it (no English flash before Gujarati).
   const language = await requestLanguage()
   return (
-    <html lang={language} className={`${geist.variable} ${plusJakartaSans.variable}`}>
+    <html lang={language} className={`${geist.variable} ${plusJakartaSans.variable} ${notoSansGujarati.variable}`}>
       <body className="antialiased" suppressHydrationWarning>
         <LanguageProvider initial={language}>{children}</LanguageProvider>
         {process.env.NODE_ENV === 'production' && <Analytics />}
