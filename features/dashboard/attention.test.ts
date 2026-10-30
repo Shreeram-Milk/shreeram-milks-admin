@@ -8,7 +8,10 @@ const quiet: DashboardData = {
   deliveries: { today: { placed: 0, out_for_delivery: 0, delivered: 0, missed: 0, cancelled: 0 }, todayTotal: 0, tomorrowTotal: 0 },
   plans: { subscriptions: 0, trials: 0 },
   money: { owedPaise: 0, owingCustomers: 0, refundsToSend: 0, refundsToSendPaise: 0, paidOnlineTodayPaise: 0 },
-  customers: { active: 0, newThisWeek: 0 },
+  customers: { active: 0, newThisWeek: 0, newPreviousWeek: 0 },
+  sales: { todayPaise: 0, yesterdayPaise: 0, todayOrders: 0, yesterdayOrders: 0, last7Paise: 0, previous7Paise: 0, last7Orders: 0, previous7Orders: 0, trend: [] },
+  deliveryQuality: { delivered7: 0, missed7: 0 },
+  windows: [], topProducts: [], recentOrders: [],
   attention: { creditLimitSkips: 0, overdueOrders: 0, openTickets: 0 },
 }
 

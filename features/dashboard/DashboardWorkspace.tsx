@@ -12,11 +12,11 @@ import { t } from './messages'
 import { dashboardApi, type DashboardData } from './api'
 import { attentionItems } from './attention'
 import { KpiRows, StatusBanner } from './DashboardCards'
-import { AttentionPanel, TodayPanel } from './DashboardPanels'
+import { AttentionPanel, RecentOrdersPanel, SalesPanel, TopProductsPanel, WindowsPanel } from './DashboardPanels'
 
 type LoadState = { status: 'loading' } | { status: 'error'; message: string } | { status: 'ready'; data: DashboardData }
 
-/** The landing page: what needs doing today and tomorrow, the money, and anything that needs attention. All figures come from the server. */
+/** The landing page: sales and how they compare with before, how today's deliveries are going, best sellers, the latest orders, and anything that needs attention. All figures come from the server. */
 export function DashboardWorkspace() {
   const [state, setState] = useState<LoadState>({ status: 'loading' })
   const [reloadKey, setReloadKey] = useState(0)
@@ -47,8 +47,13 @@ export function DashboardWorkspace() {
     <StatusBanner issueTotal={items.length} />
     <KpiRows data={data} />
     <div className="dash-main">
-      <div className="dash-stack"><TodayPanel data={data} /></div>
+      <SalesPanel data={data} />
       <AttentionPanel items={items} />
     </div>
+    <div className="dash-pair">
+      <WindowsPanel data={data} />
+      <TopProductsPanel data={data} />
+    </div>
+    <RecentOrdersPanel data={data} />
   </div>
 }
