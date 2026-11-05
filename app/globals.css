@@ -1568,3 +1568,9 @@ dl.product-detail-rows dd { margin: 0; color: #344256; font-weight: 600; text-al
 .language-option { min-height: 30px; padding: 0 12px; border: 0; border-radius: 999px; background: transparent; color: var(--muted); font-size: 13px; font-weight: 600; cursor: pointer; }
 .language-option.is-active { background: var(--foreground, #111827); color: #fff; }
 .language-option:focus-visible { outline: 2px solid var(--ring, #2563eb); outline-offset: 2px; }
+
+/* The size dialog: amount and unit side by side, and a folded "More options" for the rarely needed fields. */
+.size-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 10px; }
+.size-more { border-top: 1px solid var(--border); padding-top: 12px; }
+.size-more > summary { cursor: pointer; width: fit-content; color: #344256; font-size: 13px; font-weight: 600; }
+.size-more[open] > summary { margin-bottom: 4px; }

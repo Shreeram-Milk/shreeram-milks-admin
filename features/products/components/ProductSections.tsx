@@ -12,7 +12,8 @@ import { t } from '../messages'
 import { tc } from '@/lib/i18n/common'
 import { GalleryField } from './GalleryField'
 import { ProductSelect } from './ProductSelect'
-import { suggestedProduction, unitLabel, unitOptions } from '../units'
+import { sizeName, suggestedProduction, unitLabel } from '../units'
+import { SizeEditorDialog } from './SizeEditorDialog'
 import { ImageUploadField } from '@/components/shared/ImageUploadField'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
@@ -23,7 +24,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { StatusBadge } from '@/components/shared/StatusBadge'
-import { formatINR, paiseToRupeeInput, parseRupeesToPaise } from '@/lib/money'
+import { formatINR } from '@/lib/money'
 
 /** "12 / 200" under a field, so the limit is visible while typing. */
 const counter = (text: string, max: number) => t('characters', { count: text.length, max })
@@ -56,7 +57,9 @@ export function VariantsSection({ watch, setValue }: { watch: UseFormWatch<Produ
   const [deleteIndex, setDeleteIndex] = useState<number | null>(null)
   const openEditor = (index: number | null) => {
     setEditorError('')
-    setEditor({ index, value: index === null ? newVariant() : { ...variants[index] } })
+    const existing = index === null ? null : variants[index]
+    // A name that is only the size written out ("500 ml") is the automatic one, so the "own name" box starts empty.
+    setEditor({ index, value: existing ? { ...existing, name: existing.name === sizeName(existing.displayUnit, existing.displayQuantity) ? '' : existing.name } : newVariant() })
   }
   /** Changes the size, and keeps the "uses for making" amount in step with it until the admin types their own. */
   const changeSize = (patch: Pick<Partial<FormVariant>, 'displayUnit' | 'displayQuantity'>) => setEditor(current => {
@@ -74,7 +77,7 @@ export function VariantsSection({ watch, setValue }: { watch: UseFormWatch<Produ
   }
   const saveEditor = () => {
     if (!editor) return
-    if (!editor.value.name.trim() || !editor.value.displayUnit.trim() || editor.value.pricePaise <= 0 || editor.value.displayQuantity <= 0) {
+    if (!editor.value.displayUnit.trim() || editor.value.pricePaise <= 0 || editor.value.displayQuantity <= 0) {
       setEditorError(t('sizeFieldsRequired'))
       return
     }
@@ -86,7 +89,8 @@ export function VariantsSection({ watch, setValue }: { watch: UseFormWatch<Produ
       setEditorError(t('oldPriceHigher'))
       return
     }
-    const next = editor.index === null ? [...variants, editor.value] : variants.map((variant, index) => index === editor.index ? editor.value : variant)
+    const saved = { ...editor.value, name: editor.value.name.trim() || sizeName(editor.value.displayUnit, editor.value.displayQuantity) }
+    const next = editor.index === null ? [...variants, saved] : variants.map((variant, index) => index === editor.index ? saved : variant)
     setValue('variants', next, { shouldDirty: true, shouldValidate: true })
     setEditor(null)
   }
@@ -104,22 +108,8 @@ export function VariantsSection({ watch, setValue }: { watch: UseFormWatch<Produ
       </TableRow>)}
       {variants.length === 0 && <TableRow><TableCell colSpan={showProduction ? 5 : 4}><EmptyRows>{t('noSizes')}</EmptyRows></TableCell></TableRow>}
     </TableBody></Table></div>
-    <Dialog open={editor !== null} onOpenChange={open => { if (!open) setEditor(null) }}>
-      {editor && <DialogContent className="record-editor-dialog"><DialogHeader><DialogTitle>{t(editor.index === null ? 'addASize' : 'editSize')}</DialogTitle><DialogDescription>{t('sizeDialogDescription')}</DialogDescription></DialogHeader>
-        <div className="record-editor-fields">
-          <FormField className="form-field" label={t('sizeName')} helper={t('sizeNameHint')}><Input autoFocus value={editor.value.name} onChange={event => setEditor(current => current ? { ...current, value: { ...current.value, name: event.target.value } } : current)} placeholder="500 ml" /></FormField>
-          <FormField className="form-field" label={t('sellingPrice')}><Input type="number" min="0" step="0.01" value={paiseToRupeeInput(editor.value.pricePaise)} onChange={event => setEditor(current => current ? { ...current, value: { ...current.value, pricePaise: parseRupeesToPaise(event.target.value.replace(/\.$/, '')) ?? 0 } } : current)} /></FormField>
-          <FormField className="form-field" label={t('unitRequired')} helper={t('unitHint')}><ProductSelect label={t('unit')} value={editor.value.displayUnit} options={unitOptions(editor.value.displayUnit)} placeholder={t('chooseUnit')} onChange={value => changeSize({ displayUnit: value })} /></FormField>
-          <FormField className="form-field" label={t('amountRequired')} helper={t('amountHint')}><Input type="number" min="0.01" step="any" value={editor.value.displayQuantity} onChange={event => changeSize({ displayQuantity: Number(event.target.value || 0) })} /></FormField>
-          {showProduction && <><FormField className="form-field" label={t('makingUnit')} helper={t('makingUnitHint')}><ProductSelect label={t('makingUnitLabel')} value={editor.value.productionUnit} options={unitOptions(editor.value.productionUnit)} placeholder={t('chooseUnit')} onChange={value => setEditor(current => current ? { ...current, value: { ...current.value, productionUnit: value } } : current)} /></FormField><FormField className="form-field" label={t('makingAmount')} helper={t('makingAmountHint')}><Input type="number" min="0" step="any" value={editor.value.productionQuantity} onChange={event => setEditor(current => current ? { ...current, value: { ...current.value, productionQuantity: Number(event.target.value || 0) } } : current)} /></FormField></>}
-          <FormField className="form-field" label={t('oldPrice')} helper={t('oldPriceHint')}><Input type="number" min="0" step="0.01" value={editor.value.compareAtPricePaise === null ? '' : paiseToRupeeInput(editor.value.compareAtPricePaise)} onChange={event => setEditor(current => current ? { ...current, value: { ...current.value, compareAtPricePaise: event.target.value.trim() === '' ? null : parseRupeesToPaise(event.target.value.replace(/\.$/, '')) } } : current)} /></FormField>
-          <FormField className="form-field" label={t('sku')} helper={t('skuHint')}><Input value={editor.value.sku} onChange={event => setEditor(current => current ? { ...current, value: { ...current.value, sku: event.target.value } } : current)} placeholder={t('optional')} /></FormField>
-          <FormField className="form-field" label={t('soldNow')}><ProductSelect label={t('soldNow')} value={editor.value.status} onChange={value => setEditor(current => current ? { ...current, value: { ...current.value, status: value === 'inactive' ? 'inactive' : 'active' } } : current)} placeholder={t('choose')} options={[{ value: 'active', label: t('soldYes') }, { value: 'inactive', label: t('soldNo') }]} /></FormField>
-        </div>
-        {editorError && <p className="field-error" role="alert">{editorError}</p>}
-        <DialogFooter><AdminButton type="button" variant="outline" onClick={() => setEditor(null)}>{tc('cancel')}</AdminButton><AdminButton type="button" onClick={saveEditor}>{t('saveSize')}</AdminButton></DialogFooter>
-      </DialogContent>}
-    </Dialog>
+    {editor && <SizeEditorDialog isNew={editor.index === null} value={editor.value} showProduction={showProduction} error={editorError} onSave={saveEditor} onClose={() => setEditor(null)}
+      onChange={patch => setEditor(current => current ? { ...current, value: { ...current.value, ...patch } } : current)} onChangeSize={changeSize} />}
     <AlertDialog open={deleteIndex !== null} onOpenChange={open => { if (!open) setDeleteIndex(null) }}>
       {deleteIndex !== null && <AlertDialogContent className="confirm-dialog"><AlertDialogHeader><p className="eyebrow">{t('removeSize')}</p><AlertDialogTitle>{t('removeTitle', { name: variants[deleteIndex]?.name || t('unnamedSize') })}</AlertDialogTitle><AlertDialogDescription>{t('removeSizeBody')}</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter className="dialog-actions"><AlertDialogCancel asChild><AdminButton type="button" variant="outline" className="secondary-button">{tc('cancel')}</AdminButton></AlertDialogCancel><AlertDialogAction asChild><AdminButton type="button" className="primary-button destructive-button" onClick={() => { removeVariant(deleteIndex); setDeleteIndex(null) }}>{t('removeSize')}</AdminButton></AlertDialogAction></AlertDialogFooter></AlertDialogContent>}
     </AlertDialog>

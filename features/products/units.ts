@@ -18,6 +18,19 @@ export function unitOptions(current: string): ProductSelectOption[] {
   return current && !MEASURE_UNITS.some(unit => unit === current) ? [{ value: current, label: current }, ...known] : known
 }
 
+/** How each unit reads in a size name: "500 ml", "1 L", "2 packets". Units with a singular and a plural carry both. */
+const NAME_UNIT: Record<MeasureUnit, string | readonly [string, string]> = {
+  Litre: 'L', Millilitre: 'ml', Kilogram: 'kg', Gram: 'g', Piece: ['piece', 'pieces'], Packet: ['packet', 'packets'], Bottle: ['bottle', 'bottles'], Dozen: ['dozen', 'dozen'],
+}
+
+/** The name customers see for a size, built from it: 500 Millilitre becomes "500 ml". Empty until a unit and an amount are chosen. */
+export function sizeName(unit: string, quantity: number): string {
+  if (!unit || !(quantity > 0)) return ''
+  const known = MEASURE_UNITS.find(item => item === unit)
+  const word = known ? NAME_UNIT[known] : unit
+  return `${quantity} ${typeof word === 'string' ? word : quantity === 1 ? word[0] : word[1]}`
+}
+
 /**
  * What one item uses up when it is made, worked out from its size: 500 Millilitre uses 0.5 Litre, 250 Gram uses 0.25 Kilogram,
  * anything else uses its own unit and amount. Only a suggestion for the form; the admin can change it.
