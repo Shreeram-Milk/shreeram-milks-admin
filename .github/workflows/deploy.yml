@@ -9,15 +9,33 @@ on:
 
 concurrency:
   group: shreeram-admin-deploy
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    # A deploy normally takes a few minutes; one that hangs is stopped instead of blocking the next push for hours.
+    timeout-minutes: 20
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      # The server is small: building the admin there ran it out of memory (the build hung or failed). The admin is built here
+      # instead, and only the finished .next/ folder is sent. The API address is the only setting the build bakes in.
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Build admin
+        env:
+          NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL || 'https://api.shreerammilk.com' }}
+          NEXT_TELEMETRY_DISABLED: '1'
+        run: |
+          npm ci
+          npm run build
 
       - name: Configure SSH
         env:
@@ -29,28 +47,33 @@ jobs:
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -H "${{ secrets.EC2_HOST }}" >> ~/.ssh/known_hosts
 
-      - name: Upload admin source
+      - name: Upload admin source and build
         run: |
-          # --delete removes files that were deleted from the repository; without it, an old file left on the server still gets built
-          # and can fail the type check. Settings, the build folder and the lock file on the server are protected from deletion.
+          # Source first (settings on the server are kept), then the finished build replaced as a whole.
           rsync -az --delete \
             --filter='P .env*' \
             --filter='P .next/' \
-            --filter='P package-lock.json' \
             --exclude='.env' \
             --exclude='node_modules/' \
+            --exclude='.next/' \
             --exclude='.git/' \
             -e "ssh -i ~/.ssh/deploy_key" \
             ./ "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/var/www/html/shreeram-milks-admin/"
+          rsync -az --delete \
+            --exclude='cache/' \
+            --exclude='dev/' \
+            -e "ssh -i ~/.ssh/deploy_key" \
+            .next/ "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/var/www/html/shreeram-milks-admin/.next/"
 
-      - name: Build and restart admin
+      - name: Install packages and restart admin
         run: |
           ssh -i ~/.ssh/deploy_key \
             "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}" \
             'set -e
              cd /var/www/html/shreeram-milks-admin
-             npm install
-             npm run build
+             # A build left running by an older deploy only eats the memory the site needs.
+             pkill -f "[n]ext build" || true
+             npm install --no-audit --no-fund
              sudo systemctl restart shreeram-admin
-             sleep 3
+             sleep 5
              sudo systemctl is-active --quiet shreeram-admin'
