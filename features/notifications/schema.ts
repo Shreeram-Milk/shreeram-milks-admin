@@ -30,6 +30,8 @@ export const broadcastSchema = z.object({
   title, titleGujarati, body, bodyGujarati,
   /** Tapping the message opens the Offers page. */
   opensOffers: z.boolean(),
+  /** One offer to open on tap; empty opens the whole Offers page. */
+  offerId: z.string(),
   audienceType: z.enum(AUDIENCE_TYPES),
   customerType: z.enum(['', 'prepaid', 'credit']),
   pinCodes: z.string().max(600, { error: () => t('errPinsLong') }),
@@ -46,7 +48,7 @@ export const broadcastSchema = z.object({
 })
 export type BroadcastFormValues = z.infer<typeof broadcastSchema>
 
-export const blankBroadcast: BroadcastFormValues = { title: '', titleGujarati: '', body: '', bodyGujarati: '', opensOffers: false, audienceType: 'all', customerType: '', pinCodes: '', subscription: 'any', customerIds: [] }
+export const blankBroadcast: BroadcastFormValues = { title: '', titleGujarati: '', body: '', bodyGujarati: '', opensOffers: false, offerId: '', audienceType: 'all', customerType: '', pinCodes: '', subscription: 'any', customerIds: [] }
 
 /** The audience the server understands, from what staff filled in. Only the part for the chosen kind of audience is sent. */
 export function toAudience(values: Pick<BroadcastFormValues, 'audienceType' | 'customerType' | 'pinCodes' | 'subscription' | 'customerIds'>): Audience {

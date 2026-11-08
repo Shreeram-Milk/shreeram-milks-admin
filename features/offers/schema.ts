@@ -31,6 +31,14 @@ export const offerSchema = z.object({
   startsOn: isoDateOrEmpty, endsOn: isoDateOrEmpty,
   totalLimit: wholeNumberOrEmpty('limit'), perCustomerLimit: wholeNumberOrEmpty('limit'),
   status: z.enum(['active', 'inactive']),
+  imageAssetId: z.string().nullable(),
+  showText: z.boolean(),
+  points: z.array(z.object({
+    en: z.string().trim().min(1, { error: () => t('errPointEmpty') }).max(120, { error: () => t('errPointLong') }),
+    gu: z.string().trim().max(120, { error: () => t('errPointLong') }),
+  })).max(8, { error: () => t('errPointsMax') }),
+  inRewardPool: z.boolean(),
+  rewardOnly: z.boolean(),
 }).superRefine((form, context) => {
   const problem = (path: string, message: string) => context.addIssue({ code: 'custom', path: [path], message })
   if (form.kind === 'percent') {
@@ -47,6 +55,12 @@ export const offerSchema = z.object({
   if (form.minPlanDays && !form.appliesSubscription) problem('minPlanDays', t('errPlanOnlySubscriptions'))
   const range = windowError(form.startsOn, form.endsOn)
   if (range) problem('endsOn', range)
+  if (form.inRewardPool && form.kind === 'free_gift') problem('inRewardPool', t('errRewardGift'))
+  if (form.rewardOnly) {
+    if (!form.inRewardPool) problem('rewardOnly', t('errRewardOnlyPool'))
+    if (!form.code) problem('code', t('errRewardCode'))
+    if (form.appliesTrial || form.appliesSubscription) problem('rewardOnly', t('errRewardOneTime'))
+  }
 })
 export type OfferFormValues = z.infer<typeof offerSchema>
 
@@ -54,6 +68,7 @@ export const blankOffer: OfferFormValues = {
   title: '', titleGu: '', description: '', descriptionGu: '', kind: 'percent', percent: '', flat: '', maxDiscount: '', minOrder: '', scope: 'order', productIds: [],
   giftProductId: '', giftVariantId: '', giftQuantity: '1', appliesOneTime: true, appliesTrial: false, appliesSubscription: false, minPlanDays: '', code: '',
   startsOn: '', endsOn: '', totalLimit: '', perCustomerLimit: '', status: 'active',
+  imageAssetId: null, showText: true, points: [], inRewardPool: false, rewardOnly: false,
 }
 
 export function fromOffer(offer: Offer): OfferFormValues {
@@ -65,6 +80,7 @@ export function fromOffer(offer: Offer): OfferFormValues {
     appliesOneTime: offer.appliesOneTime, appliesTrial: offer.appliesTrial, appliesSubscription: offer.appliesSubscription, minPlanDays: offer.minPlanDays === null ? '' : String(offer.minPlanDays),
     code: offer.code ?? '', startsOn: offer.startsOn ?? '', endsOn: offer.endsOn ?? '', totalLimit: offer.totalLimit === null ? '' : String(offer.totalLimit),
     perCustomerLimit: offer.perCustomerLimit === null ? '' : String(offer.perCustomerLimit), status: offer.status,
+    imageAssetId: offer.imageAssetId, showText: offer.showText, points: offer.points.map(point => ({ en: point.en, gu: point.gu })), inRewardPool: offer.inRewardPool, rewardOnly: offer.rewardOnly,
   }
 }
 
@@ -87,5 +103,7 @@ export function toInput(form: OfferFormValues): OfferInput {
     code: form.code === '' ? null : form.code,
     startsOn: form.startsOn || null, endsOn: form.endsOn || null,
     totalLimit: orNull(form.totalLimit), perCustomerLimit: orNull(form.perCustomerLimit), status: form.status,
+    imageAssetId: form.imageAssetId, showText: form.showText, points: form.points,
+    inRewardPool: form.inRewardPool, rewardOnly: form.inRewardPool && form.rewardOnly,
   }
 }

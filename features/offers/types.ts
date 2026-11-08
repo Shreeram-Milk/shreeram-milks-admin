@@ -34,8 +34,20 @@ export type Offer = {
   status: 'active' | 'inactive'
   /** "Cow Ghee - 250 g": the gift, named for the list. */
   giftLabel: string | null
+  /** The picture at the top of the offer page. Saved by id; `imageUrl` is a short-lived link for showing it. */
+  imageAssetId: string | null
+  imageUrl: string | null
+  /** Off: the picture shows alone, for pictures that already carry their own words. */
+  showText: boolean
+  /** Bullet points under the code on the offer page. */
+  points: OfferPoint[]
+  /** Can come out of a scratch card. */
+  inRewardPool: boolean
+  /** The code works only for a customer who scratched a card for it; hidden from the Offers page. */
+  rewardOnly: boolean
   createdAt: string; updatedAt: string
 }
 
 /** What is sent to save an offer. */
-export type OfferInput = Omit<Offer, 'id' | 'giftLabel' | 'giftProductId' | 'createdAt' | 'updatedAt'>
+export type OfferInput = Omit<Offer, 'id' | 'giftLabel' | 'giftProductId' | 'imageUrl' | 'createdAt' | 'updatedAt'>
+export type OfferPoint = { en: string; gu: string }

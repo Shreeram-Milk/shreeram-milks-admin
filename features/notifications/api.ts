@@ -22,7 +22,7 @@ export type BroadcastRecord = {
   id: string; title: string; titleGujarati: string; body: string; bodyGujarati: string; audience: Audience
   recipients: number; pushed: number; status: 'sending' | 'sent' | 'failed'; createdAt: string; finishedAt: string | null
 }
-export type BroadcastInput = { title: string; titleGujarati: string; body: string; bodyGujarati: string; audience: Audience; opensOffers: boolean }
+export type BroadcastInput = { title: string; titleGujarati: string; body: string; bodyGujarati: string; audience: Audience; opensOffers: boolean; offerId: string | null }
 
 export const notificationApi = {
   async templates(): Promise<MessageTemplate[]> { return (await apiRequest<{ templates: MessageTemplate[] }>('/admin/notifications/templates')).templates },

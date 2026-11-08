@@ -15,7 +15,7 @@ import { PageBreadcrumbs } from '@/components/shared/PageBreadcrumbs'
 import { PageSkeleton } from '@/components/shared/PageSkeleton'
 import { describeApiError } from '@/lib/api-errors'
 import { formatTimestamp } from '@/lib/business-time'
-import { appSettingsApi } from './api'
+import { appSettingsApi, rewardStatsApi } from './api'
 import { appSettingsSchema, type AppSettingsFormValues } from './schema'
 import { FEATURE_FLAG_KEYS, FEATURE_FLAG_LABELS, type AppSettings } from './types'
 import { tc } from '@/lib/i18n/common'
@@ -25,6 +25,7 @@ const TABS = [
   { value: 'support', label: 'tabSupport' },
   { value: 'delivery', label: 'tabDelivery' },
   { value: 'features', label: 'tabFeatures' },
+  { value: 'rewards', label: 'tabRewards' },
   { value: 'availability', label: 'tabAvailability' },
 ] as const
 type TabValue = (typeof TABS)[number]['value']
@@ -35,6 +36,7 @@ const TAB_OF_FIELD: Record<string, TabValue> = {
   supportHoursEn: 'support', supportHoursGu: 'support', afterHoursMessageEn: 'support', afterHoursMessageGu: 'support',
   deliveryPromiseEn: 'delivery', deliveryPromiseGu: 'delivery',
   flags: 'features',
+  rewardsEnabled: 'rewards', rewardsMinOrderPaise: 'rewards', rewardsExpiryDays: 'rewards', latestAppVersion: 'availability',
   minimumAppVersion: 'availability', maintenanceMode: 'availability', maintenanceMessageEn: 'availability', maintenanceMessageGu: 'availability', showMaintenanceContact: 'availability',
 }
 
@@ -114,9 +116,26 @@ function AppSettingsForm({ initial }: { initial: AppSettings }) {
         <div className="switch-list">{FEATURE_FLAG_KEYS.map(key => <Controller key={key} control={control} name={`flags.${key}`} render={({ field }) => <SwitchRow id={`flag-${key}`} label={FEATURE_FLAG_LABELS[key].label} detail={FEATURE_FLAG_LABELS[key].detail} checked={field.value} onChange={field.onChange} />} />)}</div>
       </section>
       </TabsContent>
+      <TabsContent value="rewards" className="settings-tab">
+      <section className="form-card"><h2>{t('rewards')}</h2>
+        <p className="product-hint">{t('rewardsHint')}</p>
+        <div className="switch-list">
+          <Controller control={control} name="rewardsEnabled" render={({ field }) => <SwitchRow id="rewards-enabled" label={t('rewardsEnabled')} detail={t('rewardsEnabledDetail')} checked={field.value} onChange={field.onChange} />} />
+        </div>
+        <div className="product-grid">
+          <FormField label={t('rewardsMinOrder')} error={errors.rewardsMinOrderPaise?.message} helper={t('rewardsMinOrderHelper')}>
+            <Controller control={control} name="rewardsMinOrderPaise" render={({ field }) => <Input inputMode="numeric" autoComplete="off" value={String(Math.round(field.value / 100))} onChange={event => { const digits = event.target.value.replace(/\D/g, ''); field.onChange(digits === '' ? 0 : Number(digits) * 100) }} />} />
+          </FormField>
+          <FormField label={t('rewardsExpiry')} error={errors.rewardsExpiryDays?.message} helper={t('rewardsExpiryHelper')}><Input {...register('rewardsExpiryDays', { valueAsNumber: true })} type="number" min={1} max={365} inputMode="numeric" /></FormField>
+        </div>
+        <RewardStats />
+        <p className="product-hint">{t('rewardsRules')}</p>
+      </section>
+      </TabsContent>
       <TabsContent value="availability" className="settings-tab">
       <section className="form-card"><h2>{t('availability')}</h2>
         <div className="product-grid">
+          <FormField label={t('latestVersion')} error={errors.latestAppVersion?.message} helper={t('latestVersionHelper')}><Input {...register('latestAppVersion')} autoComplete="off" placeholder="1.0.0" /></FormField>
           <FormField label={t('minimumVersion')} error={errors.minimumAppVersion?.message} helper={t('minimumVersionHelper')}><Input {...register('minimumAppVersion')} autoComplete="off" placeholder="1.0.0" /></FormField>
         </div>
         <div className="switch-list">
@@ -137,6 +156,18 @@ function AppSettingsForm({ initial }: { initial: AppSettings }) {
       <div className="settings-actions"><Button type="button" variant="outline" className="secondary-button" disabled={!isDirty} onClick={() => reset(toForm(saved))}>{t('discard')}</Button><Button type="submit" className="primary-button" disabled={!isDirty || isSubmitting}>{t('saveSettings')}</Button></div>
     </form>
   </div>
+}
+
+/** Cards given, scratched and used so far. Quietly hidden if it cannot be read: the settings still work. */
+function RewardStats() {
+  const [stats, setStats] = useState<{ given: number; scratched: number; used: number } | null>(null)
+  useEffect(() => {
+    let cancelled = false
+    rewardStatsApi.get().then(value => { if (!cancelled) setStats(value) }, () => undefined)
+    return () => { cancelled = true }
+  }, [])
+  if (!stats) return null
+  return <p className="product-hint" role="status">{t('rewardsStats', { given: stats.given, scratched: stats.scratched, used: stats.used })}</p>
 }
 
 type LoadState = { status: 'loading' } | { status: 'error'; message: string } | { status: 'ready'; settings: AppSettings }

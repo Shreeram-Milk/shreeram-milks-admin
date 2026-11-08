@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { FormField } from '@/components/configuration/FormField'
 import { describeApiError } from '@/lib/api-errors'
 import type { CustomerRecord } from '../../customers/api'
+import { offerApi } from '../../offers/api'
 import { notificationApi, type AudienceReach, type BroadcastRecord } from '../api'
 import { BODY_MAX, TITLE_MAX, blankBroadcast, broadcastSchema, readyAudience, toAudience, type AudienceType, type BroadcastFormValues, type SubscriptionFilter } from '../schema'
 import { CustomerPicker } from './CustomerPicker'
@@ -36,7 +37,18 @@ const reachText = (reach: AudienceReach) => t(reach.customers === 1 ? 'reachOne'
  */
 export function BroadcastDialog({ onClose, onSent }: { onClose: () => void; onSent: (broadcast: BroadcastRecord) => void }) {
   const { register, handleSubmit, control, setValue, formState: { errors } } = useForm<BroadcastFormValues>({ resolver: zodResolver(broadcastSchema), defaultValues: blankBroadcast })
-  const [audienceType, customerType, pinCodes, subscription, customerIds] = useWatch({ control, name: ['audienceType', 'customerType', 'pinCodes', 'subscription', 'customerIds'] })
+  const [audienceType, customerType, pinCodes, subscription, customerIds, opensOffers] = useWatch({ control, name: ['audienceType', 'customerType', 'pinCodes', 'subscription', 'customerIds', 'opensOffers'] })
+  // Live offers customers can see, for "open one offer". Loaded only when the box is ticked.
+  const [offerChoices, setOfferChoices] = useState<Array<{ value: string; label: string }> | null>(null)
+  useEffect(() => {
+    if (!opensOffers || offerChoices) return
+    let cancelled = false
+    offerApi.list().then(
+      offers => { if (!cancelled) setOfferChoices([{ value: '', label: t('allOffers') }, ...offers.filter(offer => offer.status === 'active' && !offer.rewardOnly).map(offer => ({ value: offer.id, label: offer.code ? `${offer.title} (${offer.code})` : offer.title }))]) },
+      () => { if (!cancelled) setOfferChoices([{ value: '', label: t('allOffers') }]) },
+    )
+    return () => { cancelled = true }
+  }, [opensOffers, offerChoices])
   const [chosen, setChosen] = useState<CustomerRecord[]>([])
   // The answer for one particular group; it only counts while the group on screen is still that one.
   const [answer, setAnswer] = useState<{ key: string; result: { status: 'ready'; value: AudienceReach } | { status: 'error'; message: string } } | null>(null)
@@ -67,7 +79,7 @@ export function BroadcastDialog({ onClose, onSent }: { onClose: () => void; onSe
     if (!pending) return
     setSending(true)
     try {
-      const broadcast = await notificationApi.send({ title: pending.title, titleGujarati: pending.titleGujarati, body: pending.body, bodyGujarati: pending.bodyGujarati, audience: toAudience(pending), opensOffers: pending.opensOffers })
+      const broadcast = await notificationApi.send({ title: pending.title, titleGujarati: pending.titleGujarati, body: pending.body, bodyGujarati: pending.bodyGujarati, audience: toAudience(pending), opensOffers: pending.opensOffers, offerId: pending.opensOffers && pending.offerId ? pending.offerId : null })
       toast.success(t(broadcast.recipients === 1 ? 'sentToOne' : 'sentToMany', { count: broadcast.recipients }))
       onSent(broadcast)
       onClose()
@@ -96,6 +108,7 @@ export function BroadcastDialog({ onClose, onSent }: { onClose: () => void; onSe
             <FormField label={t('messageField')} required error={errors.body?.message}><Textarea {...register('body')} rows={3} maxLength={BODY_MAX} /></FormField>
             <FormField label={t('gujaratiMessage')} helper={t('gujaratiMessageHelper')} error={errors.bodyGujarati?.message}><Textarea {...register('bodyGujarati')} rows={3} maxLength={BODY_MAX} lang="gu" /></FormField>
             <label className="field-wide" style={{ display: 'flex', gap: 8, alignItems: 'center' }}><input type="checkbox" {...register('opensOffers')} /> <span>{t('opensOffers')}</span></label>
+            {opensOffers && <div className="field-wide"><FormField label={t('whichOffer')} helper={t('whichOfferHelper')}><Controller control={control} name="offerId" render={({ field }) => <SelectField label={t('whichOffer')} placeholder={offerChoices ? t('allOffers') : t('loadingOffers')} value={field.value} options={offerChoices ?? []} onChange={value => field.onChange(value)} />} /></FormField></div>}
             <div className="field-wide"><FormField label={t('sendTo')}><Controller control={control} name="audienceType" render={({ field }) => <SelectField label={t('sendTo')} placeholder={t('chooseWho')} value={field.value} options={audienceOptions()} onChange={value => field.onChange(value)} />} /></FormField></div>
             {audienceType === 'filter' && <>
               <FormField label={t('customerType')} error={errors.customerType?.message}><Controller control={control} name="customerType" render={({ field }) => <SelectField label={t('customerType')} placeholder={t('anyCustomer')} value={field.value || 'any'} options={typeOptions()} onChange={value => field.onChange(value === 'any' ? '' : value)} />} /></FormField>

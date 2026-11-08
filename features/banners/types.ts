@@ -4,7 +4,9 @@ import { t, type BannerKey } from './messages'
 
 export type BannerType = 'promotion' | 'warning' | 'maintenance' | 'informational'
 export type BannerAudience = 'all_users' | 'prepaid' | 'credit' | 'subscribers'
-export type BannerCtaType = 'none' | 'product' | 'category' | 'offers'
+export type BannerCtaType = 'none' | 'product' | 'category' | 'offers' | 'offer' | 'subscriptions' | 'trials' | 'orders' | 'rewards'
+/** Links that open one chosen item; the other links open a fixed page of the app. */
+export const CTA_WITH_TARGET: readonly BannerCtaType[] = ['product', 'category', 'offer']
 export type BannerStatus = 'active' | 'inactive'
 
 export const BANNER_TYPE_LABELS = liveLabels(t, { promotion: 'typePromotion', warning: 'typeWarning', maintenance: 'typeMaintenance', informational: 'typeInformational' } satisfies Record<BannerType, BannerKey>)
@@ -17,7 +19,7 @@ export const BANNER_TYPE_DESCRIPTIONS = liveLabels(t, {
 export const isBannerType = (value: string | null): value is BannerType => BANNER_TYPES.includes(value as BannerType)
 
 export const BANNER_AUDIENCE_LABELS = liveLabels(t, { all_users: 'audienceAll', prepaid: 'audiencePrepaid', credit: 'audienceCredit', subscribers: 'audienceSubscribers' } satisfies Record<BannerAudience, BannerKey>)
-export const BANNER_CTA_LABELS = liveLabels(t, { none: 'ctaNone', product: 'ctaProduct', category: 'ctaCategory', offers: 'ctaOffers' } satisfies Record<BannerCtaType, BannerKey>)
+export const BANNER_CTA_LABELS = liveLabels(t, { none: 'ctaNone', product: 'ctaProduct', category: 'ctaCategory', offers: 'ctaOffers', offer: 'ctaOffer', subscriptions: 'ctaSubscriptions', trials: 'ctaTrials', orders: 'ctaOrders', rewards: 'ctaRewards' } satisfies Record<BannerCtaType, BannerKey>)
 
 /**
  * A message on the customer app's home screen: a promotion, or a notice such as a delay or maintenance window.
@@ -37,8 +39,10 @@ export type Banner = {
   /** The uploaded picture, if any. Saved by id; `imageUrl` is a short-lived link the backend adds for showing it. */
   imageAssetId: string | null
   imageUrl: string | null
+  /** Off: the picture shows alone, for pictures that already carry their own words. */
+  showText: boolean
   ctaType: BannerCtaType
-  /** Product or category id, depending on `ctaType`; empty when there is no link. */
+  /** Product, category or offer id, depending on `ctaType`; empty for a fixed page. */
   ctaTarget: string
   startDate: IsoDate | null
   endDate: IsoDate | null

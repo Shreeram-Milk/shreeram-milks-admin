@@ -3,15 +3,17 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { Controller, useForm, useWatch } from 'react-hook-form'
+import { Controller, useFieldArray, useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { SelectField } from '@/components/ui/select-field'
+import { Switch } from '@/components/ui/switch'
+import { ImageUploadField } from '@/components/shared/ImageUploadField'
 import { FormField } from '@/components/configuration/FormField'
 import { OptionalDateField } from '@/components/shared/OptionalDateField'
 import { PageBreadcrumbs } from '@/components/shared/PageBreadcrumbs'
@@ -66,8 +68,10 @@ function useVariants(productId: string) {
 export function OfferForm({ offer }: { offer: Offer | null }) {
   const router = useRouter()
   const { register, handleSubmit, control, setValue, formState: { errors, isSubmitting, isDirty } } = useForm<OfferFormValues>({ resolver: zodResolver(offerSchema), defaultValues: offer ? fromOffer(offer) : blankOffer })
-  const [kind, scope, giftProductId, appliesSubscription] = useWatch({ control, name: ['kind', 'scope', 'giftProductId', 'appliesSubscription'] })
+  const [kind, scope, giftProductId, appliesSubscription, inRewardPool] = useWatch({ control, name: ['kind', 'scope', 'giftProductId', 'appliesSubscription', 'inRewardPool'] })
+  const points = useFieldArray({ control, name: 'points' })
   const [error, setError] = useState('')
+  const [imageBusy, setImageBusy] = useState(false)
   const { leave, dialog } = useUnsavedChangesGuard(isDirty, BACK)
   const products = useProductOptions()
   const variants = useVariants(giftProductId)
@@ -98,6 +102,20 @@ export function OfferForm({ offer }: { offer: Offer | null }) {
           <FormField label={t('detailsEn')} error={errors.description?.message}><Textarea {...register('description')} rows={3} maxLength={300} /></FormField>
           <FormField label={t('detailsGu')} error={errors.descriptionGu?.message}><Textarea {...register('descriptionGu')} rows={3} maxLength={300} /></FormField>
         </div>
+        <Controller control={control} name="imageAssetId" render={({ field }) => <ImageUploadField purpose="offer" label={t('picture')} hint={t('pictureHint')} currentUrl={offer?.imageUrl ?? null} hasImage={Boolean(field.value)} onChange={id => setValue('imageAssetId', id, { shouldDirty: true })} onBusyChange={setImageBusy} />} />
+        <Controller control={control} name="showText" render={({ field }) => <SwitchRow id="offer-show-text" label={t('showText')} detail={t('showTextHelper')} checked={field.value} onChange={field.onChange} />} />
+      </section>
+
+      <section className="form-card"><h2>{t('pointsTitle')}</h2>
+        <p className="product-hint">{t('pointsHelper')}</p>
+        {points.fields.map((point, index) => <div key={point.id} className="product-grid offer-point-row">
+          <FormField label={t('pointEn', { number: index + 1 })} required error={errors.points?.[index]?.en?.message}><Input {...register(`points.${index}.en`)} autoComplete="off" maxLength={120} /></FormField>
+          <FormField label={t('pointGu', { number: index + 1 })} error={errors.points?.[index]?.gu?.message}>
+            <div style={{ display: 'flex', gap: 8 }}><Input {...register(`points.${index}.gu`)} autoComplete="off" maxLength={120} /><Button type="button" variant="outline" aria-label={t('removePoint', { number: index + 1 })} onClick={() => points.remove(index)}><Trash2 size={16} /></Button></div>
+          </FormField>
+        </div>)}
+        {errors.points?.message && <p className="field-error" role="alert">{errors.points.message}</p>}
+        {points.fields.length < 8 && <Button type="button" variant="outline" className="secondary-button" onClick={() => points.append({ en: '', gu: '' })}><Plus size={16} /> {t('addPoint')}</Button>}
       </section>
 
       <section className="form-card"><h2>{t('whatItGives')}</h2>
@@ -145,6 +163,11 @@ export function OfferForm({ offer }: { offer: Offer | null }) {
         {isGift && <p className="product-hint">{t('giftFirstDelivery')}</p>}
       </section>
 
+      <section className="form-card"><h2>{t('rewardsTitle')}</h2>
+        <Controller control={control} name="inRewardPool" render={({ field }) => <SwitchRow id="offer-in-pool" label={t('inRewardPool')} detail={t('inRewardPoolHelper')} error={errors.inRewardPool?.message} checked={field.value} disabled={isGift} onChange={checked => { field.onChange(checked); if (!checked) setValue('rewardOnly', false, { shouldDirty: true }) }} />} />
+        {inRewardPool && <Controller control={control} name="rewardOnly" render={({ field }) => <SwitchRow id="offer-reward-only" label={t('rewardOnly')} detail={t('rewardOnlyHelper')} error={errors.rewardOnly?.message} checked={field.value} onChange={field.onChange} />} />}
+      </section>
+
       <section className="form-card"><h2>{t('codeDatesLimits')}</h2>
         <div className="product-grid">
           <FormField label={t('offerCode')} error={errors.code?.message} helper={t('offerCodeHelper')}><Input {...register('code')} autoComplete="off" maxLength={20} /></FormField>
@@ -158,11 +181,16 @@ export function OfferForm({ offer }: { offer: Offer | null }) {
       {error && <p className="field-error" role="alert">{error}</p>}
       <div className="settings-actions">
         <Button type="button" variant="outline" className="secondary-button" onClick={() => leave()} disabled={isSubmitting}>{t('cancel')}</Button>
-        <Button type="submit" className="primary-button" disabled={isSubmitting}>{isSubmitting ? t('saving') : offer ? t('saveChanges') : t('createOffer')}</Button>
+        <Button type="submit" className="primary-button" disabled={isSubmitting || imageBusy}>{isSubmitting ? t('saving') : offer ? t('saveChanges') : t('createOffer')}</Button>
       </div>
     </form>
     {dialog}
   </div>
+}
+
+/** A labelled on/off switch with an explanation underneath. */
+function SwitchRow({ id, label, detail, error, checked, disabled, onChange }: { id: string; label: string; detail: string; error?: string | undefined; checked: boolean; disabled?: boolean; onChange: (checked: boolean) => void }) {
+  return <div className="switch-row"><div><label htmlFor={id}>{label}</label><small className="help-text">{detail}</small>{error && <small className="field-error">{error}</small>}</div><Switch id={id} checked={checked} disabled={disabled} onCheckedChange={onChange} /></div>
 }
 
 /** Shown when an offer can't be found or loaded, with a way back. */

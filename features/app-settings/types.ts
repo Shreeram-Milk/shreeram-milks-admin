@@ -38,8 +38,14 @@ export type AppSettings = {
   afterHoursMessageGu: string
   deliveryPromiseEn: string
   deliveryPromiseGu: string
-  /** Oldest app version allowed to run; older versions are asked to update. */
+  /** Emergency only: apps older than this are stopped until they update. */
   minimumAppVersion: string
+  /** The newest app on the Play Store: older apps show a small "Update available" strip and keep working. */
+  latestAppVersion: string
+  /** Scratch cards after delivered orders. */
+  rewardsEnabled: boolean
+  rewardsMinOrderPaise: number
+  rewardsExpiryDays: number
   maintenanceMode: boolean
   maintenanceMessageEn: string
   maintenanceMessageGu: string

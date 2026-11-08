@@ -86,7 +86,7 @@ export function OfferWorkspace() {
         <TableHeader><TableRow><TableHead>{t('offer')}</TableHead><TableHead>{t('whatItGives')}</TableHead><TableHead>{t('worksFor')}</TableHead><TableHead>{t('minimum')}</TableHead><TableHead>{t('runs')}</TableHead><TableHead>{t('status')}</TableHead><TableHead scope="col" aria-label={t('actions')} /></TableRow></TableHeader>
         <TableBody>
           {filtered.map(item => <TableRow key={item.id}>
-            <TableCell><Link className="table-link" href={`/content/offers/${item.id}/edit`}>{item.title}</Link><small className="cell-note">{item.code ? t('code', { code: item.code }) : t('automatic')}</small></TableCell>
+            <TableCell><Link className="table-link" href={`/content/offers/${item.id}/edit`}>{item.title}</Link><small className="cell-note">{item.code ? t('code', { code: item.code }) : t('automatic')}{item.inRewardPool ? ` · ${t('inScratchCards')}` : ''}</small></TableCell>
             <TableCell>{describeValue(item)}<small className="cell-note">{OFFER_KIND_LABELS[item.kind]}</small></TableCell>
             <TableCell>{worksFor(item)}</TableCell>
             <TableCell>{item.minOrderPaise ? formatINR(item.minOrderPaise) : t('none')}</TableCell>

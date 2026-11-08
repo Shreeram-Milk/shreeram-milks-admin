@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { SelectField } from '@/components/ui/select-field'
+import { Switch } from '@/components/ui/switch'
 import { FormField } from '@/components/configuration/FormField'
 import { OptionalDateField } from '@/components/shared/OptionalDateField'
 import { ImageUploadField } from '@/components/shared/ImageUploadField'
@@ -20,15 +21,15 @@ import { describeApiError } from '@/lib/api-errors'
 import { bannerApi } from '../api'
 import { useLinkTargets } from '../links'
 import { bannerSchema, type BannerFormValues } from '../schema'
-import { BANNER_AUDIENCE_LABELS, BANNER_CTA_LABELS, BANNER_TAB_LABELS, BANNER_TYPE_DESCRIPTIONS, BANNER_TYPE_LABELS, type Banner, type BannerAudience, type BannerCtaType, type BannerInput, type BannerType } from '../types'
+import { BANNER_AUDIENCE_LABELS, BANNER_CTA_LABELS, BANNER_TAB_LABELS, BANNER_TYPE_DESCRIPTIONS, BANNER_TYPE_LABELS, type Banner, type BannerAudience, type BannerCtaType, type BannerInput, type BannerType, CTA_WITH_TARGET } from '../types'
 import { tc } from '@/lib/i18n/common'
 import { t } from '../messages'
 
 const audiences = () => (Object.keys(BANNER_AUDIENCE_LABELS) as BannerAudience[]).map(value => ({ value, label: BANNER_AUDIENCE_LABELS[value] }))
 const ctaTypes = () => (Object.keys(BANNER_CTA_LABELS) as BannerCtaType[]).map(value => ({ value, label: BANNER_CTA_LABELS[value] }))
 
-const blank = (type: BannerType, sortOrder: number): BannerFormValues => ({ type, audience: 'all_users', titleEn: '', titleGu: '', messageEn: '', messageGu: '', labelEn: '', labelGu: '', imageAssetId: null, ctaType: 'none', ctaTarget: '', startDate: '', endDate: '', sortOrder, status: 'active' })
-const fromBanner = (banner: Banner): BannerFormValues => ({ type: banner.type, audience: banner.audience, titleEn: banner.titleEn, titleGu: banner.titleGu, messageEn: banner.messageEn, messageGu: banner.messageGu, labelEn: banner.labelEn, labelGu: banner.labelGu, imageAssetId: banner.imageAssetId, ctaType: banner.ctaType, ctaTarget: banner.ctaTarget, startDate: banner.startDate ?? '', endDate: banner.endDate ?? '', sortOrder: banner.sortOrder, status: banner.status })
+const blank = (type: BannerType, sortOrder: number): BannerFormValues => ({ type, audience: 'all_users', titleEn: '', titleGu: '', messageEn: '', messageGu: '', labelEn: '', labelGu: '', imageAssetId: null, showText: true, ctaType: 'none', ctaTarget: '', startDate: '', endDate: '', sortOrder, status: 'active' })
+const fromBanner = (banner: Banner): BannerFormValues => ({ type: banner.type, audience: banner.audience, titleEn: banner.titleEn, titleGu: banner.titleGu, messageEn: banner.messageEn, messageGu: banner.messageGu, labelEn: banner.labelEn, labelGu: banner.labelGu, imageAssetId: banner.imageAssetId, showText: banner.showText, ctaType: banner.ctaType, ctaTarget: banner.ctaTarget, startDate: banner.startDate ?? '', endDate: banner.endDate ?? '', sortOrder: banner.sortOrder, status: banner.status })
 /** The form keeps "no date" as an empty string; the API wants null. */
 const toInput = (values: BannerFormValues): BannerInput => ({ ...values, startDate: values.startDate || null, endDate: values.endDate || null })
 
@@ -82,13 +83,17 @@ export function BannerForm({ banner, type, nextSortOrder = 1 }: Props) {
           : <Controller control={control} name="imageAssetId" render={({ field }) => type === 'promotion'
             ? <ImageUploadField purpose="banner" label={t('picture')} hint={t('pictureHint')} currentUrl={banner?.imageUrl ?? null} hasImage={Boolean(field.value)} onChange={id => setValue('imageAssetId', id, { shouldDirty: true })} onBusyChange={setImageBusy} />
             : <ImageUploadField purpose="banner_icon" label={t('icon')} hint={t('iconHint')} currentUrl={banner?.imageUrl ?? null} hasImage={Boolean(field.value)} onChange={id => setValue('imageAssetId', id, { shouldDirty: true })} onBusyChange={setImageBusy} />} />}
+        {type === 'promotion' && <Controller control={control} name="showText" render={({ field }) => <div className="switch-row">
+          <div><label htmlFor="banner-show-text">{t('showText')}</label><small className="help-text">{t('showTextHelper')}</small>{errors.showText?.message && <small className="field-error">{errors.showText.message}</small>}</div>
+          <Switch id="banner-show-text" checked={field.value} onCheckedChange={checked => field.onChange(checked)} />
+        </div>} />}
       </section>
       <section className="form-card"><h2>{t('whereItGoes')}</h2>
         <div className="product-grid">
           <FormField label={t('shownTo')}><Controller control={control} name="audience" render={({ field }) => <SelectField label={t('audience')} placeholder={t('chooseAudience')} value={field.value} options={audiences()} onChange={field.onChange} />} /></FormField>
           <FormField label={t('opensWhenTapped')}><Controller control={control} name="ctaType" render={({ field }) => <SelectField label={t('opens')} placeholder={t('ctaNone')} value={field.value} options={ctaTypes()} onChange={value => { field.onChange(value); setValue('ctaTarget', '', { shouldDirty: true }) }} />} /></FormField>
-          {ctaType !== 'none' && ctaType !== 'offers' && <FormField label={ctaType === 'category' ? t('category') : t('product')} error={errors.ctaTarget?.message}>
-            <Controller control={control} name="ctaTarget" render={({ field }) => <SelectField label={t('linkTarget')} placeholder={ctaType === 'category' ? t('chooseCategory') : t('chooseProduct')} value={field.value} options={linkTargets.options(ctaType)} onChange={value => field.onChange(value)} />} />
+          {CTA_WITH_TARGET.includes(ctaType) && <FormField label={ctaType === 'category' ? t('category') : ctaType === 'offer' ? t('offer') : t('product')} error={errors.ctaTarget?.message}>
+            <Controller control={control} name="ctaTarget" render={({ field }) => <SelectField label={t('linkTarget')} placeholder={ctaType === 'category' ? t('chooseCategory') : ctaType === 'offer' ? t('chooseOffer') : t('chooseProduct')} value={field.value} options={linkTargets.options(ctaType)} onChange={value => field.onChange(value)} />} />
           </FormField>}
         </div>
       </section>
