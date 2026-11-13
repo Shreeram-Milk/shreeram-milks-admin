@@ -66,7 +66,18 @@ function DeliverySummary({ product, refs }: { product: Product; refs: ProductRef
   if (!product.deliveryMethod) return <p className="product-hint">{t('noDelivery')}</p>
   const area = refs.areas.find(item => item.id === product.serviceAreaId)
   const cutoff = refs.cutoffRules.find(item => item.id === product.cutoffRuleId)
-  return <div className="product-detail-rows"><Summary label={t('deliveredBy')} value={t(product.deliveryMethod === 'local_delivery' ? 'ownDelivery' : 'courierShipping')} /><Summary label={t('deliveryArea')} value={area ? (area.status === 'inactive' ? t('inactiveSuffix', { name: area.name }) : area.name) : '—'} /><Summary label={t('orderCutoff')} value={cutoff?.name ?? t('none')} /><Summary label={t('productionPlanning')} value={t(product.includeInProductionPlanning ? 'included' : 'notIncluded')} /></div>
+  const localAreaNames = (product.localDeliveryAreaIds ?? []).map(id => {
+    const localArea = refs.areas.find(item => item.id === id)
+    if (!localArea) return t('unavailableConfig')
+    return localArea.status === 'inactive' ? t('inactiveSuffix', { name: localArea.name }) : localArea.name
+  })
+  return <div className="product-detail-rows">
+    <Summary label={t('deliveredBy')} value={t(product.deliveryMethod === 'local_delivery' ? 'ownDelivery' : 'courierShipping')} />
+    <Summary label={t('deliveryArea')} value={area ? (area.status === 'inactive' ? t('inactiveSuffix', { name: area.name }) : area.name) : '—'} />
+    {product.deliveryMethod === 'shipping' && localAreaNames.length > 0 && <Summary label={t('localDeliveryAreas')} value={localAreaNames.join(', ')} />}
+    <Summary label={t('orderCutoff')} value={cutoff?.name ?? t('none')} />
+    <Summary label={t('productionPlanning')} value={t(product.includeInProductionPlanning ? 'included' : 'notIncluded')} />
+  </div>
 }
 function ReferenceNames<T extends TrialPlan | SubscriptionRule>({ ids, rows }: { ids: string[]; rows: T[] }) {
   return <ul className="product-reference-list">{ids.length ? ids.map(id => { const row = rows.find(item => item.id === id); return <li key={id}>{row?.name ?? t('unavailableConfig')}{row?.status === 'inactive' && <em className="product-inactive">{t('inactive')}</em>}</li> }) : <li>{t('noneSelected')}</li>}</ul>

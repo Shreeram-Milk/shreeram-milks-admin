@@ -32,7 +32,7 @@ export const productSchema = z.object({
   sku: z.string(), shortDescriptionEn: z.string().max(200, say('vShort')), shortDescriptionGu: z.string().max(200, say('vShort')), content: contentSchema,
   status: z.enum(['draft', 'active', 'inactive']), variants: z.array(variantSchema), purchaseMethods: z.array(z.enum(['buy_once', 'trial', 'subscription'])),
   trialPlanIds: z.array(z.string()), subscriptionRuleIds: z.array(z.string()),
-  deliveryMethod: z.enum(['', 'local_delivery', 'shipping']), serviceAreaId: z.string(), cutoffRuleId: z.string(), includeInProductionPlanning: z.boolean(), excludedFromCredit: z.boolean(),
+  deliveryMethod: z.enum(['', 'local_delivery', 'shipping']), serviceAreaId: z.string(), localDeliveryAreaIds: z.array(z.string()).max(30, say('vLocalDeliveryAreas', { max: 30 })), cutoffRuleId: z.string(), includeInProductionPlanning: z.boolean(), excludedFromCredit: z.boolean(),
 }).superRefine((value, context) => {
   const names = value.variants.map(variant => variant.name.trim().toLowerCase())
   if (new Set(names).size !== names.length) context.addIssue({ code: 'custom', path: ['variants'], message: t('vUniqueVariants') })
@@ -56,7 +56,7 @@ export function emptyForm(): ProductFormValues {
     name: '', nameGu: '', categoryId: '', sku: '', shortDescriptionEn: '', shortDescriptionGu: '',
     content: { longDescriptionEn: '', longDescriptionGu: '', primaryImageAssetId: '', galleryAssetIds: [], nutritionEn: '', nutritionGu: '', highlightsEn: [], highlightsGu: [], badges: [] },
     status: 'draft', variants: [], purchaseMethods: [], trialPlanIds: [], subscriptionRuleIds: [],
-    deliveryMethod: '', serviceAreaId: '', cutoffRuleId: '', includeInProductionPlanning: false, excludedFromCredit: false,
+    deliveryMethod: '', serviceAreaId: '', localDeliveryAreaIds: [], cutoffRuleId: '', includeInProductionPlanning: false, excludedFromCredit: false,
   }
 }
 
@@ -69,6 +69,7 @@ export function toForm(product: Product): ProductFormValues {
     },
     status: product.status, purchaseMethods: product.purchaseMethods, trialPlanIds: product.trialPlanIds, subscriptionRuleIds: product.subscriptionRuleIds,
     deliveryMethod: product.deliveryMethod ?? '', serviceAreaId: product.serviceAreaId ?? '', cutoffRuleId: product.cutoffRuleId ?? '', includeInProductionPlanning: product.includeInProductionPlanning, excludedFromCredit: product.excludedFromCredit,
+    localDeliveryAreaIds: product.localDeliveryAreaIds ?? [],
     variants: product.variants.map(variant => ({ ...variant, clientKey: variant.id })),
   }
 }
@@ -87,6 +88,7 @@ export function toPayload(values: ProductFormValues): ProductPayload {
     primaryImageAssetId: content.primaryImageAssetId || null, galleryAssetIds: content.galleryAssetIds.filter(id => id !== content.primaryImageAssetId),
     purchaseMethods: values.purchaseMethods,
     deliveryMethod: values.deliveryMethod || null, serviceAreaId: values.serviceAreaId || null,
+    localDeliveryAreaIds: values.deliveryMethod === 'shipping' ? values.localDeliveryAreaIds : [],
     cutoffRuleId: values.deliveryMethod === 'local_delivery' ? values.cutoffRuleId || null : null, includeInProductionPlanning: values.deliveryMethod === 'local_delivery' && Boolean(values.cutoffRuleId) && values.includeInProductionPlanning, excludedFromCredit: values.excludedFromCredit,
     trialPlanIds: values.purchaseMethods.includes('trial') ? values.trialPlanIds : [], subscriptionRuleIds: values.purchaseMethods.includes('subscription') ? values.subscriptionRuleIds : [],
     status: values.status,

@@ -161,15 +161,18 @@ const methodOptions = () => [{ value: 'local_delivery', label: t('methodOwn') },
 export function DeliverySection({ watch, setValue, errors, areas, cutoffRules }: { errors: FieldErrors<ProductFormValues>; watch: UseFormWatch<ProductFormValues>; setValue: UseFormSetValue<ProductFormValues>; areas: ServiceArea[]; cutoffRules: CutoffRule[] }) {
   const method = watch('deliveryMethod')
   const areaId = watch('serviceAreaId')
+  const localDeliveryAreaIds = watch('localDeliveryAreaIds')
   const cutoffId = watch('cutoffRuleId')
   const fits = (area: ServiceArea) => (method === 'local_delivery' ? area.coverageType === 'pin_code' : area.coverageType !== 'pin_code')
   const named = (name: string, status: string) => (status === 'inactive' ? t('inactiveTag', { name }) : name)
   const areaOptions = areas.filter(area => fits(area) && (area.status === 'active' || area.id === areaId)).map(area => ({ value: area.id, label: named(area.name, area.status) }))
+  const localAreas = areas.filter(area => localDeliveryAreaIds.includes(area.id) || (area.coverageType === 'pin_code' && area.status === 'active'))
   const cutoffOptions = [{ value: NO_CUTOFF, label: t('noLimit') }, ...cutoffRules.filter(rule => rule.status === 'active' || rule.id === cutoffId).map(rule => ({ value: rule.id, label: named(rule.name, rule.status) }))]
   const changeMethod = (value: string) => {
     setValue('deliveryMethod', value as DeliveryMethod, { shouldDirty: true, shouldValidate: true })
     // The area list changes with the method, so the old pick no longer applies; courier shipping has no cut-off or production plan.
     setValue('serviceAreaId', '', { shouldDirty: true })
+    if (value !== 'shipping') setValue('localDeliveryAreaIds', [], { shouldDirty: true, shouldValidate: true })
     if (value === 'shipping') {
       setValue('cutoffRuleId', '', { shouldDirty: true }); setValue('includeInProductionPlanning', false, { shouldDirty: true })
       // A courier product is bought once only.
@@ -184,7 +187,22 @@ export function DeliverySection({ watch, setValue, errors, areas, cutoffRules }:
       <p className="product-hint">{t('pinWindowsHint')}</p>
       <FormField label={t('orderByTime')} helper={t('orderByHint')}><ProductSelect label={t('orderByTime')} value={cutoffId || NO_CUTOFF} onChange={value => { setValue('cutoffRuleId', value === NO_CUTOFF ? '' : value, { shouldDirty: true }); if (value === NO_CUTOFF) setValue('includeInProductionPlanning', false, { shouldDirty: true }) }} placeholder={t('chooseOrderBy')} options={cutoffOptions} /></FormField>
     </>}
-    {method === 'shipping' && <p className="product-hint">{t('courierNoWindows')}</p>}
+    {method === 'shipping' && <>
+      <p className="product-hint">{t('courierNoWindows')}</p>
+      <fieldset className="product-badges">
+        <legend className="product-form-label">{t('localDeliveryAreas')}</legend>
+        <p className="product-hint basis-full">{t('localDeliveryAreasHint')}</p>
+        {localAreas.length === 0 && <p className="product-hint">{t('noLocalDeliveryAreas')}</p>}
+        {localAreas.map(area => <label key={area.id}>
+          <Checkbox
+            checked={localDeliveryAreaIds.includes(area.id)}
+            onCheckedChange={checked => setValue('localDeliveryAreaIds', checked === true ? [...localDeliveryAreaIds, area.id] : localDeliveryAreaIds.filter(id => id !== area.id), { shouldDirty: true, shouldValidate: true })}
+          />
+          {named(area.name, area.status)}
+        </label>)}
+        {errors.localDeliveryAreaIds?.message && <p className="field-error basis-full">{errors.localDeliveryAreaIds.message}</p>}
+      </fieldset>
+    </>}
   </Section>
 }
 

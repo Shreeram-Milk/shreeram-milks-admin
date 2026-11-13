@@ -10,7 +10,7 @@ export function stepForField(path: string): ProductStepId {
   if (root === 'content') return 'content'
   if (root === 'variants' || root === 'includeInProductionPlanning') return 'variants'
   if (['purchaseMethods', 'trialPlanIds', 'subscriptionRuleIds'].includes(root)) return 'selling'
-  if (['deliveryMethod', 'serviceAreaId', 'cutoffRuleId'].includes(root)) return 'delivery'
+  if (['deliveryMethod', 'serviceAreaId', 'localDeliveryAreaIds', 'cutoffRuleId'].includes(root)) return 'delivery'
   return 'basics'
 }
 

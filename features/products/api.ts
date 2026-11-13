@@ -17,6 +17,7 @@ export type Product = {
   shortDescriptionEn: string; shortDescriptionGu: string; longDescriptionEn: string; longDescriptionGu: string; nutritionEn: string; nutritionGu: string
   highlightsEn: string[]; highlightsGu: string[]; badges: ProductBadge[]; purchaseMethods: PurchaseMethod[]
   deliveryMethod: DeliveryMethod | null; serviceAreaId: string | null; cutoffRuleId: string | null; includeInProductionPlanning: boolean; excludedFromCredit: boolean
+  localDeliveryAreaIds?: string[]
   trialPlanIds: string[]; subscriptionRuleIds: string[]; status: ProductStatus; updatedAt: string
   variants: ProductVariant[]; primaryImage: ImageRef | null; gallery: ImageRef[]
 }
@@ -32,6 +33,7 @@ export type ProductPayload = {
   name: string; nameGu: string; categoryId: string; sku: string; shortDescriptionEn: string; shortDescriptionGu: string
   longDescriptionEn: string; longDescriptionGu: string; nutritionEn: string; nutritionGu: string; highlightsEn: string[]; highlightsGu: string[]; badges: ProductBadge[]
   primaryImageAssetId: string | null; galleryAssetIds: string[]; purchaseMethods: PurchaseMethod[]; deliveryMethod: DeliveryMethod | null; serviceAreaId: string | null; cutoffRuleId: string | null; includeInProductionPlanning: boolean; excludedFromCredit: boolean
+  localDeliveryAreaIds: string[]
   trialPlanIds: string[]; subscriptionRuleIds: string[]
   status: ProductStatus
   variants: Array<Omit<ProductVariant, 'id'> & { id?: string }>

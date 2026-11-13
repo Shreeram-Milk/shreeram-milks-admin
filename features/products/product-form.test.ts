@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { emptyForm, newVariant, productSchema, statusChoices, toPayload, type ProductFormValues } from './schema'
+import { emptyForm, newVariant, productSchema, statusChoices, toForm, toPayload, type ProductFormValues } from './schema'
 
 const variant = (extra: Partial<ReturnType<typeof newVariant>> = {}) => ({ ...newVariant(), name: ' 500 ml ', displayUnit: 'ml', displayQuantity: 500, pricePaise: 3500, ...extra })
 const filled = (extra: Partial<ProductFormValues> = {}): ProductFormValues => ({
@@ -47,6 +47,21 @@ describe('quick checks before saving', () => {
     const payload = toPayload(filled({ deliveryMethod: 'shipping', cutoffRuleId: '', includeInProductionPlanning: true }))
     assert.equal(payload.cutoffRuleId, null)
     assert.equal(payload.includeInProductionPlanning, false)
+  })
+  it('sends local area overrides only for courier delivery', () => {
+    const localDeliveryAreaIds = ['area-2', 'area-3']
+    assert.deepEqual(toPayload(filled({ deliveryMethod: 'shipping', localDeliveryAreaIds })).localDeliveryAreaIds, localDeliveryAreaIds)
+    assert.deepEqual(toPayload(filled({ deliveryMethod: 'local_delivery', localDeliveryAreaIds })).localDeliveryAreaIds, [])
+    assert.deepEqual(toPayload(filled({ deliveryMethod: 'shipping' })).localDeliveryAreaIds, [])
+  })
+  it('restores saved local areas and accepts older products without the field', () => {
+    const saved = {
+      ...toPayload(filled({ deliveryMethod: 'shipping', localDeliveryAreaIds: ['area-2'] })),
+      id: 'product-1', updatedAt: '', primaryImage: null, gallery: [], variants: [],
+    }
+    const { localDeliveryAreaIds, ...legacy } = saved
+    assert.deepEqual(toForm(saved).localDeliveryAreaIds, localDeliveryAreaIds)
+    assert.deepEqual(toForm(legacy).localDeliveryAreaIds, [])
   })
   it('sends the production plan choice only for our own delivery with an order-by time', () => {
     assert.equal(toPayload(filled({ deliveryMethod: 'local_delivery', cutoffRuleId: '', includeInProductionPlanning: true })).includeInProductionPlanning, false)
