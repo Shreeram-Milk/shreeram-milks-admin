@@ -50,6 +50,7 @@ export const productApi = {
   get: (id: string) => apiRequest<{ product: Product }>(`/admin/products/${id}`).then(response => response.product),
   create: (input: ProductPayload) => apiRequest<{ product: Product }>('/admin/products', { method: 'POST', body: input }).then(response => response.product),
   update: (id: string, input: ProductPayload) => apiRequest<{ product: Product }>(`/admin/products/${id}`, { method: 'PUT', body: input }).then(response => response.product),
+  remove: (id: string) => apiRequest(`/admin/products/${id}`, { method: 'DELETE' }),
   /** Marks or unmarks a product as not available on credit, without touching anything else. */
   setCreditExclusion: (id: string, excludedFromCredit: boolean) => apiRequest<{ product: Product }>(`/admin/products/${id}/credit-exclusion`, { method: 'PATCH', body: { excludedFromCredit } }).then(response => response.product),
   /** Switching on is refused (code PRODUCT_NOT_READY) until the product is complete. */

@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import { CircleOff, Edit2, MoreHorizontal, Plus } from 'lucide-react'
+import { CircleOff, Edit2, MoreHorizontal, Plus, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SelectField } from '@/components/ui/select-field'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -39,6 +39,9 @@ export function ProductList() {
   const [status, setStatus] = useState<ProductStatus | ''>('')
   const [page, setPage] = useState(1)
   const [confirm, setConfirm] = useState<ProductSummary | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<ProductSummary | null>(null)
+  const [deleteBusy, setDeleteBusy] = useState(false)
+  const [deleteError, setDeleteError] = useState('')
   const [reloadKey, setReloadKey] = useState(0)
   const refresh = () => setReloadKey(count => count + 1)
 
@@ -67,6 +70,23 @@ export function ProductList() {
   const deactivate = async (product: ProductSummary) => {
     try { await productApi.setStatus(product.id, 'inactive'); toast.success(t('deactivated')) } catch (failure) { toast.error(describeApiError(failure)) }
     setConfirm(null); refresh()
+  }
+
+  const remove = async (product: ProductSummary) => {
+    if (deleteBusy) return
+    setDeleteBusy(true)
+    setDeleteError('')
+    try {
+      await productApi.remove(product.id)
+      toast.success(t('productDeleted', { name: product.name }))
+      setDeleteTarget(null)
+      if (state.status === 'ready' && state.result.rows.length === 1 && page > 1) setPage(page - 1)
+      refresh()
+    } catch (failure) {
+      setDeleteError(describeApiError(failure))
+    } finally {
+      setDeleteBusy(false)
+    }
   }
 
   if (state.status === 'loading') return <PageSkeleton />
@@ -102,6 +122,7 @@ export function ProductList() {
               <TableCell>{formatTimestamp(item.updatedAt)}</TableCell>
               <TableCell><div className="row-actions product-row-actions">
                 <Link href={`/products/${item.id}/edit`} className="row-edit-action" aria-label={t('editNamed', { name: item.name })}><Edit2 size={15} /></Link>
+                <Button type="button" variant="ghost" size="icon" className="row-edit-action text-destructive hover:text-destructive" aria-label={t('deleteProductTitle', { name: item.name })} title={t('deleteProduct')} onClick={() => { setDeleteError(''); setDeleteTarget(item) }}><Trash2 size={15} /></Button>
                 <DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="row-menu" aria-label={t('moreActionsFor', { name: item.name })}><MoreHorizontal size={16} /></Button></DropdownMenuTrigger>
                   <DropdownMenuContent align="end"><DropdownMenuItem asChild><Link href={`/products/${item.id}/edit`}><Edit2 /> {t('editProduct')}</Link></DropdownMenuItem>{item.status === 'active' && <DropdownMenuItem onSelect={() => setConfirm(item)}><CircleOff /> {t('deactivate')}</DropdownMenuItem>}</DropdownMenuContent></DropdownMenu>
               </div></TableCell>
@@ -110,6 +131,19 @@ export function ProductList() {
           <div className="product-pagination"><span>{t('countPage', { count: result.total, page: Math.min(page, pageCount), pages: pageCount })}</span><TablePagination page={Math.min(page, pageCount)} pageCount={pageCount} onPageChange={setPage} density="compact" /></div>
         </>}
     </section>
+    <AlertDialog open={deleteTarget !== null} onOpenChange={open => { if (!open && !deleteBusy) setDeleteTarget(null) }}>
+      {deleteTarget && <AlertDialogContent className="confirm-dialog">
+        <AlertDialogHeader>
+          <AlertDialogTitle>{t('deleteProductTitle', { name: deleteTarget.name })}</AlertDialogTitle>
+          <AlertDialogDescription>{t('deleteProductBody')}</AlertDialogDescription>
+        </AlertDialogHeader>
+        {deleteError && <p className="field-error" role="alert">{deleteError}</p>}
+        <AlertDialogFooter className="dialog-actions">
+          <AlertDialogCancel asChild><Button variant="outline" className="secondary-button" disabled={deleteBusy}>{tc('cancel')}</Button></AlertDialogCancel>
+          <AlertDialogAction asChild><Button className="primary-button destructive-button" disabled={deleteBusy} onClick={event => { event.preventDefault(); void remove(deleteTarget) }}>{t(deleteBusy ? 'deletingProduct' : 'deleteProduct')}</Button></AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>}
+    </AlertDialog>
     <AlertDialog open={Boolean(confirm)} onOpenChange={open => { if (!open) setConfirm(null) }}>{confirm && <AlertDialogContent className="confirm-dialog"><AlertDialogHeader><p className="eyebrow">{t('deactivationEyebrow')}</p><AlertDialogTitle>{t('deactivateTitle', { name: confirm.name })}</AlertDialogTitle><AlertDialogDescription asChild><div><p>{t('deactivateBody')}</p><p className="warning-note">{t('deactivateNote')}</p></div></AlertDialogDescription></AlertDialogHeader><AlertDialogFooter className="dialog-actions"><AlertDialogCancel asChild><Button variant="outline" className="secondary-button">{tc('cancel')}</Button></AlertDialogCancel><AlertDialogAction asChild><Button className="primary-button destructive-button" onClick={() => void deactivate(confirm)}>{t('deactivate')}</Button></AlertDialogAction></AlertDialogFooter></AlertDialogContent>}</AlertDialog>
   </div>
 }
