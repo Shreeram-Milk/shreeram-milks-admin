@@ -1574,3 +1574,59 @@ dl.product-detail-rows dd { margin: 0; color: #344256; font-weight: 600; text-al
 .size-more { border-top: 1px solid var(--border); padding-top: 12px; }
 .size-more > summary { cursor: pointer; width: fit-content; color: #344256; font-size: 13px; font-weight: 600; }
 .size-more[open] > summary { margin-bottom: 4px; }
+
+/* Wallets: the overview numbers, the money story, a refund waiting, and the refund dialog. */
+.wallet-overview { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 0 0 20px; }
+.wallet-overview-card { display: flex; flex-direction: column; gap: 3px; padding: 14px 16px; border: 1px solid var(--border); border-left: 3px solid #cbd2dc; border-radius: 10px; background: var(--surface); color: inherit; font: inherit; text-align: left; }
+button.wallet-overview-card { cursor: pointer; }
+.wallet-overview-card > span { color: var(--muted); font-size: 12px; font-weight: 600; }
+.wallet-overview-card > strong { font-size: 24px; line-height: 1.15; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.wallet-overview-card > small { color: var(--muted); font-size: 12px; }
+.wallet-overview-card.is-due { border-left-color: #d9a441; background: #fffcf3; }
+.wallet-table .num, .wallet-section .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.wallet-row-due { background: #fffcf3; }
+.wallet-due { color: #a15c00; }
+.wallet-row-button { display: inline-flex; align-items: center; justify-content: center; min-height: 34px; padding: 0 14px; border-radius: 8px; font-size: 13px; font-weight: 600; text-decoration: none; white-space: nowrap; }
+.wallet-in { color: #2f7d62; }
+.wallet-section { margin-bottom: 16px; }
+.wallet-section h2 { margin-bottom: 2px; }
+.wallet-waiting { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 0 0 16px; padding: 16px 18px; border: 1px solid #ecd29a; border-left: 4px solid #d9a441; border-radius: 10px; background: #fffcf3; }
+.wallet-waiting > div { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.wallet-waiting strong { font-size: 17px; }
+.wallet-waiting span { color: #5b6472; font-size: 13px; }
+.money-story { display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px; margin: 12px 0 0; padding: 0; list-style: none; }
+.money-story li { position: relative; display: flex; flex-direction: column; gap: 2px; min-width: 128px; padding: 10px 12px 10px 30px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
+.money-story li:first-child { padding-left: 12px; }
+.money-story-sign { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 18px; font-weight: 700; }
+.money-story-label { color: var(--muted); font-size: 12px; font-weight: 600; }
+.money-story strong { font-size: 18px; font-variant-numeric: tabular-nums; }
+.money-story li.is-due { border-color: #ecd29a; background: #fffcf3; }
+.money-story li.is-due strong { color: #a15c00; }
+.money-story li.is-total { border-color: #0a0a0a; background: #0a0a0a; }
+.money-story li.is-total .money-story-label, .money-story li.is-total .money-story-sign { color: rgba(255,255,255,.7); }
+.money-story li.is-total strong { color: #fff; }
+.money-story.is-compact li { min-width: 0; flex: 1 1 110px; padding-top: 7px; padding-bottom: 7px; }
+.money-story.is-compact strong { font-size: 15px; }
+.wallet-how-sent { display: flex; flex-direction: column; gap: 3px; }
+.wallet-how-sent ul { margin: 0; padding-left: 16px; }
+.wallet-in-bank { color: #2f7d62; font-weight: 600; }
+.wallet-order-id { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; word-break: break-all; }
+.wallet-refund-dialog { max-width: min(760px, calc(100vw - 32px)); }
+.wallet-step { display: flex; flex-direction: column; gap: 2px; margin-top: 4px; }
+.wallet-step span { color: var(--muted); font-size: 12px; }
+.wallet-refund-lines { display: flex; flex-direction: column; gap: 8px; }
+.wallet-refund-line { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(90px, .6fr) minmax(0, 1fr); align-items: end; gap: 10px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
+.wallet-refund-line.is-used { border-color: #0a0a0a; }
+.wallet-refund-payment { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.wallet-refund-payment span, .wallet-refund-payment small { color: var(--muted); font-size: 12px; }
+.wallet-refund-input { display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 600; color: var(--muted); }
+.wallet-copy { display: inline-flex; align-items: center; gap: 3px; margin-left: 4px; padding: 1px 6px; border: 1px solid var(--border); border-radius: 6px; background: #fff; color: #374151; font: 600 11px/1.5 inherit; font-family: inherit; cursor: pointer; vertical-align: middle; }
+.wallet-total { display: flex; justify-content: space-between; gap: 12px; padding: 10px 12px; border-radius: 10px; font-size: 13px; font-variant-numeric: tabular-nums; }
+.wallet-total.is-ok { background: #ecfdf5; color: #2f7d62; }
+.wallet-total.is-off { background: #fef2f2; color: #b42318; }
+@media (max-width: 760px) {
+  .wallet-overview { grid-template-columns: minmax(0, 1fr); }
+  .wallet-waiting { flex-direction: column; align-items: stretch; }
+  .wallet-refund-line { grid-template-columns: minmax(0, 1fr); }
+  .money-story li { flex: 1 1 140px; }
+}
