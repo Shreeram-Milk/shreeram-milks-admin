@@ -65,8 +65,10 @@ export function buildSchema(feature: FeatureKey) {
 }
 
 /** "15, 30" as sorted, unique numbers; null when it is not 1 to 6 whole numbers from 1 to 365. */
+/** The optional ready-made lengths: empty means none (customers pick a last day on the calendar). Null when something typed is not valid. */
 export function parseLengths(text: string): number[] | null {
   const parts = text.split(/[,\s]+/).filter(Boolean)
+  if (parts.length === 0) return []
   if (!parts.every(part => /^\d+$/.test(part))) return null
   const lengths = [...new Set(parts.map(Number))].sort((a, b) => a - b)
   return lengths.length >= 1 && lengths.length <= 6 && lengths.every(length => length >= 1 && length <= 365) ? lengths : null
@@ -81,7 +83,7 @@ export function defaultValues(existing: FeatureRecord | undefined, refs: Referen
   const activeSlots = refs.slots.filter(item => item.status === 'active')
   return {
     name: existing?.name ?? '', description: existing?.description ?? '', status: existing?.status ?? 'active',
-    durationDays: plan?.durationDays ?? 5, systemType: rule?.systemType ?? 'daily', lengthOptions: (rule?.lengthOptions ?? [15, 30]).join(', '), minDays: rule?.minDays ?? 5, maxDays: rule?.maxDays ?? 180,
+    durationDays: plan?.durationDays ?? 5, systemType: rule?.systemType ?? 'daily', lengthOptions: (rule?.lengthOptions ?? []).join(', '), minDays: rule?.minDays ?? 5, maxDays: rule?.maxDays ?? 180,
     startTime: slot?.startTime ?? '06:00', endTime: slot?.endTime ?? '09:00',
     coverageType: area?.coverageType ?? 'pin_code', state: area?.state ?? '', city: area?.city ?? '',
     conditions: cutoff?.conditions?.map(({ deliverySlotId, dayRelation, cutoffTime, cancelDayRelation, cancelTime }) => ({ deliverySlotId, dayRelation, cutoffTime, cancelDayRelation: cancelDayRelation ?? '', cancelTime: cancelTime ?? '' })) ?? [{ deliverySlotId: activeSlots[0]?.id ?? '', dayRelation: 'previous_day', cutoffTime: '15:00', cancelDayRelation: '', cancelTime: '' }],
