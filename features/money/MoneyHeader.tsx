@@ -9,12 +9,13 @@ import { adjustmentAdminApi } from '../adjustment-admin/api'
 import { creditAdminApi } from '../credit-admin/api'
 import { t } from './messages'
 
-export type MoneyTab = 'owed' | 'credit' | 'payments'
+export type MoneyTab = 'owed' | 'credit' | 'payments' | 'wallet'
 
-const TABS: Array<{ id: MoneyTab; href: string; label: 'tabOwed' | 'tabCredit' | 'tabPayments' }> = [
+const TABS: Array<{ id: MoneyTab; href: string; label: 'tabOwed' | 'tabCredit' | 'tabPayments' | 'tabWallet' }> = [
   { id: 'owed', href: '/prepaid-adjustments', label: 'tabOwed' },
   { id: 'credit', href: '/credit-accounts', label: 'tabCredit' },
   { id: 'payments', href: '/online-payments', label: 'tabPayments' },
+  { id: 'wallet', href: '/wallet-refunds', label: 'tabWallet' },
 ]
 
 type ToDo = { refunds: number | null; owing: number | null }

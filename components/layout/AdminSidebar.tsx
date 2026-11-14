@@ -28,7 +28,7 @@ const dailyItems: NavEntry[] = [
 ]
 const peopleItems: NavEntry[] = [
   { label: 'customers', href: '/customers', icon: Users },
-  { label: 'money', href: '/prepaid-adjustments', icon: Wallet, also: ['/credit-accounts', '/online-payments'] },
+  { label: 'money', href: '/prepaid-adjustments', icon: Wallet, also: ['/credit-accounts', '/online-payments', '/wallet-refunds'] },
   { label: 'products', href: '/products', icon: Package },
 ]
 /** Reusable setup lists that products read from. Made once, changed rarely. */

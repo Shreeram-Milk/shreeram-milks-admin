@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { FormField } from '@/components/configuration/FormField'
+import { ImageUploadField } from '@/components/shared/ImageUploadField'
 import { describeApiError } from '@/lib/api-errors'
 import { categoryApi, type CategoryRecord } from '../api'
 import { categorySchema, type CategoryFormValues } from '../schema'
@@ -21,10 +22,13 @@ const fromCategory = (category: CategoryRecord): CategoryFormValues => ({ name: 
 export function CategoryDialog({ category, nextSortOrder, onClose, onDone }: { category: CategoryRecord | null; nextSortOrder: number; onClose: () => void; onDone: () => void }) {
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<CategoryFormValues>({ resolver: zodResolver(categorySchema), defaultValues: category ? fromCategory(category) : blank(nextSortOrder) })
   const [error, setError] = useState('')
+  // The tile picture is uploaded on its own as soon as it is chosen; the category keeps only its id when saved.
+  const [imageAssetId, setImageAssetId] = useState<string | null>(category?.imageAssetId ?? null)
+  const [uploading, setUploading] = useState(false)
   const submit = handleSubmit(async values => {
     setError('')
     try {
-      const payload = { name: values.name, nameGu: values.nameGujarati, description: values.description, sortOrder: values.sortOrder, status: values.status }
+      const payload = { name: values.name, nameGu: values.nameGujarati, description: values.description, sortOrder: values.sortOrder, status: values.status, imageAssetId }
       if (category) await categoryApi.update(category.id, payload); else await categoryApi.create(payload)
       toast.success(category ? t('saved') : t('created'))
       onClose()
@@ -41,10 +45,11 @@ export function CategoryDialog({ category, nextSortOrder, onClose, onDone }: { c
           <FormField label={t('name')} required error={errors.name?.message}><Input {...register('name')} autoComplete="off" placeholder={t('namePlaceholder')} /></FormField>
           <FormField label={t('gujaratiName')} error={errors.nameGujarati?.message} helper={t('gujaratiHelper')}><Input {...register('nameGujarati')} autoComplete="off" placeholder="દૂધ" /></FormField>
           <FormField label={t('displayOrder')} error={errors.sortOrder?.message} helper={t('displayOrderHelper')}><Input {...register('sortOrder', { valueAsNumber: true })} type="number" min={0} inputMode="numeric" /></FormField>
+          <div className="field-wide"><ImageUploadField purpose="category" label={t('picture')} hint={t('pictureHint')} currentUrl={category?.imageUrl ?? null} hasImage={Boolean(imageAssetId)} onChange={setImageAssetId} onBusyChange={setUploading} /></div>
           <FormField label={t('descriptionField')} error={errors.description?.message} className="field-wide"><Textarea {...register('description')} rows={2} maxLength={200} placeholder={t('descriptionPlaceholder')} /></FormField>
         </div>
         {error && <p className="field-error" role="alert">{error}</p>}
-        <DialogFooter><Button type="button" variant="outline" className="secondary-button" onClick={onClose}>{t('cancel')}</Button><Button type="submit" className="primary-button" disabled={isSubmitting}>{category ? t('saveCategory') : t('createCategory')}</Button></DialogFooter>
+        <DialogFooter><Button type="button" variant="outline" className="secondary-button" onClick={onClose}>{t('cancel')}</Button><Button type="submit" className="primary-button" disabled={isSubmitting || uploading}>{category ? t('saveCategory') : t('createCategory')}</Button></DialogFooter>
       </form>
     </DialogContent>
   </Dialog>

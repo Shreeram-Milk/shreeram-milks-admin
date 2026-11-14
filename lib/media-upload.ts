@@ -2,7 +2,7 @@ import { ApiError, apiRequest } from './api-client'
 import { tc } from './i18n/common'
 
 /** `banner` = a promotion photo, `banner_icon` = a small SVG on a notice, `onboarding` = a first-run slide picture, `product` = a photo of something you sell. */
-export type MediaPurpose = 'banner' | 'banner_icon' | 'onboarding' | 'product' | 'offer'
+export type MediaPurpose = 'banner' | 'banner_icon' | 'onboarding' | 'product' | 'offer' | 'category'
 
 const KB = 1024
 const PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp']
@@ -13,13 +13,14 @@ export const MEDIA_RULES: Record<MediaPurpose, { types: string[]; maxBytes: numb
   product: { types: PHOTO_TYPES, maxBytes: 2 * KB * KB, typeMessage: 'photoType', sizeMessage: 'photoSize' },
   onboarding: { types: PHOTO_TYPES, maxBytes: 2 * KB * KB, typeMessage: 'photoType', sizeMessage: 'photoSize' },
   offer: { types: PHOTO_TYPES, maxBytes: 2 * KB * KB, typeMessage: 'photoType', sizeMessage: 'photoSize' },
+  category: { types: PHOTO_TYPES, maxBytes: 1 * KB * KB, typeMessage: 'photoType', sizeMessage: 'photoSize' },
   banner_icon: { types: ['image/svg+xml'], maxBytes: 100 * KB, typeMessage: 'iconType', sizeMessage: 'iconSize' },
 }
 
 /** A photo picked from a phone camera can be several MB. It is shrunk before upload, so the limit on what can be picked is generous. */
 const MAX_PICKED_PHOTO_BYTES = 15 * KB * KB
 /** The longest side a stored photo keeps. Bigger originals are scaled down; the app never shows more than this. */
-const MAX_SIDE: Record<MediaPurpose, number> = { banner: 1600, product: 1200, onboarding: 1200, offer: 1600, banner_icon: 0 }
+const MAX_SIDE: Record<MediaPurpose, number> = { banner: 1600, product: 1200, onboarding: 1200, offer: 1600, category: 600, banner_icon: 0 }
 const WEBP_QUALITY = 0.82
 
 const isPhoto = (purpose: MediaPurpose) => purpose !== 'banner_icon'
