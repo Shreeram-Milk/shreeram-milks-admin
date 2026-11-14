@@ -1,0 +1,19 @@
+{
+  "title": "મેસેજ મોકલો",
+  "voice": {
+    "pace": 1.0,
+    "temperature": 0.7
+  },
+  "steps": [
+    {
+      "id": "intro",
+      "target": "css:.page-header",
+      "text": "અહીંથી બધા કસ્ટમરને એક સાથે મેસેજ મોકલી શકો. જેમ કે કાલે ડિલિવરી બંધ રહેશે."
+    },
+    {
+      "id": "table",
+      "target": "css:.table-card, .config-section",
+      "text": "ધ્યાનથી મોકલજો, એક વાર ગયેલો મેસેજ પાછો નથી આવતો."
+    }
+  ]
+}

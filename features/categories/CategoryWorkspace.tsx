@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { PageTour } from '@/features/tour/PageTour'
 import { toast } from 'sonner'
 import { Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -70,14 +71,14 @@ export function CategoryWorkspace() {
   const pageCount = Math.max(1, Math.ceil(state.total / PAGE_SIZE))
   const filtered = Boolean(search || status)
   return <div className="workspace-page">
-    <header className="page-header">
+    <header className="page-header" data-tour="list-header">
       <div><PageBreadcrumbs items={[{ label: t('masterData') }, { label: t('categories') }]} /><h1 className="title-with-tip">{t('categories')}<InfoTip label={t('categories')} text={setupHelp('categories')} /></h1><p className="page-description">{t('description')}</p></div>
-      <Button className="primary-button" onClick={() => setEditing(null)}><Plus size={16} /> {t('addCategory')}</Button>
+      <div className="header-actions"><PageTour name="categories" /><PageTour name="categories-add" kind="howTo" /><Button className="primary-button" data-tour="list-add" onClick={() => setEditing(null)}><Plus size={16} /> {t('addCategory')}</Button></div>
     </header>
     <section className="config-section">
       <ListSearchInput label={t('searchCategories')} value={search} onCommit={value => { setSearch(value); setPage(1) }} placeholder={t('searchPlaceholder')} />
       <div className="config-filter-row"><SelectField label={tc('filterByStatus')} className="config-select product-select-trigger" value={status || ALL} onChange={value => { setStatus(value === ALL ? '' : value as RecordStatus); setPage(1) }} placeholder={tc('allStatuses')} options={[{ value: ALL, label: tc('allStatuses') }, { value: 'active', label: tc('active') }, { value: 'inactive', label: tc('inactive') }]} /><span className="record-count">{t('countCategories', { count: state.total })}</span></div>
-      <div className="table-card"><div className="table-scroll"><Table>
+      <div className="table-card" data-tour="list-table"><div className="table-scroll"><Table>
         <TableHeader><TableRow><TableHead>{t('category')}</TableHead><TableHead>{t('gujarati')}</TableHead><TableHead>{t('order')}</TableHead><TableHead>{t('status')}</TableHead><TableHead scope="col" aria-label={t('actions')} /></TableRow></TableHeader>
         <TableBody>
           {state.rows.map(item => <TableRow key={item.id}>

@@ -72,7 +72,7 @@ export function AdminSidebar({ collapsed, mobileOpen, onToggleCollapse, onCloseM
     const Icon = item.icon
     const label = t(item.label)
     const link = (
-      <Link className={`nav-item ${nested ? 'nav-item-nested' : ''} ${active ? 'active' : ''}`} href={item.href} onClick={onCloseMobile} aria-current={active ? 'page' : undefined}>
+      <Link className={`nav-item ${nested ? 'nav-item-nested' : ''} ${active ? 'active' : ''}`} href={item.href} onClick={onCloseMobile} aria-current={active ? 'page' : undefined} data-tour={`nav-${item.label}`}>
         <Icon size={17} /><span>{label}</span>
       </Link>
     )
@@ -82,7 +82,7 @@ export function AdminSidebar({ collapsed, mobileOpen, onToggleCollapse, onCloseM
   }
   return <aside className={`sidebar ${collapsed ? 'collapsed' : ''} ${mobileOpen ? 'mobile-open' : ''}`}>
     <div className="brand-block"><div className="brand-mark">SR</div><div className="brand-copy"><p className="brand-name">ShreeRam Milks</p><p className="brand-subtitle">{t('adminPanel')}</p></div><AdminButton className="brand-collapse" aria-label={collapsed ? t('expandSidebar') : t('collapseSidebar')} onClick={onToggleCollapse}>{collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}</AdminButton></div>
-    <nav className="sidebar-nav" aria-label={t('mainNavigation')}>
+    <nav className="sidebar-nav" aria-label={t('mainNavigation')} data-tour="nav-main">
       <Link className={`nav-item ${pathname === '/' ? 'active' : ''}`} href="/" onClick={onCloseMobile} aria-current={pathname === '/' ? 'page' : undefined}><LayoutDashboard size={17} /><span>{t('dashboard')}</span></Link>
       <p className="nav-label">{t('everyDay')}</p>
       {dailyItems.map(item => <NavLink key={item.href} {...item} />)}
@@ -105,9 +105,9 @@ function NavGroup({ id, label, icon: Icon, items, pathname, collapsed, render }:
   if (inside !== wasInside) { setWasInside(inside); if (inside) setOpen(true) }
   const show = open || collapsed
   return <>
-    <button type="button" className={`nav-item nav-group-toggle ${inside && !show ? 'active' : ''}`} aria-expanded={show} aria-controls={id} onClick={() => setOpen(value => !value)}>
+    <button type="button" className={`nav-item nav-group-toggle ${inside && !show ? 'active' : ''}`} aria-expanded={show} aria-controls={id} onClick={() => setOpen(value => !value)} data-tour={`nav-${id}`}>
       <Icon size={17} /><span>{label}</span><ChevronDown size={15} className={`nav-chevron ${show ? 'open' : ''}`} aria-hidden="true" />
     </button>
-    {show && <div id={id} className="nav-group">{items.map(render)}</div>}
+    {show && <div id={id} className="nav-group" data-tour={`nav-${id.replace('-group', '')}-items`}>{items.map(render)}</div>}
   </>
 }

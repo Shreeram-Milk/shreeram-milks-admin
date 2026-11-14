@@ -1,0 +1,24 @@
+{
+  "title": "ઓર્ડરની વિગત",
+  "voice": {
+    "pace": 1.0,
+    "temperature": 0.7
+  },
+  "steps": [
+    {
+      "id": "intro",
+      "target": "css:.page-header",
+      "text": "આ એક ઓર્ડરની પૂરી વિગત છે. કોણે, ક્યારે, શું મંગાવ્યું અને પૈસા કેવી રીતે ભર્યા."
+    },
+    {
+      "id": "buttons",
+      "target": "css:.page-header .header-actions",
+      "text": "ઉપરના બટનથી ઓર્ડર આગળ વધે. ડિલિવરી માટે નીકળ્યા, ડિલિવર થયા, ચૂકી ગયા, કે ઓર્ડર રદ કરો. ચૂકી ગયા પછી પૈસા પાછા આપવા હોય તો પૈસા પાછા આપો બટન."
+    },
+    {
+      "id": "details",
+      "target": "css:.content-inner .form-card, .content-inner .product-detail-grid, .content-inner section",
+      "text": "નીચે સરનામું, ડિલિવરીનો સમય અને બધી વસ્તુઓ દેખાય. ડિલિવર થયા નોંધ્યા પછી બદલાતું નથી, એટલે ધ્યાનથી દબાવજો."
+    }
+  ]
+}

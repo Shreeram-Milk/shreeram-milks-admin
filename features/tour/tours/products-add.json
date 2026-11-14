@@ -1,0 +1,163 @@
+{
+  "title": "નવી પ્રોડક્ટ",
+  "voice": {
+    "pace": 1.0,
+    "temperature": 0.7
+  },
+  "leave": {
+    "page": "/products"
+  },
+  "steps": [
+    {
+      "id": "steps",
+      "target": "css:.product-step-grid",
+      "text": "પ્રોડક્ટ પાંચ પગલામાં બને છે. વિગત, ડિલિવરી, સાઇઝ અને ભાવ, કેવી રીતે વેચાય, અને ફોટા. ચાલો ગાયનું દૂધ બનાવીને જોઈએ."
+    },
+    {
+      "id": "name",
+      "target": "p-name",
+      "text": "પહેલાં પ્રોડક્ટનું નામ અંગ્રેજીમાં લખો.",
+      "example": "Cow Milk",
+      "open": "css:.product-step-grid > :nth-child(1)",
+      "fill": {
+        "type": "Cow Milk"
+      }
+    },
+    {
+      "id": "category",
+      "target": "p-category",
+      "text": "હવે કેટેગરી. સેટઅપમાં જે કેટેગરી બનાવી હતી એમાંથી બસ પસંદ કરવાની.",
+      "example": "Milk",
+      "open": "css:.product-step-grid > :nth-child(1)",
+      "fill": {
+        "choose": "milk|દૂધ"
+      }
+    },
+    {
+      "id": "gujarati",
+      "target": "p-name-gu",
+      "text": "પછી ગુજરાતી નામ. એપ ગુજરાતીમાં હોય ત્યારે કસ્ટમરને આ નામ દેખાય.",
+      "example": "ગાયનું દૂધ",
+      "open": "css:.product-step-grid > :nth-child(1)",
+      "fill": {
+        "type": "ગાયનું દૂધ"
+      }
+    },
+    {
+      "id": "how",
+      "target": "p-how",
+      "text": "હવે બીજું પગલું, ડિલિવરી. દૂધ તમે જાતે પહોંચાડો છો એટલે અમારી પોતાની ડિલિવરી પસંદ કરો. ઘી જેવી વસ્તુ કુરિયરથી મોકલવી હોય તો કુરિયર.",
+      "example": "અમારી પોતાની ડિલિવરી",
+      "open": "css:.product-step-grid > :nth-child(2)",
+      "fill": {
+        "choose": "our own|પોતાની"
+      }
+    },
+    {
+      "id": "area",
+      "target": "p-area",
+      "text": "કયા વિસ્તારમાં વેચવી છે એ પસંદ કરો. ગાંધીનગર લોકલ ડિલિવરી. એના પિન કોડ અને સમય જાતે જ આવી જાય.",
+      "example": "Gandhinagar Local Delivery",
+      "open": "css:.product-step-grid > :nth-child(2)",
+      "fill": {
+        "choose": "gandhinagar"
+      }
+    },
+    {
+      "id": "cutoff",
+      "target": "p-cutoff",
+      "text": "ઓર્ડરનો છેલ્લો સમય પણ પસંદ કરો. એ ના હોય તો પ્રોડક્શન પ્લાનમાં આ દૂધ ગણાશે નહીં.",
+      "example": "Gandhinagar Milk Order Cutoffs",
+      "open": "css:.product-step-grid > :nth-child(2)",
+      "fill": {
+        "choose": "gandhinagar milk"
+      }
+    },
+    {
+      "id": "sizes",
+      "target": "p-add-size",
+      "text": "ત્રીજું પગલું, સાઇઝ અને ભાવ. સાઇઝ ઉમેરો દબાવો.",
+      "open": "css:.product-step-grid > :nth-child(3)"
+    },
+    {
+      "id": "amount",
+      "target": "s-size",
+      "text": "એક પેકમાં કેટલું છે એ લખો. પાંચસો.",
+      "example": "500",
+      "open": "p-add-size",
+      "fill": {
+        "type": "500"
+      }
+    },
+    {
+      "id": "unit",
+      "target": "s-size",
+      "text": "અને એકમ પસંદ કરો. મિલી.",
+      "example": "મિલીલિટર (ml)",
+      "open": "p-add-size",
+      "fill": {
+        "choose": "millilitre|મિલીલિટર"
+      }
+    },
+    {
+      "id": "price",
+      "target": "s-price",
+      "text": "હવે ભાવ. પાંત્રીસ રૂપિયા. નીચે જૂનો ભાવ લખો તો એ છેકીને દેખાય, ઓફર જેવું.",
+      "example": "₹35",
+      "open": "p-add-size",
+      "fill": {
+        "type": "35"
+      }
+    },
+    {
+      "id": "make",
+      "target": "p-make",
+      "text": "પોપઅપમાં ઉમેરો દબાવો એટલે સાઇઝ લિસ્ટમાં આવી જાય. એક લિટર માટે ફરી આ જ રીતે. અને આ ખાનું ટિક કરો, એટલે આ દૂધ રોજના પ્રોડક્શન પ્લાનમાં ગણાય.",
+      "open": "css:.product-step-grid > :nth-child(3)",
+      "fill": {
+        "tick": true
+      },
+      "closeFirst": true
+    },
+    {
+      "id": "subscription",
+      "target": "p-methods",
+      "text": "ચોથું પગલું, કેવી રીતે વેચાય. એક વખતની ખરીદી, ટ્રાયલ અને સબ્સ્ક્રિપ્શન. રોજના દૂધ માટે સબ્સ્ક્રિપ્શન ટિક કરો.",
+      "example": "સબ્સ્ક્રિપ્શન",
+      "open": "css:.product-step-grid > :nth-child(4)",
+      "fill": {
+        "tick": true,
+        "field": "label:nth-child(3)"
+      }
+    },
+    {
+      "id": "trial",
+      "target": "p-methods",
+      "text": "અને નવા કસ્ટમર ચાખીને જુએ એ માટે ટ્રાયલ પણ ટિક કરો.",
+      "example": "ટ્રાયલ",
+      "open": "css:.product-step-grid > :nth-child(4)",
+      "fill": {
+        "tick": true,
+        "field": "label:nth-child(2)"
+      }
+    },
+    {
+      "id": "plans",
+      "target": "css:[data-tour=\"product-section-4b\"], [data-tour=\"product-section-4a\"]",
+      "text": "નીચે ઉમેરો બટનથી ટ્રાયલ પ્લાન અને સબ્સ્ક્રિપ્શનનો નિયમ પસંદ કરો. જેમ કે ત્રણ દિવસનો ટ્રાયલ અને ડેઇલી.",
+      "example": "3 દિવસ · Daily",
+      "open": "css:.product-step-grid > :nth-child(4)"
+    },
+    {
+      "id": "photos",
+      "target": "product-section-05",
+      "text": "પાંચમું પગલું, ફોટા અને વિગત. સરસ ફોટો મૂકો અને થોડું લખાણ લખો. કસ્ટમર પ્રોડક્ટ ખોલે ત્યારે આ જ વાંચે.",
+      "open": "css:.product-step-grid > :nth-child(5)"
+    },
+    {
+      "id": "publish",
+      "target": "css:.product-save-bar",
+      "text": "બધું ભરાઈ જાય એટલે પ્રકાશિત કરો દબાવો. તરત એપમાં કસ્ટમરને દેખાવા લાગે. હજી તૈયાર ના હોય તો ડ્રાફ્ટમાં સેવ કરો. આ તો ખાલી શીખવા માટે છે, એટલે સેવ ના કરતા."
+    }
+  ]
+}

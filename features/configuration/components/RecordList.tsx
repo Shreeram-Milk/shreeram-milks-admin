@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useState, type ReactNode } from 'react'
 import { toast } from 'sonner'
-import { CircleCheck, CircleOff, Edit2, MoreHorizontal, Plus, Trash2 } from 'lucide-react'
+import { BookOpen, CircleCheck, CircleOff, Edit2, MoreHorizontal, Plus, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SelectField } from '@/components/ui/select-field'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -24,6 +24,8 @@ import { setupHelp, type SetupScreen } from '../help'
 import { tc } from '@/lib/i18n/common'
 import { t, type ConfigKey } from '../messages'
 import { DeleteRecordDialog } from './DeleteRecordDialog'
+import { PageTour } from '@/features/tour/PageTour'
+import { t as tt } from '@/features/tour/messages'
 import { InUseDialog } from './InUseDialog'
 
 const PAGE_SIZE = 10
@@ -101,11 +103,11 @@ export function RecordList({ feature }: { feature: ListFeature }) {
   }
   const columns = COLUMNS[feature]
   return <div className="workspace-page">
-    <header className="page-header"><div><PageBreadcrumbs items={[{ label: meta.group }, { label: meta.plural }]} /><h1 className="title-with-tip">{meta.plural}{HELP[feature] && <InfoTip label={meta.plural} text={setupHelp(HELP[feature])} />}</h1><p className="page-description">{meta.description}</p></div>{<Link className="primary-button" href={`${href}/new`}><Plus size={16} /> {t('addNoun', { noun: meta.singular })}</Link>}</header>
+    <header className="page-header" data-tour="list-header"><div><PageBreadcrumbs items={[{ label: meta.group }, { label: meta.plural }]} /><h1 className="title-with-tip">{meta.plural}{HELP[feature] && <InfoTip label={meta.plural} text={setupHelp(HELP[feature])} />}</h1><p className="page-description">{meta.description}</p></div><div className="header-actions"><PageTour name={feature} />{feature === 'service-areas' ? <PageTour name="service-areas-pins" kind="howTo" label={tt('howToPins')} /> : null}<Link className="secondary-button tour-button" href={`${href}/new?guide=1`}><BookOpen size={15} aria-hidden="true" />{tt('howTo')}</Link><Link className="primary-button" href={`${href}/new`} data-tour="list-add"><Plus size={16} /> {t('addNoun', { noun: meta.singular })}</Link></div></header>
     <section className="config-section">
       <ListSearchInput label={t('searchNoun', { noun: meta.plural.toLowerCase() })} value={search} onCommit={value => { setSearch(value); setPage(1) }} placeholder={t('searchNounPlaceholder', { noun: meta.plural.toLowerCase() })} />
       <div className="config-filter-row"><SelectField label={tc('filterByStatus')} className="config-select product-select-trigger" value={status || ALL} onChange={value => { setStatusFilter(value === ALL ? '' : value as RecordStatus); setPage(1) }} placeholder={tc('allStatuses')} options={[{ value: ALL, label: tc('allStatuses') }, { value: 'active', label: tc('active') }, { value: 'inactive', label: tc('inactive') }]} /><span className="record-count">{t('recordsCount', { count: result.total })}</span></div>
-      <div className="table-card"><div className="table-scroll"><Table>
+      <div className="table-card" data-tour="list-table"><div className="table-scroll"><Table>
         <TableHeader><TableRow>{columns.map(column => <TableHead key={column}>{t(column)}</TableHead>)}<TableHead scope="col" aria-label={t('actions')} /></TableRow></TableHeader>
         <TableBody>
           {result.rows.map(row => <TableRow key={row.id}>

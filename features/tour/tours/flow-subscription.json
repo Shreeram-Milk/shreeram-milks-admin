@@ -1,0 +1,37 @@
+{
+  "title": "સબ્સ્ક્રિપ્શન",
+  "voice": {
+    "pace": 1.0,
+    "temperature": 0.7
+  },
+  "steps": [
+    {
+      "id": "start",
+      "target": "css:.page-header",
+      "text": "સબ્સ્ક્રિપ્શન કેવી રીતે ચાલે એ જોઈએ. કસ્ટમર એપમાંથી રોજનો પ્લાન શરૂ કરે એ અહીં દેખાય.",
+      "page": "/subscriptions"
+    },
+    {
+      "id": "auto",
+      "target": "css:.table-card",
+      "text": "દરેક ડિલિવરી ત્રણ દિવસ પહેલાં જાતે જ ઓર્ડર બની જાય. એટલે ઓર્ડર અને પ્રોડક્શન પ્લાનમાં આપોઆપ ગણાઈ જાય.",
+      "page": "/subscriptions"
+    },
+    {
+      "id": "pause",
+      "target": "css:.page-header .header-actions",
+      "text": "પ્લાન ખોલો તો ઉપર થોભાવો અને રદ કરો બટન છે. કસ્ટમર બહારગામ જાય તો થોભાવો. એ દિવસો ગુમાતા નથી, પ્લાનના અંતે ઉમેરાઈ જાય છે. આ તો ખાલી શીખવા માટે છે, એટલે સેવ ના કરતા.",
+      "open": "css:.table-card tbody a.product-name-link, .table-card tbody .table-link"
+    },
+    {
+      "id": "days",
+      "target": "css:.kpi-row, .product-detail-rows",
+      "text": "અહીં કેટલી ડિલિવરી થઈ અને કેટલી બાકી એ દેખાય. કોઈ એક જ દિવસ છોડવો હોય તો નીચે એ દિવસ પર છોડો દબાવો."
+    },
+    {
+      "id": "stop",
+      "target": "css:.page-header .header-actions",
+      "text": "પ્લાન રદ કરો તો વાપર્યા વગરના પૈસા પૈસાના વિભાગમાં રિફંડ માટે આવી જાય."
+    }
+  ]
+}

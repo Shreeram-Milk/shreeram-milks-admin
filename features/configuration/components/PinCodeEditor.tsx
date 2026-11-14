@@ -14,6 +14,7 @@ import { MAX_PASTED_PINS, parsePinList } from '../pin-list'
 import { pinApi, type DeliverySlot, type Pin, type RecordStatus, type ServiceArea } from '../api'
 import { DirectoryPicker } from './DirectoryPicker'
 import { SlotChoices } from './SlotChoices'
+import { keepOpenForTour } from '@/features/tour/PageTour'
 import { tc } from '@/lib/i18n/common'
 import { t } from '../messages'
 
@@ -73,16 +74,16 @@ export function PinCodeEditor({ area, slots, mode: startMode, editing, onClose, 
 
   const sharedFields = <>
     <div className="pin-form-row">
-      <Field label={t('areaLocality')} helper={mode === 'many' ? t('appliedToAll') : undefined}><Input value={locality} onChange={event => setLocality(event.target.value)} placeholder={t('localityPlaceholder')} /></Field>
+      <Field label={t('areaLocality')} helper={mode === 'many' ? t('appliedToAll') : undefined} tour="pin-locality"><Input value={locality} onChange={event => setLocality(event.target.value)} placeholder={t('localityPlaceholder')} /></Field>
       <Field label={t('status')}><SelectField label={t('pinStatus')} value={status} onChange={value => setStatus(value as RecordStatus)} placeholder={t('chooseStatus')} options={[{ value: 'active', label: tc('active') }, { value: 'inactive', label: tc('inactive') }]} /></Field>
     </div>
-    <SlotChoices label={t('deliverySlotsCol')} slots={slots} value={slotIds} onChange={setSlotIds} />
+    <div data-tour="pin-slots"><SlotChoices label={t('deliverySlotsCol')} slots={slots} value={slotIds} onChange={setSlotIds} /></div>
   </>
   const manyLabel = pasted.codes.length > 0 ? t(pasted.codes.length === 1 ? 'addCountOne' : 'addCountMany', { count: pasted.codes.length }) : t('addPinCodes')
   const actionLabel = saving ? t('saving') : mode === 'many' ? manyLabel : editing ? t('updatePin') : t('addPin')
 
   return <Sheet open={open} onOpenChange={next => { if (!next && !saving) leave(onClose) }}>
-    <SheetContent side="right" className="pin-sheet w-full sm:max-w-[560px]">
+    <SheetContent side="right" className="pin-sheet w-full sm:max-w-[560px]" onInteractOutside={keepOpenForTour}>
       <SheetHeader className="pin-sheet-header">
         <SheetTitle>{editing ? t('editPinTitle', { pin: editing.pinCode }) : t('addPinCodes')}</SheetTitle>
         <SheetDescription>{editing ? t('editPinHint') : t('addPinsHint', { area: area.name })}</SheetDescription>
@@ -92,9 +93,9 @@ export function PinCodeEditor({ area, slots, mode: startMode, editing, onClose, 
           <Field label={t('pinCode')} required><Input inputMode="numeric" maxLength={6} value={pinCode} onChange={event => setPinCode(event.target.value.replace(/\D/g, '').slice(0, 6))} /></Field>
           {sharedFields}
         </div> : <Tabs value={mode} onValueChange={value => { setMode(value as PinEditorMode); setError('') }}>
-          <TabsList className="pin-tabs"><TabsTrigger value="one">{t('singlePin')}</TabsTrigger><TabsTrigger value="many">{t('pasteList')}</TabsTrigger><TabsTrigger value="city">{t('fromCity')}</TabsTrigger></TabsList>
+          <TabsList className="pin-tabs" data-tour="pin-tabs"><TabsTrigger value="one">{t('singlePin')}</TabsTrigger><TabsTrigger value="many">{t('pasteList')}</TabsTrigger><TabsTrigger value="city">{t('fromCity')}</TabsTrigger></TabsList>
           <TabsContent value="one" className="pin-sheet-stack">
-            <Field label={t('pinCode')} required><Input inputMode="numeric" maxLength={6} value={pinCode} onChange={event => setPinCode(event.target.value.replace(/\D/g, '').slice(0, 6))} placeholder="382010" /></Field>
+            <Field label={t('pinCode')} required tour="pin-code"><Input inputMode="numeric" maxLength={6} value={pinCode} onChange={event => setPinCode(event.target.value.replace(/\D/g, '').slice(0, 6))} placeholder="382010" /></Field>
             {sharedFields}
           </TabsContent>
           <TabsContent value="many" className="pin-sheet-stack">
@@ -115,7 +116,7 @@ export function PinCodeEditor({ area, slots, mode: startMode, editing, onClose, 
       </div>
       {mode !== 'city' && <div className="pin-sheet-footer">
         {error && <p className="field-error" role="alert">{error}</p>}
-        <div className="pin-sheet-actions"><Button className="secondary-button" disabled={saving} onClick={() => leave(onClose)}>{t('cancel')}</Button><Button className="primary-button" disabled={saving} onClick={() => void save()}>{actionLabel}</Button></div>
+        <div className="pin-sheet-actions"><Button className="secondary-button" disabled={saving} onClick={() => leave(onClose)}>{t('cancel')}</Button><Button className="primary-button" disabled={saving} onClick={() => void save()} data-tour="pin-save">{actionLabel}</Button></div>
       </div>}
     </SheetContent>
   </Sheet>

@@ -1,0 +1,54 @@
+{
+  "title": "નવી કેટેગરી",
+  "voice": {
+    "pace": 1.0,
+    "temperature": 0.7
+  },
+  "leave": {
+    "escape": true
+  },
+  "steps": [
+    {
+      "id": "name",
+      "target": "cat-name",
+      "text": "ચાલો દહીંની નવી કેટેગરી બનાવીને જોઈએ. પહેલાં અંગ્રેજીમાં નામ લખો.",
+      "example": "Curd",
+      "open": "list-add",
+      "fill": {
+        "type": "Curd"
+      }
+    },
+    {
+      "id": "gujarati",
+      "target": "cat-gu",
+      "text": "પછી ગુજરાતી નામ. એપ ગુજરાતીમાં ચાલતી હોય ત્યારે કસ્ટમરને આ જ નામ દેખાય.",
+      "example": "દહીં",
+      "open": "list-add",
+      "fill": {
+        "type": "દહીં"
+      }
+    },
+    {
+      "id": "order",
+      "target": "cat-order",
+      "text": "દેખાવાનો ક્રમ. દૂધ પહેલું છે અને ઘી બીજું, એટલે દહીં ત્રીજું.",
+      "example": "3",
+      "open": "list-add",
+      "fill": {
+        "type": "3"
+      }
+    },
+    {
+      "id": "picture",
+      "target": "cat-picture",
+      "text": "અહીં દહીંનો એક સરસ ફોટો મૂકો. એપના હોમ પેજ પર આ ફોટો દેખાશે. નીચેનું વર્ણન ખાલી રાખો તો પણ ચાલે.",
+      "open": "list-add"
+    },
+    {
+      "id": "save",
+      "target": "cat-save",
+      "text": "છેલ્લે કેટેગરી બનાવો દબાવો એટલે સેવ થઈ જાય. આ તો ખાલી શીખવા માટે છે, એટલે સેવ ના કરતા.",
+      "open": "list-add"
+    }
+  ]
+}

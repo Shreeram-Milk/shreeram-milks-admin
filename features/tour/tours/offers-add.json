@@ -1,0 +1,67 @@
+{
+  "title": "નવી ઓફર",
+  "voice": {
+    "pace": 1.0,
+    "temperature": 0.7
+  },
+  "leave": {
+    "page": "/content/offers"
+  },
+  "steps": [
+    {
+      "id": "title",
+      "target": "o-title",
+      "text": "ચાલો એક ઓફર બનાવીને જોઈએ. પહેલાં અંગ્રેજીમાં ઓફરનું નામ લખો.",
+      "example": "10% off on Ghee",
+      "fill": {
+        "type": "10% off on Ghee"
+      }
+    },
+    {
+      "id": "title-gu",
+      "target": "o-title-gu",
+      "text": "પછી ગુજરાતીમાં.",
+      "example": "ઘી પર 10% છૂટ",
+      "fill": {
+        "type": "ઘી પર 10% છૂટ"
+      }
+    },
+    {
+      "id": "picture",
+      "target": "css:.banner-image-field",
+      "text": "ઓફરનો એક સરસ ફોટો મૂકો."
+    },
+    {
+      "id": "kind",
+      "target": "o-kind",
+      "text": "કેવી છૂટ આપવી એ પસંદ કરો. ટકા છૂટ, ચોક્કસ રકમની છૂટ, કે મફત ભેટ.",
+      "example": "ટકા છૂટ",
+      "fill": {
+        "choose": "percent|ટકા"
+      }
+    },
+    {
+      "id": "percent",
+      "target": "o-percent",
+      "text": "કેટલા ટકા છૂટ. દસ.",
+      "example": "10",
+      "fill": {
+        "type": "10"
+      }
+    },
+    {
+      "id": "min",
+      "target": "o-min-order",
+      "text": "ઓછામાં ઓછો કેટલાનો ઓર્ડર હોય તો ઓફર મળે. પાંચસો રૂપિયા.",
+      "example": "₹500",
+      "fill": {
+        "type": "500"
+      }
+    },
+    {
+      "id": "save",
+      "target": "css:.settings-actions",
+      "text": "નીચે કઈ પ્રોડક્ટ પર અને ક્યાં સુધી, એ પણ ભરો. પછી ઓફર બનાવો દબાવો એટલે સેવ થઈ જાય. આ તો ખાલી શીખવા માટે છે, એટલે સેવ ના કરતા."
+    }
+  ]
+}

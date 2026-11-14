@@ -1,0 +1,107 @@
+import type { Tour } from './GuideProvider'
+import appSettings from './tours/app-settings.json'
+import banners from './tours/banners.json'
+import bannersAdd from './tours/banners-add.json'
+import categories from './tours/categories.json'
+import categoriesAdd from './tours/categories-add.json'
+import credit from './tours/credit.json'
+import creditDetail from './tours/credit-detail.json'
+import customerDetail from './tours/customer-detail.json'
+import customers from './tours/customers.json'
+import cutoffRules from './tours/cutoff-rules.json'
+import cutoffRulesAdd from './tours/cutoff-rules-add.json'
+import deliveries from './tours/deliveries.json'
+import deliverySlots from './tours/delivery-slots.json'
+import deliverySlotsAdd from './tours/delivery-slots-add.json'
+import faqs from './tours/faqs.json'
+import flowCancelled from './tours/flow-cancelled.json'
+import flowCredit from './tours/flow-credit.json'
+import flowMorning from './tours/flow-morning.json'
+import flowNewProduct from './tours/flow-new-product.json'
+import flowPins from './tours/flow-pins.json'
+import flowSubscription from './tours/flow-subscription.json'
+import flowWallet from './tours/flow-wallet.json'
+import messagesAuto from './tours/messages-auto.json'
+import messagesSend from './tours/messages-send.json'
+import moneyOwed from './tours/money-owed.json'
+import offers from './tours/offers.json'
+import offersAdd from './tours/offers-add.json'
+import onboarding from './tours/onboarding.json'
+import orderDetail from './tours/order-detail.json'
+import orders from './tours/orders.json'
+import payments from './tours/payments.json'
+import policies from './tours/policies.json'
+import production from './tours/production.json'
+import products from './tours/products.json'
+import productsAdd from './tours/products-add.json'
+import riderSheet from './tours/rider-sheet.json'
+import serviceAreas from './tours/service-areas.json'
+import serviceAreasAdd from './tours/service-areas-add.json'
+import serviceAreasPins from './tours/service-areas-pins.json'
+import startHere from './tours/start-here.json'
+import subscriptionDetail from './tours/subscription-detail.json'
+import subscriptionRules from './tours/subscription-rules.json'
+import subscriptionRulesAdd from './tours/subscription-rules-add.json'
+import subscriptions from './tours/subscriptions.json'
+import support from './tours/support.json'
+import trialPlans from './tours/trial-plans.json'
+import trialPlansAdd from './tours/trial-plans-add.json'
+import trials from './tours/trials.json'
+import wallets from './tours/wallets.json'
+import website from './tours/website.json'
+
+/** Every spoken guide, by name. The name is also the folder of its clips: public/tours/<name>/. */
+export const TOURS = {
+  'app-settings': appSettings as Tour,
+  'banners': banners as Tour,
+  'banners-add': bannersAdd as Tour,
+  'categories': categories as Tour,
+  'categories-add': categoriesAdd as Tour,
+  'credit': credit as Tour,
+  'credit-detail': creditDetail as Tour,
+  'customer-detail': customerDetail as Tour,
+  'customers': customers as Tour,
+  'cutoff-rules': cutoffRules as Tour,
+  'cutoff-rules-add': cutoffRulesAdd as Tour,
+  'deliveries': deliveries as Tour,
+  'delivery-slots': deliverySlots as Tour,
+  'delivery-slots-add': deliverySlotsAdd as Tour,
+  'faqs': faqs as Tour,
+  'flow-cancelled': flowCancelled as Tour,
+  'flow-credit': flowCredit as Tour,
+  'flow-morning': flowMorning as Tour,
+  'flow-new-product': flowNewProduct as Tour,
+  'flow-pins': flowPins as Tour,
+  'flow-subscription': flowSubscription as Tour,
+  'flow-wallet': flowWallet as Tour,
+  'messages-auto': messagesAuto as Tour,
+  'messages-send': messagesSend as Tour,
+  'money-owed': moneyOwed as Tour,
+  'offers': offers as Tour,
+  'offers-add': offersAdd as Tour,
+  'onboarding': onboarding as Tour,
+  'order-detail': orderDetail as Tour,
+  'orders': orders as Tour,
+  'payments': payments as Tour,
+  'policies': policies as Tour,
+  'production': production as Tour,
+  'products': products as Tour,
+  'products-add': productsAdd as Tour,
+  'rider-sheet': riderSheet as Tour,
+  'service-areas': serviceAreas as Tour,
+  'service-areas-add': serviceAreasAdd as Tour,
+  'service-areas-pins': serviceAreasPins as Tour,
+  'start-here': startHere as Tour,
+  'subscription-detail': subscriptionDetail as Tour,
+  'subscription-rules': subscriptionRules as Tour,
+  'subscription-rules-add': subscriptionRulesAdd as Tour,
+  'subscriptions': subscriptions as Tour,
+  'support': support as Tour,
+  'trial-plans': trialPlans as Tour,
+  'trial-plans-add': trialPlansAdd as Tour,
+  'trials': trials as Tour,
+  'wallets': wallets as Tour,
+  'website': website as Tour,
+} satisfies Record<string, Tour>
+
+export type TourName = keyof typeof TOURS

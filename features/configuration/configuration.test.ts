@@ -64,7 +64,10 @@ describe('quick checks before saving', () => {
   it('reads a subscription rule\'s lengths as sorted unique numbers, and refuses anything else', () => {
     assert.deepEqual(toPayload('subscription-rules', values(), false), { name: 'Morning', description: 'note', status: 'active', systemType: 'daily', lengthOptions: [15, 30], minDays: 5, maxDays: 180 })
     assert.deepEqual(parseLengths('7 15,30'), [7, 15, 30])
-    for (const bad of ['', '0', '15, abc', '400', '1,2,3,4,5,6,7']) assert.equal(parseLengths(bad), null, bad)
+    // Ready-made lengths are optional: empty means none, and customers pick their last day on the calendar.
+    assert.deepEqual(parseLengths(''), [])
+    assert.equal(buildSchema('subscription-rules').safeParse(values({ lengthOptions: '' })).success, true)
+    for (const bad of ['0', '15, abc', '400', '1,2,3,4,5,6,7']) assert.equal(parseLengths(bad), null, bad)
     assert.equal(buildSchema('subscription-rules').safeParse(values({ lengthOptions: '15.5' })).success, false)
     assert.equal(buildSchema('subscription-rules').safeParse(values({ minDays: 30, maxDays: 10 })).success, false)
     assert.equal(buildSchema('subscription-rules').safeParse(values({ minDays: 0 })).success, false)

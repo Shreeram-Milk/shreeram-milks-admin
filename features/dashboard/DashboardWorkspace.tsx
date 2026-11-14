@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { PageTour } from '@/features/tour/PageTour'
 import { useEffect, useState } from 'react'
 import { Plus, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -40,6 +41,7 @@ export function DashboardWorkspace() {
     <header className="page-header">
       <div><p className="eyebrow">{formatWeekdayDate(data.today)}</p><h1>{t('title')}</h1><p className="page-description">{t('description')}</p></div>
       <div className="header-actions">
+        <PageTour name="start-here" kind="start" />
         <Button variant="outline" className="secondary-button" onClick={reload}><RefreshCw size={15} /> {tc('refresh')}</Button>
         <Link className="primary-button" href="/notifications/broadcasts"><Plus size={15} /> {t('sendMessage')}</Link>
       </div>

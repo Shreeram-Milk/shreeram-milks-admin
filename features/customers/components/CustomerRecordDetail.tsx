@@ -54,7 +54,7 @@ function CustomerRecordForm({ customer, onSaved }: { customer: CustomerRecord; o
       <div className="form-section-header"><div className="form-section-heading"><div><h2>{t('account')}</h2><p>{editable ? t('accountEditable') : t('accountDeleted')}</p></div></div></div>
       <div className="record-editor-fields">
         <FormField label={t('name')} error={errors.name?.message}><Input {...register('name')} autoComplete="off" disabled={!editable} /></FormField>
-        <FormField label={t('customerType')} helper={watch("customerType") === "credit" ? t('creditHelper') : t('prepaidHelper')} error={errors.customerType?.message}>
+        <FormField label={t('customerType')} helper={watch("customerType") === "credit" ? t('creditHelper') : t('prepaidHelper')} error={errors.customerType?.message} tour="c-type">
           <Controller control={control} name="customerType" render={({ field }) => <SelectField label={t('customerType')} value={field.value} onChange={field.onChange} placeholder={t('selectAType')} options={typeOptions()} />} />
         </FormField>
         <FormField label={t('staffNote')} className="field-wide" helper={t('staffNoteHelper')} error={errors.adminNote?.message}><Textarea {...register('adminNote')} rows={3} maxLength={500} disabled={!editable} /></FormField>

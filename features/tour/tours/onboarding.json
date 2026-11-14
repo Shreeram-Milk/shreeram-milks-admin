@@ -1,0 +1,19 @@
+{
+  "title": "સ્વાગતના પેજ",
+  "voice": {
+    "pace": 1.0,
+    "temperature": 0.7
+  },
+  "steps": [
+    {
+      "id": "intro",
+      "target": "css:.page-header",
+      "text": "એપ પહેલી વાર ખોલે ત્યારે જે સ્વાગતના પેજ દેખાય એ અહીંથી બદલાય."
+    },
+    {
+      "id": "table",
+      "target": "css:.table-card, .product-list-section",
+      "text": "દરેક પેજનો ફોટો અને લખાણ બદલી શકો. ટૂંકું અને સરળ લખાણ રાખજો."
+    }
+  ]
+}

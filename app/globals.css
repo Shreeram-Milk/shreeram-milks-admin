@@ -1637,3 +1637,23 @@ button.wallet-overview-card { cursor: pointer; }
 .wallet-warning { display: flex; flex-direction: column; gap: 3px; padding: 10px 12px; border: 1px solid #ecd29a; border-left: 4px solid #d9a441; border-radius: 10px; background: #fffcf3; font-size: 13px; }
 .wallet-warning span { color: #5b6472; }
 .wallet-pick { align-self: flex-start; margin-bottom: 2px; padding: 2px 8px; border-radius: 999px; background: #ecfdf5; color: #2f7d62 !important; font-size: 11px !important; font-weight: 700; }
+
+/* Spoken page guide: a lit-up part of the page, the words underneath, and simple controls. */
+.tour-button { display: inline-flex; align-items: center; gap: 6px; }
+.tour-layer { position: fixed; inset: 0; z-index: 80; pointer-events: none; }
+.tour-dim { position: fixed; inset: 0; background: rgba(10,16,28,.45); }
+.tour-spot { position: fixed; border-radius: 12px; box-shadow: 0 0 0 9999px rgba(10,16,28,.45), 0 0 0 3px #ff6700; transition: top .35s ease, left .35s ease, width .35s ease, height .35s ease; }
+.tour-card { position: fixed; left: 50%; bottom: 24px; width: min(560px, calc(100vw - 32px)); transform: translateX(-50%); display: flex; flex-direction: column; gap: 10px; padding: 16px 18px; border-radius: 14px; background: #fff; box-shadow: 0 18px 50px rgba(10,16,28,.28); pointer-events: auto; }
+.tour-card-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 12px; font-weight: 600; }
+.tour-card p { margin: 0; font-size: 17px; line-height: 1.6; color: #0a0a0a; }
+.tour-icon { display: grid; place-items: center; width: 30px; height: 30px; border: 0; border-radius: 8px; background: #f3f4f6; color: #374151; cursor: pointer; }
+.tour-progress { display: flex; gap: 4px; }
+.tour-progress i { flex: 1; height: 4px; border-radius: 4px; background: #e5e7eb; }
+.tour-progress i.is-done { background: #ff6700; }
+.tour-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.tour-actions button { display: inline-flex; align-items: center; gap: 6px; }
+@media (prefers-reduced-motion: reduce) { .tour-spot { transition: none; } }
+.tour-example { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 10px; background: #fff4ec; border: 1px solid #ffd2b3; }
+.tour-example span { color: #a14200; font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.tour-example strong { font-size: 20px; color: #0a0a0a; }
+a.tour-button { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }

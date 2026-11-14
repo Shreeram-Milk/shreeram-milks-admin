@@ -1,0 +1,58 @@
+{
+  "title": "નવો ડિલિવરી વિસ્તાર",
+  "voice": {
+    "pace": 1.0,
+    "temperature": 0.7
+  },
+  "leave": {
+    "page": "/operations/service-areas"
+  },
+  "steps": [
+    {
+      "id": "steps",
+      "target": "f-area-steps",
+      "text": "નવો વિસ્તાર બે પગલામાં બને છે. પહેલાં વિસ્તારની માહિતી અને પછી એના પિન કોડ."
+    },
+    {
+      "id": "name",
+      "target": "f-name",
+      "text": "ચાલો કલોલનો વિસ્તાર બનાવીને જોઈએ. પહેલાં એવું નામ લખો જે તમને યાદ રહે.",
+      "example": "Kalol Local Delivery",
+      "fill": {
+        "type": "Kalol Local Delivery"
+      }
+    },
+    {
+      "id": "where",
+      "target": "f-where",
+      "text": "તમે ક્યાં ડિલિવરી કરો છો એ પસંદ કરો. રોજના દૂધ માટે પસંદ કરેલા પિન કોડ જ રાખો. આખું રાજ્ય કે આખું ભારત તો ફક્ત કુરિયરની વસ્તુ માટે છે.",
+      "example": "પસંદ કરેલા પિન કોડ",
+      "fill": {
+        "choose": "chosen pin|પસંદ કરેલા"
+      }
+    },
+    {
+      "id": "state",
+      "target": "f-state",
+      "text": "રાજ્યનું નામ લખો.",
+      "example": "Gujarat",
+      "fill": {
+        "type": "Gujarat"
+      }
+    },
+    {
+      "id": "city",
+      "target": "f-city",
+      "text": "અને શહેરનું નામ.",
+      "example": "Kalol",
+      "fill": {
+        "type": "Kalol"
+      }
+    },
+    {
+      "id": "save",
+      "target": "f-save",
+      "text": "હવે આ બટનથી સેવ કરો એટલે સીધા પિન કોડના પેજ પર જશો. ત્યાં દરેક પિન કોડ અને એનો સમય નક્કી થાય. આ તો ખાલી શીખવા માટે છે, એટલે સેવ ના કરતા."
+    }
+  ]
+}

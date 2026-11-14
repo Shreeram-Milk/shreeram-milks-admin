@@ -1,0 +1,33 @@
+{
+  "title": "નવી પ્રોડક્ટ",
+  "voice": {
+    "pace": 1.0,
+    "temperature": 0.7
+  },
+  "steps": [
+    {
+      "id": "category",
+      "target": "css:.page-header",
+      "text": "નવી પ્રોડક્ટ બનાવતા પહેલાં એક વાર જોઈ લો કે એની કેટેગરી બનેલી છે.",
+      "page": "/configuration/categories"
+    },
+    {
+      "id": "areas",
+      "target": "css:.table-card",
+      "text": "અને જ્યાં વેચવી છે એ ડિલિવરી વિસ્તાર અને એના સમય તૈયાર છે.",
+      "page": "/operations/service-areas"
+    },
+    {
+      "id": "products",
+      "target": "css:.page-header",
+      "text": "બધું તૈયાર હોય તો હવે પ્રોડક્ટ. ચાલો એક પ્રોડક્ટ બનાવીને જોઈએ.",
+      "page": "/products"
+    },
+    {
+      "id": "form",
+      "target": "css:.product-step-grid",
+      "text": "પ્રોડક્ટનું ફોર્મ ખુલી ગયું. હવે એક એક પગલું ભરીને બતાવું છું.",
+      "page": "/products/new?guide=1"
+    }
+  ]
+}

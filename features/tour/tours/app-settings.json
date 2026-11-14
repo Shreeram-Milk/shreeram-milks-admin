@@ -1,0 +1,19 @@
+{
+  "title": "એપ સેટિંગ",
+  "voice": {
+    "pace": 1.0,
+    "temperature": 0.7
+  },
+  "steps": [
+    {
+      "id": "intro",
+      "target": "css:.page-header",
+      "text": "આ એપના સેટિંગ છે, જેમ કે સંપર્ક નંબર. આ બહુ ઓછું બદલવાનું હોય."
+    },
+    {
+      "id": "form",
+      "target": "css:.form-card",
+      "text": "બદલો તો નીચે સેવ કરવાનું ભૂલતા નહીં."
+    }
+  ]
+}

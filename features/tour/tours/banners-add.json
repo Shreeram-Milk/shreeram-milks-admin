@@ -1,0 +1,50 @@
+{
+  "title": "નવું બેનર",
+  "voice": {
+    "pace": 1.0,
+    "temperature": 0.7
+  },
+  "leave": {
+    "page": "/content/banners"
+  },
+  "steps": [
+    {
+      "id": "title",
+      "target": "b-title",
+      "text": "ચાલો એક નવું બેનર બનાવીને જોઈએ. પહેલાં અંગ્રેજીમાં મથાળું લખો, ટૂંકું અને ચોખ્ખું.",
+      "example": "Fresh milk every morning",
+      "fill": {
+        "type": "Fresh milk every morning"
+      }
+    },
+    {
+      "id": "title-gu",
+      "target": "b-title-gu",
+      "text": "પછી ગુજરાતીમાં મથાળું.",
+      "example": "દરરોજ સવારે તાજું દૂધ",
+      "fill": {
+        "type": "દરરોજ સવારે તાજું દૂધ"
+      }
+    },
+    {
+      "id": "picture",
+      "target": "css:.banner-image-field",
+      "text": "અહીં ફોટો મૂકો. પહોળો ફોટો સરસ લાગે, અને ફોટામાં બહુ લખાણ ના રાખો."
+    },
+    {
+      "id": "opens",
+      "target": "b-opens",
+      "text": "કસ્ટમર બેનર દબાવે તો શું ખૂલે એ પસંદ કરો. જેમ કે દૂધની કેટેગરી કે કોઈ ઓફર."
+    },
+    {
+      "id": "dates",
+      "target": "b-starts",
+      "text": "ક્યારથી ક્યાં સુધી દેખાય એ તારીખ પસંદ કરો. છેલ્લી તારીખ પછી બેનર જાતે હટી જાય."
+    },
+    {
+      "id": "save",
+      "target": "css:.settings-actions",
+      "text": "છેલ્લે બનાવો દબાવો એટલે સેવ થઈ જાય. આ તો ખાલી શીખવા માટે છે, એટલે સેવ ના કરતા."
+    }
+  ]
+}

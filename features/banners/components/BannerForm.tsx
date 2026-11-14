@@ -71,8 +71,8 @@ export function BannerForm({ banner, type, nextSortOrder = 1 }: Props) {
     <form onSubmit={submit} noValidate className="settings-form">
       <section className="form-card"><h2>{t('message')}</h2>
         <div className="product-grid">
-          <FormField label={t('headlineEn')} required error={errors.titleEn?.message}><Input {...register('titleEn')} autoComplete="off" /></FormField>
-          <FormField label={t('headlineGu')} error={errors.titleGu?.message}><Input {...register('titleGu')} autoComplete="off" /></FormField>
+          <FormField tour="b-title" label={t('headlineEn')} required error={errors.titleEn?.message}><Input {...register('titleEn')} autoComplete="off" /></FormField>
+          <FormField tour="b-title-gu" label={t('headlineGu')} error={errors.titleGu?.message}><Input {...register('titleGu')} autoComplete="off" /></FormField>
           <FormField label={t('textEn')} error={errors.messageEn?.message}><Textarea {...register('messageEn')} rows={3} maxLength={160} /></FormField>
           <FormField label={t('textGu')} error={errors.messageGu?.message}><Textarea {...register('messageGu')} rows={3} maxLength={160} /></FormField>
           <FormField label={t('labelEn')} error={errors.labelEn?.message} helper={t('labelHelper')}><Input {...register('labelEn')} autoComplete="off" maxLength={24} /></FormField>
@@ -91,7 +91,7 @@ export function BannerForm({ banner, type, nextSortOrder = 1 }: Props) {
       <section className="form-card"><h2>{t('whereItGoes')}</h2>
         <div className="product-grid">
           <FormField label={t('shownTo')}><Controller control={control} name="audience" render={({ field }) => <SelectField label={t('audience')} placeholder={t('chooseAudience')} value={field.value} options={audiences()} onChange={field.onChange} />} /></FormField>
-          <FormField label={t('opensWhenTapped')}><Controller control={control} name="ctaType" render={({ field }) => <SelectField label={t('opens')} placeholder={t('ctaNone')} value={field.value} options={ctaTypes()} onChange={value => { field.onChange(value); setValue('ctaTarget', '', { shouldDirty: true }) }} />} /></FormField>
+          <FormField tour="b-opens" label={t('opensWhenTapped')}><Controller control={control} name="ctaType" render={({ field }) => <SelectField label={t('opens')} placeholder={t('ctaNone')} value={field.value} options={ctaTypes()} onChange={value => { field.onChange(value); setValue('ctaTarget', '', { shouldDirty: true }) }} />} /></FormField>
           {CTA_WITH_TARGET.includes(ctaType) && <FormField label={ctaType === 'category' ? t('category') : ctaType === 'offer' ? t('offer') : t('product')} error={errors.ctaTarget?.message}>
             <Controller control={control} name="ctaTarget" render={({ field }) => <SelectField label={t('linkTarget')} placeholder={ctaType === 'category' ? t('chooseCategory') : ctaType === 'offer' ? t('chooseOffer') : t('chooseProduct')} value={field.value} options={linkTargets.options(ctaType)} onChange={value => field.onChange(value)} />} />
           </FormField>}
@@ -99,8 +99,8 @@ export function BannerForm({ banner, type, nextSortOrder = 1 }: Props) {
       </section>
       <section className="form-card"><h2>{t('whenItRuns')}</h2>
         <div className="product-grid">
-          <FormField label={t('starts')} helper={t('startsHelper')}><Controller control={control} name="startDate" render={({ field }) => <OptionalDateField label={t('startDate')} value={field.value} onChange={field.onChange} placeholder={t('immediately')} />} /></FormField>
-          <FormField label={t('ends')} error={errors.endDate?.message} helper={t('endsHelper')}><Controller control={control} name="endDate" render={({ field }) => <OptionalDateField label={t('endDate')} value={field.value} onChange={field.onChange} placeholder={t('noEndDate')} />} /></FormField>
+          <FormField tour="b-starts" label={t('starts')} helper={t('startsHelper')}><Controller control={control} name="startDate" render={({ field }) => <OptionalDateField label={t('startDate')} value={field.value} onChange={field.onChange} placeholder={t('immediately')} />} /></FormField>
+          <FormField tour="b-ends" label={t('ends')} error={errors.endDate?.message} helper={t('endsHelper')}><Controller control={control} name="endDate" render={({ field }) => <OptionalDateField label={t('endDate')} value={field.value} onChange={field.onChange} placeholder={t('noEndDate')} />} /></FormField>
           <FormField label={t('displayOrder')} error={errors.sortOrder?.message} helper={t('displayOrderHelper')}><Input {...register('sortOrder', { valueAsNumber: true })} type="number" min={0} inputMode="numeric" /></FormField>
           <FormField label={t('status')}><Controller control={control} name="status" render={({ field }) => <SelectField label={t('status')} placeholder={t('chooseStatus')} value={field.value} options={[{ value: 'active', label: tc('active') }, { value: 'inactive', label: tc('inactive') }]} onChange={field.onChange} />} /></FormField>
         </div>

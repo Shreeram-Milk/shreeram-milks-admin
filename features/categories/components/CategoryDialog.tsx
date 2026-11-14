@@ -14,6 +14,7 @@ import { describeApiError } from '@/lib/api-errors'
 import { categoryApi, type CategoryRecord } from '../api'
 import { categorySchema, type CategoryFormValues } from '../schema'
 import { t } from '../messages'
+import { keepOpenForTour } from '@/features/tour/PageTour'
 
 const blank = (sortOrder: number): CategoryFormValues => ({ name: '', nameGujarati: '', description: '', sortOrder, status: 'active' })
 const fromCategory = (category: CategoryRecord): CategoryFormValues => ({ name: category.name, nameGujarati: category.nameGu, description: category.description, sortOrder: category.sortOrder, status: category.status })
@@ -38,18 +39,18 @@ export function CategoryDialog({ category, nextSortOrder, onClose, onDone }: { c
     }
   })
   return <Dialog open onOpenChange={next => { if (!next) onClose() }}>
-    <DialogContent className="record-editor-dialog">
+    <DialogContent className="record-editor-dialog" onInteractOutside={keepOpenForTour}>
       <form onSubmit={submit} noValidate>
         <DialogHeader><DialogTitle>{category ? t('editName', { name: category.name }) : t('addTitle')}</DialogTitle><DialogDescription>{t('dialogDescription')}</DialogDescription></DialogHeader>
         <div className="record-editor-fields">
-          <FormField label={t('name')} required error={errors.name?.message}><Input {...register('name')} autoComplete="off" placeholder={t('namePlaceholder')} /></FormField>
-          <FormField label={t('gujaratiName')} error={errors.nameGujarati?.message} helper={t('gujaratiHelper')}><Input {...register('nameGujarati')} autoComplete="off" placeholder="દૂધ" /></FormField>
-          <FormField label={t('displayOrder')} error={errors.sortOrder?.message} helper={t('displayOrderHelper')}><Input {...register('sortOrder', { valueAsNumber: true })} type="number" min={0} inputMode="numeric" /></FormField>
-          <div className="field-wide"><ImageUploadField purpose="category" label={t('picture')} hint={t('pictureHint')} currentUrl={category?.imageUrl ?? null} hasImage={Boolean(imageAssetId)} onChange={setImageAssetId} onBusyChange={setUploading} /></div>
+          <FormField label={t('name')} required error={errors.name?.message} tour="cat-name"><Input {...register('name')} autoComplete="off" placeholder={t('namePlaceholder')} /></FormField>
+          <FormField label={t('gujaratiName')} error={errors.nameGujarati?.message} helper={t('gujaratiHelper')} tour="cat-gu"><Input {...register('nameGujarati')} autoComplete="off" placeholder="દૂધ" /></FormField>
+          <FormField label={t('displayOrder')} error={errors.sortOrder?.message} helper={t('displayOrderHelper')} tour="cat-order"><Input {...register('sortOrder', { valueAsNumber: true })} type="number" min={0} inputMode="numeric" /></FormField>
+          <div className="field-wide" data-tour="cat-picture"><ImageUploadField purpose="category" label={t('picture')} hint={t('pictureHint')} currentUrl={category?.imageUrl ?? null} hasImage={Boolean(imageAssetId)} onChange={setImageAssetId} onBusyChange={setUploading} /></div>
           <FormField label={t('descriptionField')} error={errors.description?.message} className="field-wide"><Textarea {...register('description')} rows={2} maxLength={200} placeholder={t('descriptionPlaceholder')} /></FormField>
         </div>
         {error && <p className="field-error" role="alert">{error}</p>}
-        <DialogFooter><Button type="button" variant="outline" className="secondary-button" onClick={onClose}>{t('cancel')}</Button><Button type="submit" className="primary-button" disabled={isSubmitting || uploading}>{category ? t('saveCategory') : t('createCategory')}</Button></DialogFooter>
+        <DialogFooter data-tour="cat-save"><Button type="button" variant="outline" className="secondary-button" onClick={onClose}>{t('cancel')}</Button><Button type="submit" className="primary-button" disabled={isSubmitting || uploading}>{category ? t('saveCategory') : t('createCategory')}</Button></DialogFooter>
       </form>
     </DialogContent>
   </Dialog>

@@ -1,0 +1,29 @@
+{
+  "title": "સબ્સ્ક્રિપ્શનની વિગત",
+  "voice": {
+    "pace": 1.0,
+    "temperature": 0.7
+  },
+  "steps": [
+    {
+      "id": "intro",
+      "target": "css:.page-header",
+      "text": "આ એક સબ્સ્ક્રિપ્શનની વિગત છે."
+    },
+    {
+      "id": "numbers",
+      "target": "css:.kpi-row",
+      "text": "કેટલી ડિલિવરી થઈ, કેટલી બાકી, અને આગલી ડિલિવરી ક્યારે, એ ઉપર દેખાય."
+    },
+    {
+      "id": "buttons",
+      "target": "css:.page-header .header-actions",
+      "text": "કસ્ટમર બહારગામ જાય તો થોભાવો દબાવો. એ દિવસો ગુમાતા નથી, પ્લાનના અંતે ઉમેરાઈ જાય. પ્લાન બંધ કરવો હોય તો રદ કરો."
+    },
+    {
+      "id": "days",
+      "target": "css:.content-inner .table-card, .content-inner section",
+      "text": "નીચે દરેક દિવસનું લિસ્ટ છે. કોઈ એક દિવસ છોડવો હોય તો એની સામે છોડો દબાવો."
+    }
+  ]
+}

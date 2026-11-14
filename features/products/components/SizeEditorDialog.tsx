@@ -5,6 +5,7 @@ import type { FormVariant } from '../schema'
 import { t } from '../messages'
 import { sizeName, unitOptions } from '../units'
 import { ProductSelect } from './ProductSelect'
+import { keepOpenForTour } from '@/features/tour/PageTour'
 import { tc } from '@/lib/i18n/common'
 import { Button as AdminButton } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -36,9 +37,9 @@ export function SizeEditorDialog({ isNew, value, showProduction, error, onChange
   const automaticName = sizeName(value.displayUnit, value.displayQuantity)
   const shownName = value.name.trim() || automaticName
   return <Dialog open onOpenChange={open => { if (!open) onClose() }}>
-    <DialogContent className="record-editor-dialog"><DialogHeader><DialogTitle>{t(isNew ? 'addASize' : 'editSize')}</DialogTitle><DialogDescription>{t('sizeDialogDescription')}</DialogDescription></DialogHeader>
+    <DialogContent className="record-editor-dialog" onInteractOutside={keepOpenForTour}><DialogHeader><DialogTitle>{t(isNew ? 'addASize' : 'editSize')}</DialogTitle><DialogDescription>{t('sizeDialogDescription')}</DialogDescription></DialogHeader>
       <div className="record-editor-fields">
-        <div className="form-field" role="group" aria-labelledby={sizeLabelId}>
+        <div className="form-field" role="group" aria-labelledby={sizeLabelId} data-tour="s-size">
           <Label id={sizeLabelId} className="product-form-label">{t('sizeLabel')}</Label>
           <div className="size-row">
             <Input autoFocus type="number" min="0.01" step="any" aria-label={t('amount')} value={value.displayQuantity || ''} onChange={event => onChangeSize({ displayQuantity: Number(event.target.value || 0) })} placeholder="500" />
@@ -46,8 +47,8 @@ export function SizeEditorDialog({ isNew, value, showProduction, error, onChange
           </div>
           <small className="help-text">{automaticName ? t('customersWillSee', { name: shownName }) : t('sizeHint')}</small>
         </div>
-        <FormField className="form-field" label={t('sellingPrice')}><Input type="number" min="0" step="0.01" value={paiseToRupeeInput(value.pricePaise)} onChange={event => onChange({ pricePaise: parseRupeesToPaise(event.target.value.replace(/\.$/, '')) ?? 0 })} /></FormField>
-        <FormField className="form-field" label={t('oldPrice')} helper={t('oldPriceHint')}><Input type="number" min="0" step="0.01" value={value.compareAtPricePaise === null ? '' : paiseToRupeeInput(value.compareAtPricePaise)} onChange={event => onChange({ compareAtPricePaise: event.target.value.trim() === '' ? null : parseRupeesToPaise(event.target.value.replace(/\.$/, '')) })} /></FormField>
+        <FormField className="form-field" label={t('sellingPrice')} tour="s-price"><Input type="number" min="0" step="0.01" value={paiseToRupeeInput(value.pricePaise)} onChange={event => onChange({ pricePaise: parseRupeesToPaise(event.target.value.replace(/\.$/, '')) ?? 0 })} /></FormField>
+        <FormField className="form-field" label={t('oldPrice')} helper={t('oldPriceHint')} tour="s-old-price"><Input type="number" min="0" step="0.01" value={value.compareAtPricePaise === null ? '' : paiseToRupeeInput(value.compareAtPricePaise)} onChange={event => onChange({ compareAtPricePaise: event.target.value.trim() === '' ? null : parseRupeesToPaise(event.target.value.replace(/\.$/, '')) })} /></FormField>
         <label className="product-check"><Checkbox checked={value.status === 'active'} onCheckedChange={checked => onChange({ status: checked === true ? 'active' : 'inactive' })} /><span>{t('soldNowCheck')}</span></label>
         <details className="size-more">
           <summary>{t('moreOptions')}</summary>

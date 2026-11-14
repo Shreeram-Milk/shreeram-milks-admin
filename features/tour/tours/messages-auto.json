@@ -1,0 +1,19 @@
+{
+  "title": "આપોઆપ મેસેજ",
+  "voice": {
+    "pace": 1.0,
+    "temperature": 0.7
+  },
+  "steps": [
+    {
+      "id": "intro",
+      "target": "css:.page-header",
+      "text": "આ આપોઆપ જતા મેસેજ છે. ઓર્ડર થાય, ડિલિવર થાય, કે રિફંડ જાય, ત્યારે કસ્ટમરને જાતે જ મેસેજ જાય."
+    },
+    {
+      "id": "table",
+      "target": "css:.table-card, .config-section",
+      "text": "અહીં દરેક મેસેજનું લખાણ બદલી શકો."
+    }
+  ]
+}

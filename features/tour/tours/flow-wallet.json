@@ -1,0 +1,33 @@
+{
+  "title": "વૉલેટ રિફંડ",
+  "voice": {
+    "pace": 1.0,
+    "temperature": 0.7
+  },
+  "steps": [
+    {
+      "id": "start",
+      "target": "css:.page-header",
+      "text": "વૉલેટમાં કસ્ટમર ફોનપેથી પૈસા નાખે અને ઓર્ડરમાં વાપરે. ક્યારેક પૈસા પાછા માંગે ત્યારે શું કરવું એ જોઈએ.",
+      "page": "/wallet-refunds"
+    },
+    {
+      "id": "numbers",
+      "target": "css:.wallet-overview",
+      "text": "ઉપર ત્રણ આંકડા છે. વૉલેટમાં કુલ પૈસા, મોકલવાના રિફંડ, અને અત્યાર સુધી પાછા આપેલા.",
+      "page": "/wallet-refunds"
+    },
+    {
+      "id": "row",
+      "target": "css:.table-card, .product-state",
+      "text": "પીળી લાઇન એટલે કસ્ટમર રાહ જુએ છે. રિફંડ મોકલો દબાવો.",
+      "page": "/wallet-refunds"
+    },
+    {
+      "id": "send",
+      "target": "css:.table-card, .product-state",
+      "text": "ત્યાં મોટા અક્ષરે રકમ લખી હોય. એ ફોનપે ડેશબોર્ડમાંથી બતાવેલા પેમેન્ટ પર રિફંડ કરો. પછી ફોનપેનો નંબર લખીને રિફંડ થયું નોંધો. કસ્ટમરને એપમાં જાતે મેસેજ જાય.",
+      "page": "/wallet-refunds"
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "title": "મદદ કેન્દ્ર",
+  "voice": {
+    "pace": 1.0,
+    "temperature": 0.7
+  },
+  "steps": [
+    {
+      "id": "intro",
+      "target": "css:.page-header",
+      "text": "આ મદદ કેન્દ્ર છે. કસ્ટમર એપમાં જે સવાલ જવાબ વાંચે એ અહીં લખાય."
+    },
+    {
+      "id": "table",
+      "target": "css:.table-card, .product-list-section",
+      "text": "નવો સવાલ ઉમેરો અને ગુજરાતી અને અંગ્રેજી બંનેમાં જવાબ લખો."
+    }
+  ]
+}

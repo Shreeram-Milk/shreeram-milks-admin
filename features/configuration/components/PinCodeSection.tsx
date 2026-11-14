@@ -14,6 +14,7 @@ import { pinApi, type DeliverySlot, type ListResult, type Pin, type RecordStatus
 import { enumText } from '../format'
 import { PinCodeEditor, type PinEditorMode } from './PinCodeEditor'
 import { tc } from '@/lib/i18n/common'
+import { PageTour } from '@/features/tour/PageTour'
 import { t } from '../messages'
 
 const PAGE_SIZE = 8
@@ -47,14 +48,15 @@ export function PinCodeSection({ area, slots, onChanged, startOpen = false }: { 
   const saved = () => { setEditor(null); setReloadKey(count => count + 1); onChanged() }
   const pageCount = state.status === 'ready' ? Math.max(1, Math.ceil(state.result.total / PAGE_SIZE)) : 1
 
-  return <section className="section-block detail-section pin-section">
+  return <section className="section-block detail-section pin-section" data-tour="pin-section">
     <div className="pin-section-head">
       <div>
         <h2>{t('pinCodesTitle')} <span className="pin-total">{area.pinCount}</span></h2>
         <p>{t('pinCodesIntro')}</p>
       </div>
       <div className="pin-add-group">
-        <Button className="primary-button pin-add-main" onClick={() => open('one')}><Plus size={15} /> {t('addPinCodes')}</Button>
+        <PageTour name="service-areas-pins" kind="howTo" />
+        <Button className="primary-button pin-add-main" data-tour="pin-add" onClick={() => open('one')}><Plus size={15} /> {t('addPinCodes')}</Button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild><Button className="primary-button pin-add-more" aria-label={t('moreWays')}><ChevronDown size={15} /></Button></DropdownMenuTrigger>
           <DropdownMenuContent align="end">

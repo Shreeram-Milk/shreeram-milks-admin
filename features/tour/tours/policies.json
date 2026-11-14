@@ -1,0 +1,19 @@
+{
+  "title": "નીતિઓ",
+  "voice": {
+    "pace": 1.0,
+    "temperature": 0.7
+  },
+  "steps": [
+    {
+      "id": "intro",
+      "target": "css:.page-header",
+      "text": "આ કાયદાકીય નીતિઓ છે, જેમ કે પ્રાઇવસી અને રિફંડ પોલિસી. ગૂગલ પ્લે માટે આ જરૂરી છે."
+    },
+    {
+      "id": "table",
+      "target": "css:.table-card, .product-list-section",
+      "text": "આ બદલવી હોય તો અમને પૂછીને જ બદલજો."
+    }
+  ]
+}

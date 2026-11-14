@@ -97,8 +97,8 @@ export function OfferForm({ offer }: { offer: Offer | null }) {
     <form onSubmit={submit} noValidate className="settings-form">
       <section className="form-card"><h2>{t('customerSees')}</h2>
         <div className="product-grid">
-          <FormField label={t('titleEn')} required error={errors.title?.message}><Input {...register('title')} autoComplete="off" maxLength={80} /></FormField>
-          <FormField label={t('titleGu')} error={errors.titleGu?.message}><Input {...register('titleGu')} autoComplete="off" maxLength={80} /></FormField>
+          <FormField tour="o-title" label={t('titleEn')} required error={errors.title?.message}><Input {...register('title')} autoComplete="off" maxLength={80} /></FormField>
+          <FormField tour="o-title-gu" label={t('titleGu')} error={errors.titleGu?.message}><Input {...register('titleGu')} autoComplete="off" maxLength={80} /></FormField>
           <FormField label={t('detailsEn')} error={errors.description?.message}><Textarea {...register('description')} rows={3} maxLength={300} /></FormField>
           <FormField label={t('detailsGu')} error={errors.descriptionGu?.message}><Textarea {...register('descriptionGu')} rows={3} maxLength={300} /></FormField>
         </div>
@@ -120,13 +120,13 @@ export function OfferForm({ offer }: { offer: Offer | null }) {
 
       <section className="form-card"><h2>{t('whatItGives')}</h2>
         <div className="product-grid">
-          <FormField label={t('typeOfOffer')} helper={OFFER_KIND_HINTS[kind]}><Controller control={control} name="kind" render={({ field }) => <SelectField label={t('typeOfOffer')} placeholder={t('chooseType')} value={field.value} options={kinds()} onChange={field.onChange} />} /></FormField>
+          <FormField tour="o-kind" label={t('typeOfOffer')} helper={OFFER_KIND_HINTS[kind]}><Controller control={control} name="kind" render={({ field }) => <SelectField label={t('typeOfOffer')} placeholder={t('chooseType')} value={field.value} options={kinds()} onChange={field.onChange} />} /></FormField>
           {kind === 'percent' && <>
-            <FormField label={t('percentField')} required error={errors.percent?.message} helper={t('percentHelper')}><Input {...register('percent')} inputMode="numeric" autoComplete="off" /></FormField>
-            <FormField label={t('upToField')} error={errors.maxDiscount?.message} helper={t('upToHelper')}><Input {...register('maxDiscount')} inputMode="decimal" autoComplete="off" /></FormField>
+            <FormField tour="o-percent" label={t('percentField')} required error={errors.percent?.message} helper={t('percentHelper')}><Input {...register('percent')} inputMode="numeric" autoComplete="off" /></FormField>
+            <FormField tour="o-up-to" label={t('upToField')} error={errors.maxDiscount?.message} helper={t('upToHelper')}><Input {...register('maxDiscount')} inputMode="decimal" autoComplete="off" /></FormField>
           </>}
           {kind === 'flat' && <FormField label={t('amountOffField')} required error={errors.flat?.message}><Input {...register('flat')} inputMode="decimal" autoComplete="off" /></FormField>}
-          {!isGift && <FormField label={t('minOrder')} error={errors.minOrder?.message} helper={t('minOrderHelper')}><Input {...register('minOrder')} inputMode="decimal" autoComplete="off" /></FormField>}
+          {!isGift && <FormField tour="o-min-order" label={t('minOrder')} error={errors.minOrder?.message} helper={t('minOrderHelper')}><Input {...register('minOrder')} inputMode="decimal" autoComplete="off" /></FormField>}
         </div>
         {isGift && <div className="product-grid">
           <FormField label={t('freeProduct')} required error={errors.giftVariantId?.message}>

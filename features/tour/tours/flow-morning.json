@@ -1,0 +1,51 @@
+{
+  "title": "રોજ સવારે",
+  "voice": {
+    "pace": 1.0,
+    "temperature": 0.7
+  },
+  "steps": [
+    {
+      "id": "start",
+      "target": "css:.page-header",
+      "text": "રોજ સવારનું કામ ચાર પગલામાં થાય છે. ચાલો સાથે જોઈએ.",
+      "page": "/"
+    },
+    {
+      "id": "orders",
+      "target": "css:.page-header",
+      "text": "પહેલું, ઓર્ડર. આજે અને કાલે કેટલા ઓર્ડર છે એ જુઓ. કોઈ ખાસ નોંધ હોય તો ઓર્ડર ખોલીને વાંચો.",
+      "page": "/orders"
+    },
+    {
+      "id": "production",
+      "target": "css:.page-header",
+      "text": "બીજું, પ્રોડક્શન પ્લાન. ઓર્ડરનો છેલ્લો સમય વીતી જાય એટલે અહીં પાકો આંકડો મળે કે કેટલું દૂધ બનાવવાનું.",
+      "page": "/production-planning"
+    },
+    {
+      "id": "plan",
+      "target": "css:.table-card, .product-state",
+      "text": "દરેક પ્રોડક્ટ અને દરેક સમયનો આંકડો અલગ દેખાય. એ પ્રમાણે દૂધ તૈયાર કરો.",
+      "page": "/production-planning"
+    },
+    {
+      "id": "deliveries",
+      "target": "css:.page-header",
+      "text": "ત્રીજું, ડિલિવરી. દૂધ તૈયાર થાય એટલે અહીં આવો.",
+      "page": "/deliveries"
+    },
+    {
+      "id": "out",
+      "target": "css:.page-header .header-actions",
+      "text": "રાઇડર શીટ ખોલો અને દરેક રાઇડરને એના પિન કોડનું લિસ્ટ મોકલો. પછી ઓર્ડર ટિક કરીને ડિલિવરી માટે નીકળ્યા નોંધો. એ પછી કસ્ટમર ઓર્ડર કેન્સલ નહીં કરી શકે.",
+      "page": "/deliveries"
+    },
+    {
+      "id": "done",
+      "target": "css:.page-header .header-actions",
+      "text": "ચોથું, ડિલિવરી પતી જાય એટલે એ જ ઓર્ડર ટિક કરીને ડિલિવર થયા નોંધો. કોઈ ઘરે ના પહોંચાયું હોય તો ચૂકી ગયા નોંધો. બસ, રોજનું કામ પૂરું.",
+      "page": "/deliveries"
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "title": "ઓર્ડર કેન્સલ અને રિફંડ",
+  "voice": {
+    "pace": 1.0,
+    "temperature": 0.7
+  },
+  "steps": [
+    {
+      "id": "start",
+      "target": "css:.page-header",
+      "text": "કસ્ટમરે ઓનલાઇન પૈસા ભર્યા અને પછી ઓર્ડર કેન્સલ થયો, તો પૈસા કેવી રીતે પાછા આપવા એ જોઈએ.",
+      "page": "/orders"
+    },
+    {
+      "id": "open",
+      "target": "css:.table-card",
+      "text": "ઓર્ડરમાં કસ્ટમરના નામ પર ક્લિક કરીને ઓર્ડર ખોલો.",
+      "page": "/orders"
+    },
+    {
+      "id": "cancel",
+      "target": "css:.page-header .header-actions",
+      "text": "ઉપર ઓર્ડર રદ કરો બટન છે. ઓનલાઇન પૈસા ભરેલો ઓર્ડર રદ કરો એટલે રિફંડ આપવાનું પૈસાના વિભાગમાં આપોઆપ લખાઈ જાય. આ તો ખાલી શીખવા માટે છે, એટલે સેવ ના કરતા.",
+      "open": "css:.table-card tbody a.product-name-link, .table-card tbody .table-link"
+    },
+    {
+      "id": "money",
+      "target": "css:.money-todo",
+      "text": "હવે પૈસાનો વિભાગ. ઉપર ફોનપેથી મોકલવાના રિફંડની સંખ્યા દેખાય.",
+      "page": "/prepaid-adjustments"
+    },
+    {
+      "id": "send",
+      "target": "css:.table-card, .product-state",
+      "text": "લિસ્ટમાં એ રિફંડ દેખાશે. પહેલાં ફોનપે ડેશબોર્ડ ખોલો, એ પેમેન્ટ શોધો અને એટલા પૈસા રિફંડ કરો.",
+      "page": "/prepaid-adjustments"
+    },
+    {
+      "id": "record",
+      "target": "css:.table-card, .product-state",
+      "text": "પછી અહીં રિફંડ નોંધો દબાવો અને ફોનપેનો રિફંડ નંબર લખો. ઉધારવાળા કસ્ટમરનો ઓર્ડર રદ થાય તો કંઈ કરવાનું નથી, એના હિસાબમાંથી જાતે ઓછા થઈ જાય.",
+      "page": "/prepaid-adjustments"
+    }
+  ]
+}

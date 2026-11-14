@@ -12,6 +12,7 @@ import { describeApiError } from '@/lib/api-errors'
 import { formatTimestamp } from '@/lib/business-time'
 import { formatINR } from '@/lib/money'
 import { MoneyHeader } from '../money/MoneyHeader'
+import { PageTour } from '../tour/PageTour'
 import { walletAdminApi, type WalletOverview, type WalletRow, type WalletShow } from './api'
 import { t } from './messages'
 
@@ -22,7 +23,7 @@ type LoadState = { status: 'loading' } | { status: 'error'; message: string } | 
 
 /** The three numbers that matter, across every wallet. */
 function Overview({ overview, onShowWaiting }: { overview: WalletOverview; onShowWaiting: () => void }) {
-  return <div className="wallet-overview">
+  return <div className="wallet-overview" data-tour="wallet-overview">
     <div className="wallet-overview-card"><span>{t('inWallets')}</span><strong>{formatINR(overview.heldPaise)}</strong><small>{t('inWalletsHint', { count: overview.customersHolding })}</small></div>
     <button type="button" className={`wallet-overview-card${overview.waitingCount ? ' is-due' : ''}`} onClick={onShowWaiting}>
       <span>{t('toRefund')}</span><strong>{formatINR(overview.waitingPaise)}</strong><small>{overview.waitingCount ? t('toRefundHint', { count: overview.waitingCount }) : t('nothingWaiting')}</small>
@@ -51,13 +52,13 @@ export function WalletList() {
   if (state.status === 'error') return <div className="product-state" role="alert"><strong>{t('loadFailed')}</strong><span>{state.message}</span><Button className="secondary-button" variant="outline" onClick={() => { setState({ status: 'loading' }); setReloadKey(count => count + 1) }}>{t('retry')}</Button></div>
 
   const pageCount = Math.max(1, Math.ceil(state.total / PAGE_SIZE))
-  return <div className="workspace-page products-page">
-    <MoneyHeader tab="wallet" description={t('description')} />
+  return <div className="workspace-page products-page" data-tour="wallet-page">
+    <MoneyHeader tab="wallet" description={t('description')} actions={<PageTour name="wallets" />} />
     <Overview overview={state.overview} onShowWaiting={() => update({ show: 'waiting' })} />
     <section className="product-list-section">
       <ListSearchInput label={t('search')} value={search} onCommit={value => update({ search: value })} placeholder={t('searchPlaceholder')} />
       <div className="list-toolbar">
-        <div className="type-tabs" role="group" aria-label={t('show')}>
+        <div className="type-tabs" role="group" aria-label={t('show')} data-tour="wallet-filters">
           {(['all', 'waiting', 'balance'] as const).map(value => <button key={value} type="button" className={`type-tab${show === value ? ' is-active' : ''}`} aria-pressed={show === value} onClick={() => update({ show: value === 'all' ? null : value })}>
             {value === 'all' ? t('showAll') : value === 'waiting' ? t('showWaiting') : t('showBalance')}
           </button>)}
@@ -66,7 +67,7 @@ export function WalletList() {
       {state.total === 0
         ? <div className="product-state"><strong>{hasActiveFilters ? t('noMatch') : t('noneYet')}</strong><span>{hasActiveFilters ? t('tryChanging') : t('noneYetHint')}</span>{hasActiveFilters ? <Button className="secondary-button" variant="outline" onClick={clear}>{t('showAll')}</Button> : null}</div>
         : <>
-          <div className="table-card product-list-table-card"><Table className="config-table wallet-table">
+          <div className="table-card product-list-table-card" data-tour="wallet-table"><Table className="config-table wallet-table">
             <TableHeader><TableRow>
               <TableHead>{t('customer')}</TableHead><TableHead className="num">{t('added')}</TableHead><TableHead className="num">{t('spent')}</TableHead>
               <TableHead className="num">{t('refunded')}</TableHead><TableHead className="num">{t('waiting')}</TableHead><TableHead className="num">{t('balance')}</TableHead>
@@ -84,7 +85,7 @@ export function WalletList() {
                 <TableCell>{row.lastActivityAt ? formatTimestamp(row.lastActivityAt) : ''}</TableCell>
                 <TableCell><div className="row-actions product-row-actions">
                   {row.waitingPaise > 0
-                    ? <Link className="primary-button wallet-row-button" href={href}>{t('sendRefund')}</Link>
+                    ? <Link className="primary-button wallet-row-button" href={href} data-tour="wallet-send">{t('sendRefund')}</Link>
                     : <Link className="secondary-button wallet-row-button" href={href}>{t('open')}</Link>}
                 </div></TableCell>
               </TableRow>

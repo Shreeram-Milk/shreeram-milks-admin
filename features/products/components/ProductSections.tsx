@@ -32,10 +32,10 @@ const counter = (text: string, max: number) => t('characters', { count: text.len
 export function BasicSection({ register, watch, setValue, errors, categories, statuses }: { register: UseFormRegister<ProductFormValues>; errors: FieldErrors<ProductFormValues>; watch: UseFormWatch<ProductFormValues>; setValue: UseFormSetValue<ProductFormValues>; categories: Array<{ value: string; label: string }>; statuses: ProductStatus[] }) {
   return <Section number="01" title={t('aboutTitle')} description={t('aboutDescription')}>
     <div className="product-grid">
-      <FormField label={t('productName')} error={errors.name?.message}><Input {...register('name')} placeholder="Fresh Cow Milk" /></FormField>
-      <FormField label={t('categoryRequired')} error={errors.categoryId?.message}><ProductSelect label={t('category')} value={watch('categoryId')} onChange={value => setValue('categoryId', value, { shouldDirty: true, shouldValidate: true })} placeholder={t('selectCategory')} options={categories} /></FormField>
+      <FormField label={t('productName')} error={errors.name?.message} tour="p-name"><Input {...register('name')} placeholder="Fresh Cow Milk" /></FormField>
+      <FormField label={t('categoryRequired')} error={errors.categoryId?.message} tour="p-category"><ProductSelect label={t('category')} value={watch('categoryId')} onChange={value => setValue('categoryId', value, { shouldDirty: true, shouldValidate: true })} placeholder={t('selectCategory')} options={categories} /></FormField>
       <FormField label={t('sku')}><Input {...register('sku')} placeholder={t('optional')} /></FormField>
-      <FormField label={t('gujaratiName')} helper={counter(watch('nameGu'), 80)}><Input maxLength={80} {...register('nameGu')} placeholder="તાજું ગાયનું દૂધ" /></FormField>
+      <FormField label={t('gujaratiName')} helper={counter(watch('nameGu'), 80)} tour="p-name-gu"><Input maxLength={80} {...register('nameGu')} placeholder="તાજું ગાયનું દૂધ" /></FormField>
       <FormField label={t('shortDescription')} helper={counter(watch('shortDescriptionEn'), 200)}><Input maxLength={200} {...register('shortDescriptionEn')} placeholder={t('shortDescriptionPlaceholder')} /></FormField>
       <FormField label={t('gujaratiShortDescription')} helper={counter(watch('shortDescriptionGu'), 200)}><Input maxLength={200} {...register('shortDescriptionGu')} placeholder="ગુજરાતીમાં ટૂંકું વર્ણન" /></FormField>
       <FormField label={t('status')}><ProductSelect label={t('status')} value={watch('status')} onChange={value => setValue('status', value as ProductFormValues['status'], { shouldDirty: true })} placeholder={t('selectStatus')} options={statuses.map(value => ({ value, label: STATUS_LABELS[value] }))} /></FormField>
@@ -97,10 +97,10 @@ export function VariantsSection({ watch, setValue }: { watch: UseFormWatch<Produ
   const removeVariant = (index: number) => setValue('variants', variants.filter((_, rowIndex) => rowIndex !== index), { shouldDirty: true, shouldValidate: true })
   const missingAmounts = showProduction ? variants.filter(variant => !variant.productionUnit || variant.productionQuantity <= 0).length : 0
 
-  return <Section number="03" title={t('sizesTitle')} description={t('sizesDescription')} action={<AdminButton type="button" className="section-add-button" onClick={() => openEditor(null)}><Plus size={14} /> {t('addSize')}</AdminButton>}>
+  return <Section number="03" title={t('sizesTitle')} description={t('sizesDescription')} action={<AdminButton type="button" className="section-add-button" data-tour="p-add-size" onClick={() => openEditor(null)}><Plus size={14} /> {t('addSize')}</AdminButton>}>
     {!canPlan
       ? <p className="product-hint">{t(courier ? 'courierNotPlanned' : deliveryMethod === 'local_delivery' ? 'chooseOrderByForPlan' : 'chooseDeliveryForPlan')}</p>
-      : <label className={`production-choice${showProduction ? ' is-on' : ''}`}><Checkbox checked={showProduction} onCheckedChange={checked => toggleProduction(checked === true)} /><span><strong>{t('weMakeThis')}</strong><small>{t(showProduction ? 'weMakeThisOn' : 'weMakeThisOff')}</small></span></label>}
+      : <label className={`production-choice${showProduction ? ' is-on' : ''}`} data-tour="p-make"><Checkbox checked={showProduction} onCheckedChange={checked => toggleProduction(checked === true)} /><span><strong>{t('weMakeThis')}</strong><small>{t(showProduction ? 'weMakeThisOn' : 'weMakeThisOff')}</small></span></label>}
     {missingAmounts > 0 ? <p className="field-error" role="alert">{missingAmounts === 1 ? t('missingAmountOne') : t('missingAmountMany', { count: missingAmounts })}</p> : null}
     <div className="repeatable-table-shell"><Table className="variant-table"><TableHeader><TableRow><TableHead>{t('size')}</TableHead><TableHead>{t('price')}</TableHead><TableHead>{t('customersSee')}</TableHead>{showProduction && <TableHead>{t('usesForMaking')}</TableHead>}<TableHead className="table-actions-heading">{t('actions')}</TableHead></TableRow></TableHeader><TableBody>
       {variants.map((variant, index) => <TableRow key={variant.clientKey}>
@@ -120,7 +120,7 @@ export function PurchaseSection({ watch, setValue }: { watch: UseFormWatch<Produ
   const selected = watch('purchaseMethods')
   // Trials and subscriptions need a delivery window every day, which a courier does not have.
   const courier = watch('deliveryMethod') === 'shipping'
-  return <Section number="04" title={t('sellingTitle')} description={t('sellingDescription')}><div className="product-methods">{(['buy_once', 'trial', 'subscription'] as const).map(value => { const label = METHOD_LABELS[value]; const locked = courier && value !== 'buy_once'; return <label className={`product-check${locked ? ' is-disabled' : ''}`} key={value}><Checkbox disabled={locked} checked={!locked && selected.includes(value)} onCheckedChange={checked => setValue('purchaseMethods', checked === true ? [...selected, value] : selected.filter(item => item !== value), { shouldDirty: true })} /><span>{label}</span></label> })}</div><p className="product-hint">{t(courier ? 'courierBuyOnceOnly' : 'methodRequired')}</p><label className="product-check product-check-row"><Checkbox checked={watch('excludedFromCredit')} onCheckedChange={checked => setValue('excludedFromCredit', checked === true, { shouldDirty: true })} /> {t('notOnCredit')}</label><p className="product-hint">{t('notOnCreditHint')}</p></Section>
+  return <Section number="04" title={t('sellingTitle')} description={t('sellingDescription')}><div className="product-methods" data-tour="p-methods">{(['buy_once', 'trial', 'subscription'] as const).map(value => { const label = METHOD_LABELS[value]; const locked = courier && value !== 'buy_once'; return <label className={`product-check${locked ? ' is-disabled' : ''}`} key={value}><Checkbox disabled={locked} checked={!locked && selected.includes(value)} onCheckedChange={checked => setValue('purchaseMethods', checked === true ? [...selected, value] : selected.filter(item => item !== value), { shouldDirty: true })} /><span>{label}</span></label> })}</div><p className="product-hint">{t(courier ? 'courierBuyOnceOnly' : 'methodRequired')}</p><label className="product-check product-check-row"><Checkbox checked={watch('excludedFromCredit')} onCheckedChange={checked => setValue('excludedFromCredit', checked === true, { shouldDirty: true })} /> {t('notOnCredit')}</label><p className="product-hint">{t('notOnCreditHint')}</p></Section>
 }
 
 export function TrialSection({ watch, setValue, plans }: { watch: UseFormWatch<ProductFormValues>; setValue: UseFormSetValue<ProductFormValues>; plans: TrialPlan[] }) {
@@ -181,11 +181,11 @@ export function DeliverySection({ watch, setValue, errors, areas, cutoffRules }:
     }
   }
   return <Section number="02" title={t('deliveryTitle')} description={t('deliveryDescription')}>
-    <FormField label={t('howDelivered')} error={errors.deliveryMethod?.message}><ProductSelect label={t('deliveryMethod')} value={method} onChange={changeMethod} placeholder={t('chooseHowDelivered')} options={methodOptions()} /></FormField>
-    {method && <FormField label={t('deliveryAreaRequired')} error={errors.serviceAreaId?.message}><ProductSelect label={t('deliveryArea')} value={areaId} onChange={value => setValue('serviceAreaId', value, { shouldDirty: true, shouldValidate: true })} placeholder={t(areaOptions.length ? 'chooseArea' : 'noMatchingArea')} options={areaOptions} /></FormField>}
+    <FormField label={t('howDelivered')} error={errors.deliveryMethod?.message} tour="p-how"><ProductSelect label={t('deliveryMethod')} value={method} onChange={changeMethod} placeholder={t('chooseHowDelivered')} options={methodOptions()} /></FormField>
+    {method && <FormField label={t('deliveryAreaRequired')} error={errors.serviceAreaId?.message} tour="p-area"><ProductSelect label={t('deliveryArea')} value={areaId} onChange={value => setValue('serviceAreaId', value, { shouldDirty: true, shouldValidate: true })} placeholder={t(areaOptions.length ? 'chooseArea' : 'noMatchingArea')} options={areaOptions} /></FormField>}
     {method === 'local_delivery' && <>
       <p className="product-hint">{t('pinWindowsHint')}</p>
-      <FormField label={t('orderByTime')} helper={t('orderByHint')}><ProductSelect label={t('orderByTime')} value={cutoffId || NO_CUTOFF} onChange={value => { setValue('cutoffRuleId', value === NO_CUTOFF ? '' : value, { shouldDirty: true }); if (value === NO_CUTOFF) setValue('includeInProductionPlanning', false, { shouldDirty: true }) }} placeholder={t('chooseOrderBy')} options={cutoffOptions} /></FormField>
+      <FormField label={t('orderByTime')} helper={t('orderByHint')} tour="p-cutoff"><ProductSelect label={t('orderByTime')} value={cutoffId || NO_CUTOFF} onChange={value => { setValue('cutoffRuleId', value === NO_CUTOFF ? '' : value, { shouldDirty: true }); if (value === NO_CUTOFF) setValue('includeInProductionPlanning', false, { shouldDirty: true }) }} placeholder={t('chooseOrderBy')} options={cutoffOptions} /></FormField>
     </>}
     {method === 'shipping' && <>
       <p className="product-hint">{t('courierNoWindows')}</p>
@@ -247,5 +247,5 @@ export function ContentSection({ control, setValue, register, imageUrls, onImage
 }
 
 function Section({ number, title, description, action, children }: { number: string; title: string; description: string; action?: ReactNode; children: ReactNode }) {
-  return <section className="form-card"><div className="form-section-header"><div className="form-section-heading"><span>{number}</span><div><h2>{title}</h2><p>{description}</p></div></div>{action}</div>{children}</section>
+  return <section className="form-card" data-tour={`product-section-${number}`}><div className="form-section-header"><div className="form-section-heading"><span>{number}</span><div><h2>{title}</h2><p>{description}</p></div></div>{action}</div>{children}</section>
 }

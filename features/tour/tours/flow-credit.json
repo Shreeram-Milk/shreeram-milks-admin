@@ -1,0 +1,56 @@
+{
+  "title": "ઉધાર કસ્ટમર",
+  "voice": {
+    "pace": 1.0,
+    "temperature": 0.7
+  },
+  "steps": [
+    {
+      "id": "start",
+      "target": "css:.page-header",
+      "text": "ઉધારવાળો કસ્ટમર કેવી રીતે ચાલે એ શરૂથી અંત સુધી જોઈએ. પહેલાં કસ્ટમરના પેજ પર.",
+      "page": "/customers"
+    },
+    {
+      "id": "find",
+      "target": "css:.table-card",
+      "text": "જેને ઉધાર આપવું હોય એ કસ્ટમરનું નામ શોધીને ખોલો. ચાલો એક ખોલીએ.",
+      "page": "/customers"
+    },
+    {
+      "id": "type",
+      "target": "c-type",
+      "text": "અહીં કસ્ટમરનો પ્રકાર છે. ક્રેડિટ પસંદ કરીને સેવ કરો એટલે એ ઉધારવાળો કસ્ટમર બની જાય. આ તો ખાલી શીખવા માટે છે, એટલે સેવ ના કરતા.",
+      "open": "css:.table-card tbody a.product-name-link, .table-card tbody .table-link"
+    },
+    {
+      "id": "list",
+      "target": "css:.page-header",
+      "text": "હવે પૈસાના વિભાગમાં ઉધાર કસ્ટમર. ઉધારવાળો બનાવેલો દરેક કસ્ટમર અહીં આપોઆપ આવી જાય.",
+      "page": "/credit-accounts"
+    },
+    {
+      "id": "open",
+      "target": "css:.table-card",
+      "text": "એનું નામ ખોલો.",
+      "page": "/credit-accounts"
+    },
+    {
+      "id": "limit",
+      "target": "css:.page-header .header-actions",
+      "text": "પહેલાં મર્યાદા બદલો દબાવીને લિમિટ નક્કી કરો. જેમ કે બે હજાર રૂપિયા. લિમિટ ના નાખો ત્યાં સુધી ઉધારમાં ઓર્ડર નહીં થાય.",
+      "example": "₹2,000",
+      "open": "css:.table-card tbody a.product-name-link, .table-card tbody .table-link"
+    },
+    {
+      "id": "orders",
+      "target": "css:.product-detail-grid",
+      "text": "હવે કસ્ટમર એપમાંથી ઓર્ડર કરશે અને પૈસા ભરવાના નહીં. બધું આ હિસાબમાં લખાતું જશે, દરેક ઓર્ડર તારીખ સાથે."
+    },
+    {
+      "id": "collect",
+      "target": "css:.page-header .header-actions",
+      "text": "મહિનો પૂરો થાય એટલે ચુકવણી માંગો દબાવો. કસ્ટમરને એપમાં હમણાં ભરો નું કાર્ડ દેખાશે અને એ ફોનપેથી ભરી દેશે. રોકડા કે યુપીઆઈથી હાથોહાથ આપે તો ચુકવણી નોંધો દબાવો. બસ, હિસાબ સરખો."
+    }
+  ]
+}

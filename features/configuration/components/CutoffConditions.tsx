@@ -47,21 +47,21 @@ export function CutoffConditions({ form, fields, slotChoices, error }: { form: U
         const latest = day === 'same_day' ? slot?.startTime : undefined
         const tooLate = Boolean(latest && condition?.cutoffTime && condition.cutoffTime > latest)
         return <div className="cutoff-sentence" key={field.id}>
-          <div className="cutoff-step"><span className="cutoff-num">1</span><div>
+          <div className="cutoff-step" data-tour="co-slot"><span className="cutoff-num">1</span><div>
             <p className="cutoff-q">{t('whichDelivery')}</p>
             <SelectField label={t('deliveryTimeN', { number: index + 1 })} className="cutoff-wide" value={condition?.deliverySlotId ?? ''} onChange={value => set(index, 'deliverySlotId', value)} placeholder={t('chooseDeliveryTime')} options={slotChoices.map(item => ({ value: item.id, label: `${humanWindow(item)}  (${item.name})`, disabled: taken.has(item.id) }))} />
           </div></div>
-          <div className="cutoff-step"><span className="cutoff-num">2</span><div>
+          <div className="cutoff-step" data-tour="co-day"><span className="cutoff-num">2</span><div>
             <p className="cutoff-q">{t('whichDay')}</p>
             <DayPicker label={t('closingDayN', { number: index + 1 })} value={day} onChange={value => set(index, 'dayRelation', value)} />
           </div></div>
-          <div className="cutoff-step"><span className="cutoff-num">3</span><div>
+          <div className="cutoff-step" data-tour="co-time"><span className="cutoff-num">3</span><div>
             <p className="cutoff-q">{t('whatTime')}</p>
             <SelectField label={t('closingTimeN', { number: index + 1 })} className="cutoff-wide" value={condition?.cutoffTime ?? ''} onChange={value => set(index, 'cutoffTime', value)} placeholder={t('chooseTime')} options={timeChoices(condition?.cutoffTime ?? '', latest)} />
             {latest ? <p className="cutoff-hint">{t('startsAt', { time: formatTime(latest) })}</p> : null}
             {tooLate ? <p className="field-error" role="alert">{t('tooLate')}</p> : null}
           </div></div>
-          <div className="cutoff-step"><span className="cutoff-num">4</span><div>
+          <div className="cutoff-step" data-tour="co-cancel"><span className="cutoff-num">4</span><div>
             <p className="cutoff-q">{t('untilCancel')}</p>
             <SelectField label={t('cancelDeadlineN', { number: index + 1 })} className="cutoff-wide" value={ownCancel ? 'own' : SAME} onChange={value => { set(index, 'cancelDayRelation', value === SAME ? '' : day); if (value === SAME) set(index, 'cancelTime', '') }} placeholder={t('choose')} options={[{ value: SAME, label: t('untilClose') }, { value: 'own', label: t('untilEarlier') }]} />
             {ownCancel ? <div className="cutoff-sub">
@@ -70,13 +70,13 @@ export function CutoffConditions({ form, fields, slotChoices, error }: { form: U
             </div> : null}
           </div></div>
           {errors?.deliverySlotId?.message || errors?.cutoffTime?.message || errors?.cancelTime?.message ? <p className="field-error" role="alert">{errors?.deliverySlotId?.message ?? errors?.cutoffTime?.message ?? errors?.cancelTime?.message}</p> : null}
-          {condition?.deliverySlotId && condition.cutoffTime ? <p className="cutoff-preview"><strong>{t('inSimpleWords')}</strong> {cutoffPreview(condition, slot)}</p> : <p className="cutoff-hint">{t('fillSteps')}</p>}
+          {condition?.deliverySlotId && condition.cutoffTime ? <p className="cutoff-preview" data-tour="co-preview"><strong>{t('inSimpleWords')}</strong> {cutoffPreview(condition, slot)}</p> : <p className="cutoff-hint">{t('fillSteps')}</p>}
           {fields.fields.length > 1 ? <Button type="button" variant="ghost" className="text-button cutoff-remove" onClick={() => fields.remove(index)}><Trash2 size={14} /> {t('removeDeliveryTime')}</Button> : null}
         </div>
       })}
       {error ? <p className="field-error">{error}</p> : null}
       <p className="cutoff-hint">{t('newOrdersOnly')}</p>
-      <Button type="button" className="secondary-button" onClick={() => fields.append({ deliverySlotId: '', dayRelation: 'previous_day', cutoffTime: '', cancelDayRelation: '', cancelTime: '' })}><Plus size={14} /> {t('addDeliveryTime')}</Button>
+      <Button type="button" className="secondary-button" data-tour="co-add" onClick={() => fields.append({ deliverySlotId: '', dayRelation: 'previous_day', cutoffTime: '', cancelDayRelation: '', cancelTime: '' })}><Plus size={14} /> {t('addDeliveryTime')}</Button>
     </div>
   </section>
 }
