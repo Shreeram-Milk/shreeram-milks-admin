@@ -1630,3 +1630,10 @@ button.wallet-overview-card { cursor: pointer; }
   .wallet-refund-line { grid-template-columns: minmax(0, 1fr); }
   .money-story li { flex: 1 1 140px; }
 }
+.wallet-send-amount { display: flex; flex-direction: column; gap: 2px; padding: 14px 16px; border-radius: 10px; background: #0a0a0a; color: #fff; }
+.wallet-send-amount > span { color: rgba(255,255,255,.75); font-size: 13px; font-weight: 600; }
+.wallet-send-amount > strong { font-size: 30px; line-height: 1.15; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.wallet-send-amount > small { color: rgba(255,255,255,.7); font-size: 12px; }
+.wallet-warning { display: flex; flex-direction: column; gap: 3px; padding: 10px 12px; border: 1px solid #ecd29a; border-left: 4px solid #d9a441; border-radius: 10px; background: #fffcf3; font-size: 13px; }
+.wallet-warning span { color: #5b6472; }
+.wallet-pick { align-self: flex-start; margin-bottom: 2px; padding: 2px 8px; border-radius: 999px; background: #ecfdf5; color: #2f7d62 !important; font-size: 11px !important; font-weight: 700; }

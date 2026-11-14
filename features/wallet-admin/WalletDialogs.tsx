@@ -102,12 +102,20 @@ export function RefundDialog({ refundId, onClose, onDone }: { refundId: string; 
         ? <div className="product-state" role={loadError ? 'alert' : undefined}>{loadError ? <><strong>{t('recordFailed')}</strong><span>{loadError}</span></> : <span>…</span>}</div>
         : <form onSubmit={event => { event.preventDefault(); void submit() }} noValidate>
           <DialogHeader>
-            <DialogTitle>{mode === 'cancel' ? t('cancelTitle') : t('dialogTitle', { amount: formatINR(detail.amountPaise), name })}</DialogTitle>
-            <DialogDescription>{mode === 'cancel' ? t('cancelBody') : t('dialogBody')}</DialogDescription>
+            <DialogTitle>{mode === 'cancel' ? t('cancelTitle') : t('sendTitle')}</DialogTitle>
+            {mode === 'cancel' ? <DialogDescription>{t('cancelBody')}</DialogDescription> : <DialogDescription className="sr-only">{t('dialogBody')}</DialogDescription>}
           </DialogHeader>
           <div className="record-editor-fields one-column">
-            {detail.totals && mode === 'send' ? <MoneyStory totals={detail.totals} compact /> : null}
+            {mode === 'send' ? <div className="wallet-send-amount">
+              <span>{t('sendTo', { name })}</span>
+              <strong>{formatINR(detail.amountPaise)}</strong>
+              <small>{t('askedOnShort', { date: formatTimestamp(detail.requestedAt) })}{detail.totals && detail.totals.balancePaise > 0 ? ` · ${t('staysInWallet', { amount: formatINR(detail.totals.balancePaise) })}` : ''}</small>
+            </div> : null}
             {detail.customerNote ? <p className="product-hint">{t('customerSaid', { note: detail.customerNote })}</p> : null}
+            {mode === 'send' && detail.untrackedPaise > 0 ? <div className="wallet-warning" role="note">
+              <strong>{t('untrackedTitle', { amount: formatINR(detail.untrackedPaise) })}</strong>
+              <span>{t('untrackedBody')}</span>
+            </div> : null}
 
             {mode === 'send' && (lines.length === 0
               ? <p className="field-error">{t('noTopUps')}</p>
@@ -118,9 +126,11 @@ export function RefundDialog({ refundId, onClose, onDone }: { refundId: string; 
                     const payment = detail.topUps.find(item => item.paymentId === line.paymentId)
                     if (!payment) return null
                     const used = (amountOf(line) ?? 0) > 0
+                    const pick = detail.suggested.find(part => part.paymentId === line.paymentId)
                     return <div key={line.paymentId} className={`wallet-refund-line${used ? ' is-used' : ''}`}>
                       <div className="wallet-refund-payment">
-                        <strong>{formatINR(payment.amountPaise)}</strong>
+                        {pick ? <span className="wallet-pick">{t('refundHere', { amount: formatINR(pick.amountPaise) })}</span> : null}
+                        <strong>{t('paymentOf', { amount: formatINR(payment.amountPaise) })}</strong>
                         <span>{payment.paidAt ? formatTimestamp(payment.paidAt) : ''}{payment.refundedPaise > 0 ? ` · ${t('refundedFromIt')} ${formatINR(payment.refundedPaise)}` : ''}</span>
                         <span className="wallet-order-id">{payment.merchantOrderId} <CopyText text={payment.merchantOrderId} /></span>
                         <small>{t('left')}: {formatINR(payment.leftPaise)}</small>

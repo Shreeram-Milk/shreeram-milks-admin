@@ -23,7 +23,10 @@ export type WalletOverview = { heldPaise: number; customersHolding: number; wait
 export type WalletRecord = { customer: WalletCustomer; totals: WalletTotals; topUps: TopUpPayment[]; refunds: WalletRefund[] }
 export type WalletEntryType = 'top_up' | 'order_payment' | 'order_return' | 'refund_hold' | 'refund_release' | 'manual_adjustment'
 export type WalletEntry = { id: string; type: WalletEntryType; direction: 'credit' | 'debit'; amountPaise: number; description: string; orderNumber: string | null; createdAt: string }
-export type RefundDetail = WalletRefund & { customerName: string; customerPhone: string; customerEmail: string; topUps: TopUpPayment[]; totals: WalletTotals | null; suggested: Array<{ paymentId: string; amountPaise: number }> }
+export type RefundDetail = WalletRefund & { customerName: string; customerPhone: string; customerEmail: string; topUps: TopUpPayment[]; totals: WalletTotals | null; suggested: Array<{ paymentId: string; amountPaise: number }>
+  /** Refunded earlier without saying which payment: the "can still refund" figures may be too high, so nothing is suggested. */
+  untrackedPaise: number
+}
 export type WalletShow = 'all' | 'waiting' | 'balance'
 
 const id = encodeURIComponent
