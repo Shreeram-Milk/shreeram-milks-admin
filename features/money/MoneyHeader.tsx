@@ -8,16 +8,19 @@ import { PageTabs } from '@/components/shared/PageTabs'
 import { adjustmentAdminApi } from '../adjustment-admin/api'
 import { creditAdminApi } from '../credit-admin/api'
 import { walletAdminApi } from '../wallet-admin/api'
+import { WALLET_ON } from '@/lib/features'
 import { t } from './messages'
 
 export type MoneyTab = 'owed' | 'credit' | 'payments' | 'wallet'
 
-const TABS: Array<{ id: MoneyTab; href: string; label: 'tabOwed' | 'tabCredit' | 'tabPayments' | 'tabWallet' }> = [
+type TabEntry = { id: MoneyTab; href: string; label: 'tabOwed' | 'tabCredit' | 'tabPayments' | 'tabWallet' }
+const ALL_TABS: TabEntry[] = [
   { id: 'owed', href: '/prepaid-adjustments', label: 'tabOwed' },
   { id: 'credit', href: '/credit-accounts', label: 'tabCredit' },
   { id: 'payments', href: '/online-payments', label: 'tabPayments' },
   { id: 'wallet', href: '/wallet-refunds', label: 'tabWallet' },
 ]
+const TABS = ALL_TABS.filter(item => WALLET_ON || item.id !== 'wallet')
 
 type ToDo = { refunds: number | null; walletRefunds: number; owing: number | null }
 
@@ -34,7 +37,7 @@ export function MoneyHeader({ tab, description, actions }: { tab: MoneyTab; desc
     void Promise.allSettled([
       adjustmentAdminApi.list({ search: '', status: 'pending', type: 'refund_pending', page: 1, pageSize: 1 }),
       creditAdminApi.list({ search: '', owingOnly: true, page: 1, pageSize: 1 }),
-      walletAdminApi.list({ search: '', show: 'waiting', page: 1, pageSize: 1 }),
+      WALLET_ON ? walletAdminApi.list({ search: '', show: 'waiting', page: 1, pageSize: 1 }) : Promise.reject(new Error('wallet off')),
     ]).then(([refunds, owing, wallets]) => {
       if (cancelled) return
       const walletRefunds = wallets.status === 'fulfilled' ? wallets.value.overview.waitingCount : 0

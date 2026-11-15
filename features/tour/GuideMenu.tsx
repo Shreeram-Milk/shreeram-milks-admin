@@ -8,6 +8,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { useGuide } from './GuideProvider'
 import { t, type TourKey } from './messages'
 import { TOURS, type TourName } from './registry'
+import { WALLET_ON } from '@/lib/features'
 
 /** The guides that walk across pages, in the order a new owner needs them. */
 const FLOWS: Array<{ name: TourName; label: TourKey }> = [
@@ -18,7 +19,7 @@ const FLOWS: Array<{ name: TourName; label: TourKey }> = [
   { name: 'flow-credit', label: 'flowCredit' },
   { name: 'flow-cancelled', label: 'flowCancelled' },
   { name: 'flow-subscription', label: 'flowSubscription' },
-  { name: 'flow-wallet', label: 'flowWallet' },
+  ...(WALLET_ON ? [{ name: 'flow-wallet' as const, label: 'flowWallet' as const }] : []),
 ]
 
 /** Which guide explains the page that is open: a list explains itself, a "new" form shows how one is made. */
