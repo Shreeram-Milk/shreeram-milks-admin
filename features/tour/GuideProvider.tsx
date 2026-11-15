@@ -4,7 +4,6 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { createPortal } from 'react-dom'
 import { usePathname, useRouter } from 'next/navigation'
 import { Pause, Play, SkipForward, X } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import { t } from './messages'
 import { TOURS, type TourName } from './registry'
 
@@ -125,6 +124,8 @@ export function GuideProvider({ children }: { children: ReactNode }) {
   const [spot, setSpot] = useState<Spot>(null)
   const [paused, setPaused] = useState(false)
   const [failed, setFailed] = useState(false)
+  // How much of the step's clip has been heard (0 to 1): the caption shows the words up to there, like live subtitles.
+  const [heard, setHeard] = useState(0)
   const audio = useRef<HTMLAudioElement | null>(null)
   const pathRef = useRef(pathname)
   useEffect(() => { pathRef.current = pathname }, [pathname])
@@ -159,9 +160,11 @@ export function GuideProvider({ children }: { children: ReactNode }) {
     let alive = true
     let after: number | undefined
     let sound: HTMLAudioElement | null = null
+    let frame = 0
     const place = () => { if (alive) setSpot(spotOf(step.target)) }
     void (async () => {
       setSpot(null)
+      setHeard(0)
       if (step.closeFirst) { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); await wait(300) }
       if (step.page && pathRef.current !== step.page.split('?')[0]) { router.push(step.page); await wait(400) }
       let element = await waitFor(step.target, step.page ? 6000 : step.open ? 400 : 3000)
@@ -177,10 +180,18 @@ export function GuideProvider({ children }: { children: ReactNode }) {
       sound = clip ? new Audio(`/tours/${name}/${clip}`) : null
       audio.current = sound
       if (sound) {
-        sound.onended = () => { after = window.setTimeout(next, 500) }
-        sound.onerror = () => { after = window.setTimeout(next, 5000) }
-        void sound.play().catch(() => setPaused(true))
-      } else after = window.setTimeout(next, 5000)
+        const playing = sound
+        const follow = () => {
+          if (!alive) return
+          if (playing.duration > 0) setHeard(Math.min(1, playing.currentTime / playing.duration))
+          frame = window.requestAnimationFrame(follow)
+        }
+        frame = window.requestAnimationFrame(follow)
+        sound.onended = () => { setHeard(1); after = window.setTimeout(next, 500) }
+        sound.onerror = () => { setHeard(1); after = window.setTimeout(next, 5000) }
+        // A browser that will not play sound before a click: show the whole sentence instead of waiting for the voice.
+        void sound.play().catch(() => { setPaused(true); setHeard(1) })
+      } else { setHeard(1); after = window.setTimeout(next, 5000) }
       if (step.fill && element) { await wait(900); if (alive) { await doFill(element, step.fill, () => alive); place() } }
     })()
     window.addEventListener('scroll', place, true)
@@ -188,6 +199,7 @@ export function GuideProvider({ children }: { children: ReactNode }) {
     return () => {
       alive = false
       window.clearTimeout(after)
+      window.cancelAnimationFrame(frame)
       window.removeEventListener('scroll', place, true); window.removeEventListener('resize', place)
       sound?.pause()
     }
@@ -207,22 +219,37 @@ export function GuideProvider({ children }: { children: ReactNode }) {
   }
 
   const value = useMemo<Guide>(() => ({ play, playing: name }), [play, name])
+  // The pill sits at the top, out of the way; only when the lit-up part is right under it does it move to the bottom.
+  const atBottom = Boolean(spot && spot.top < 150)
+  const words = step ? step.text.split(' ') : []
+  const said = Math.ceil(words.length * heard)
+  // Shown one short phrase at a time (ending at a full stop or comma, at most 8 words), like live captions.
+  const phrases: number[][] = []
+  words.forEach((word, position) => {
+    const last = phrases[phrases.length - 1]
+    if (!last || last.length >= 8) phrases.push([position]); else last.push(position)
+    if (/[.,?!]$/.test(word)) phrases.push([])
+  })
+  const filled = phrases.filter(phrase => phrase.length > 0)
+  const current = filled.find(phrase => phrase.some(position => position >= Math.max(0, said - 1))) ?? filled[filled.length - 1] ?? []
   return <GuideContext.Provider value={value}>
     {children}
     {failed ? <div className="tour-failed" role="alert" data-tour-ui="">{t('notReady')}</div> : null}
     {step && tour && typeof document !== 'undefined' ? createPortal(<div className="tour-layer" data-tour-ui="" role="dialog" aria-modal="false" aria-label={tour.title}>
       {spot ? <div className="tour-spot" style={{ top: spot.top, left: spot.left, width: spot.width, height: spot.height }} aria-hidden="true" /> : <div className="tour-dim" aria-hidden="true" />}
-      <div className="tour-card" aria-live="polite">
-        <div className="tour-card-head"><span>{tour.title} · {t('stepOf', { step: index + 1, count: tour.steps.length })}</span>
-          <button type="button" className="tour-icon" onClick={finish} aria-label={t('close')}><X size={16} /></button>
+      <div className={`tour-pill-wrap${atBottom ? ' at-bottom' : ''}`}>
+        <div className={`tour-pill${paused ? ' is-paused' : ''}`}>
+          <span className="tour-orb" aria-hidden="true"><i /><i /><i /><i /><i /></span>
+          {/* The whole sentence for screen readers; on screen, the current phrase with each word appearing as it is spoken. */}
+          <p className="tour-caption" lang="gu" aria-label={step.text}>{current.map(position => <span key={`${index}-${position}`} aria-hidden="true" className={position < said ? 'is-said' : undefined}>{words[position]} </span>)}</p>
+          <span className="tour-count" aria-hidden="true">{index + 1}/{tour.steps.length}</span>
+          <span className="tour-pill-actions">
+            <button type="button" className="tour-round" onClick={togglePause} aria-label={paused ? t('resume') : t('pause')}>{paused ? <Play size={14} /> : <Pause size={14} />}</button>
+            <button type="button" className="tour-round is-main" onClick={next} aria-label={index + 1 >= tour.steps.length ? t('finish') : t('next')}><SkipForward size={14} /></button>
+            <button type="button" className="tour-round" onClick={finish} aria-label={t('close')}><X size={14} /></button>
+          </span>
         </div>
-        <p lang="gu">{step.text}</p>
-        {step.example ? <div className="tour-example" lang="gu"><span>{t('example')}</span><strong>{step.example}</strong></div> : null}
-        <div className="tour-progress" aria-hidden="true">{tour.steps.map((item, position) => <i key={item.id} className={position <= index ? 'is-done' : undefined} />)}</div>
-        <div className="tour-actions">
-          <Button type="button" variant="outline" className="secondary-button" onClick={togglePause}>{paused ? <><Play size={15} />{t('resume')}</> : <><Pause size={15} />{t('pause')}</>}</Button>
-          <Button type="button" className="primary-button" onClick={next}><SkipForward size={15} />{index + 1 >= tour.steps.length ? t('finish') : t('next')}</Button>
-        </div>
+        {step.example ? <span className="tour-chip" lang="gu"><b>{t('example')}</b>{step.example}</span> : null}
       </div>
     </div>, document.body) : null}
   </GuideContext.Provider>
