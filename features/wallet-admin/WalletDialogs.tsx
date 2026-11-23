@@ -1,25 +1,16 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { toast } from 'sonner'
-import { Check, Copy } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { FormField } from '@/components/ui/form-field'
 import { Input } from '@/components/ui/input'
 import { describeApiError } from '@/lib/api-errors'
-import { formatTimestamp } from '@/lib/business-time'
-import { formatINR, paiseToRupeeInput, parseRupeesToPaise } from '@/lib/money'
-import { walletAdminApi, type RefundDetail, type WalletTotals } from './api'
+import { formatINR, parseRupeesToPaise } from '@/lib/money'
+import { walletAdminApi, type WalletTotals } from './api'
 import { t } from './messages'
-
-/** A small copy button: staff paste the PhonePe order number into the PhonePe dashboard search. */
-function CopyText({ text }: { text: string }) {
-  const [copied, setCopied] = useState(false)
-  return <button type="button" className="wallet-copy" aria-label={`${t('copy')} ${text}`} onClick={() => { void navigator.clipboard?.writeText(text).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1500) }) }}>
-    {copied ? <Check size={13} aria-hidden="true" /> : <Copy size={13} aria-hidden="true" />}{copied ? t('copied') : t('copy')}
-  </button>
-}
+import { SecureRefundDialog } from '../refund-admin/RefundDialog'
 
 /** The money story as one line of sums, ending in what is in the wallet now. Rows that are zero (and not essential) are left out. */
 export function MoneyStory({ totals, compact = false }: { totals: WalletTotals; compact?: boolean }) {
@@ -40,121 +31,32 @@ export function MoneyStory({ totals, compact = false }: { totals: WalletTotals; 
   </ol>
 }
 
-type Line = { paymentId: string; amount: string; reference: string }
-
-/**
- * Sending a refund. PhonePe refunds one payment at a time and never more than that payment, so the request is split over the
- * customer's PhonePe payments (newest first, filled in for staff). Step 1: refund each in PhonePe. Step 2: type each reference.
- */
+/** Refunds are reviewed and password-verified here, then sent through the backend. */
 export function RefundDialog({ refundId, onClose, onDone }: { refundId: string; onClose: () => void; onDone: () => void }) {
-  const [detail, setDetail] = useState<RefundDetail | null>(null)
-  const [loadError, setLoadError] = useState('')
-  const [mode, setMode] = useState<'send' | 'cancel'>('send')
-  const [lines, setLines] = useState<Line[]>([])
+  const [cancelling, setCancelling] = useState(false)
+  if (!cancelling) return <SecureRefundDialog source={{ kind: 'wallet', id: refundId }} onClose={onClose} onDone={onDone} onCancelRequest={() => setCancelling(true)} />
+  return <CancelRefundDialog refundId={refundId} onClose={() => setCancelling(false)} onDone={onDone} />
+}
+
+function CancelRefundDialog({ refundId, onClose, onDone }: { refundId: string; onClose: () => void; onDone: () => void }) {
   const [note, setNote] = useState('')
-  const [problem, setProblem] = useState('')
-  const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
-
-  useEffect(() => {
-    let cancelled = false
-    walletAdminApi.refund(refundId).then(found => {
-      if (cancelled) return
-      setDetail(found)
-      const suggested = new Map(found.suggested.map(part => [part.paymentId, part.amountPaise]))
-      setLines(found.topUps.filter(item => item.leftPaise > 0).map(item => ({ paymentId: item.paymentId, amount: suggested.has(item.paymentId) ? paiseToRupeeInput(suggested.get(item.paymentId) ?? 0) : '', reference: '' })))
-    }, failure => { if (!cancelled) setLoadError(describeApiError(failure)) })
-    return () => { cancelled = true }
-  }, [refundId])
-
-  const setLine = (paymentId: string, change: Partial<Line>) => { setLines(current => current.map(line => (line.paymentId === paymentId ? { ...line, ...change } : line))); setProblem('') }
-  const amountOf = (line: Line) => (line.amount.trim() ? parseRupeesToPaise(line.amount) : 0)
-  const given = lines.reduce((sum, line) => sum + Math.max(0, amountOf(line) ?? 0), 0)
-  const needed = detail?.amountPaise ?? 0
-
+  const [error, setError] = useState('')
   const submit = async () => {
-    if (!detail) return
-    if (mode === 'cancel') {
-      if (note.trim().length < 3) { setProblem(t('reasonNeeded')); return }
-    } else {
-      if (lines.some(line => amountOf(line) === null)) { setProblem(t('amountFormat')); return }
-      const over = lines.find(line => (amountOf(line) ?? 0) > (detail.topUps.find(item => item.paymentId === line.paymentId)?.leftPaise ?? 0))
-      if (over) { setProblem(t('tooMuchOn', { amount: formatINR(detail.topUps.find(item => item.paymentId === over.paymentId)?.leftPaise ?? 0) })); return }
-      if (given !== needed) { setProblem(t('mustAddUp', { amount: formatINR(needed) })); return }
-      if (lines.some(line => (amountOf(line) ?? 0) > 0 && !line.reference.trim())) { setProblem(t('referenceNeeded')); return }
-    }
-    setProblem(''); setSaving(true); setError('')
-    try {
-      if (mode === 'send') {
-        const parts = lines.filter(line => (amountOf(line) ?? 0) > 0).map(line => ({ paymentId: line.paymentId, amountPaise: amountOf(line) ?? 0, providerReference: line.reference.trim() }))
-        await walletAdminApi.markSent(refundId, { parts, note: note.trim() }); toast.success(t('sentDone'))
-      } else { await walletAdminApi.cancel(refundId, { note: note.trim() }); toast.success(t('cancelDone')) }
-      onDone()
-    } catch (failure) { setError(describeApiError(failure)) }
+    if (note.trim().length < 3) { setError(t('reasonNeeded')); return }
+    setSaving(true); setError('')
+    try { await walletAdminApi.cancel(refundId, { note: note.trim() }); toast.success(t('cancelDone')); onDone() }
+    catch (failure) { setError(describeApiError(failure)) }
     setSaving(false)
   }
-
-  const name = detail ? detail.customerName.trim() || t('noName') : ''
-  const difference = given - needed
-  return <Dialog open onOpenChange={value => { if (!value && !saving) onClose() }}>
-    <DialogContent className="record-editor-dialog wallet-refund-dialog">
-      {!detail
-        ? <div className="product-state" role={loadError ? 'alert' : undefined}>{loadError ? <><strong>{t('recordFailed')}</strong><span>{loadError}</span></> : <span>…</span>}</div>
-        : <form onSubmit={event => { event.preventDefault(); void submit() }} noValidate>
-          <DialogHeader>
-            <DialogTitle>{mode === 'cancel' ? t('cancelTitle') : t('sendTitle')}</DialogTitle>
-            {mode === 'cancel' ? <DialogDescription>{t('cancelBody')}</DialogDescription> : <DialogDescription className="sr-only">{t('dialogBody')}</DialogDescription>}
-          </DialogHeader>
-          <div className="record-editor-fields one-column">
-            {mode === 'send' ? <div className="wallet-send-amount">
-              <span>{t('sendTo', { name })}</span>
-              <strong>{formatINR(detail.amountPaise)}</strong>
-              <small>{t('askedOnShort', { date: formatTimestamp(detail.requestedAt) })}{detail.totals && detail.totals.balancePaise > 0 ? ` · ${t('staysInWallet', { amount: formatINR(detail.totals.balancePaise) })}` : ''}</small>
-            </div> : null}
-            {detail.customerNote ? <p className="product-hint">{t('customerSaid', { note: detail.customerNote })}</p> : null}
-            {mode === 'send' && detail.untrackedPaise > 0 ? <div className="wallet-warning" role="note">
-              <strong>{t('untrackedTitle', { amount: formatINR(detail.untrackedPaise) })}</strong>
-              <span>{t('untrackedBody')}</span>
-            </div> : null}
-
-            {mode === 'send' && (lines.length === 0
-              ? <p className="field-error">{t('noTopUps')}</p>
-              : <>
-                <div className="wallet-step"><strong>{t('step1')}</strong><span>{t('step1Hint')}</span></div>
-                <div className="wallet-refund-lines">
-                  {lines.map(line => {
-                    const payment = detail.topUps.find(item => item.paymentId === line.paymentId)
-                    if (!payment) return null
-                    const used = (amountOf(line) ?? 0) > 0
-                    const pick = detail.suggested.find(part => part.paymentId === line.paymentId)
-                    return <div key={line.paymentId} className={`wallet-refund-line${used ? ' is-used' : ''}`}>
-                      <div className="wallet-refund-payment">
-                        {pick ? <span className="wallet-pick">{t('refundHere', { amount: formatINR(pick.amountPaise) })}</span> : null}
-                        <strong>{t('paymentOf', { amount: formatINR(payment.amountPaise) })}</strong>
-                        <span>{payment.paidAt ? formatTimestamp(payment.paidAt) : ''}{payment.refundedPaise > 0 ? ` · ${t('refundedFromIt')} ${formatINR(payment.refundedPaise)}` : ''}</span>
-                        <span className="wallet-order-id">{payment.merchantOrderId} <CopyText text={payment.merchantOrderId} /></span>
-                        <small>{t('left')}: {formatINR(payment.leftPaise)}</small>
-                      </div>
-                      <label className="wallet-refund-input"><span>{t('refundAmount')}</span><Input inputMode="decimal" value={line.amount} placeholder="0" onChange={event => setLine(line.paymentId, { amount: event.target.value })} /></label>
-                      <label className="wallet-refund-input"><span>{t('reference')}</span><Input maxLength={100} value={line.reference} disabled={!used} onChange={event => setLine(line.paymentId, { reference: event.target.value })} /></label>
-                    </div>
-                  })}
-                </div>
-                <div className={`wallet-total${difference === 0 ? ' is-ok' : ' is-off'}`} role="status">
-                  <span>{t('totalLine', { given: formatINR(given), needed: formatINR(needed) })}</span>
-                  <strong>{difference === 0 ? t('totalOk') : difference < 0 ? t('totalShort', { amount: formatINR(-difference) }) : t('totalOver', { amount: formatINR(difference) })}</strong>
-                </div>
-              </>)}
-            <FormField label={mode === 'cancel' ? t('cancelReason') : t('note')}><Input maxLength={300} value={note} onChange={event => { setNote(event.target.value); setProblem('') }} /></FormField>
-            {problem ? <p className="field-error" role="alert">{problem}</p> : null}
-          </div>
-          {error && <p className="field-error" role="alert">{error}</p>}
-          <DialogFooter className="dialog-actions">
-            {mode === 'send' && <Button type="button" variant="outline" className="secondary-button" disabled={saving} onClick={() => { setMode('cancel'); setProblem('') }}>{t('cancelRequest')}</Button>}
-            {mode === 'cancel' && <Button type="button" variant="outline" className="secondary-button" disabled={saving} onClick={() => { setMode('send'); setProblem('') }}>{t('keepIt')}</Button>}
-            <Button type="submit" className={`primary-button${mode === 'cancel' ? ' destructive' : ''}`} disabled={saving || (mode === 'send' && lines.length === 0)}>{saving ? t('saving') : mode === 'cancel' ? t('cancelRequest') : t('markSent')}</Button>
-          </DialogFooter>
-        </form>}
+  return <Dialog open onOpenChange={open => { if (!open && !saving) onClose() }}>
+    <DialogContent className="record-editor-dialog">
+      <form onSubmit={event => { event.preventDefault(); void submit() }}>
+        <DialogHeader><DialogTitle>{t('cancelTitle')}</DialogTitle><DialogDescription>{t('cancelBody')}</DialogDescription></DialogHeader>
+        <FormField label={t('cancelReason')}><Input value={note} maxLength={300} disabled={saving} onChange={event => setNote(event.target.value)} /></FormField>
+        {error && <p className="field-error" role="alert">{error}</p>}
+        <DialogFooter><Button type="button" variant="outline" disabled={saving} onClick={onClose}>{t('keepIt')}</Button><Button type="submit" className="primary-button destructive-button" disabled={saving}>{saving ? t('saving') : t('cancelRequest')}</Button></DialogFooter>
+      </form>
     </DialogContent>
   </Dialog>
 }

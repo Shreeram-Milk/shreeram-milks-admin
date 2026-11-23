@@ -1,0 +1,42 @@
+.shield { position: fixed; inset: 0; z-index: 78; background: rgb(16 24 40 / 24%); }
+.panel { position: fixed; top: 104px; bottom: 112px; left: 50%; transform: translateX(-50%); width: min(880px, calc(100vw - 40px)); overflow: auto; border: 1px solid #e4e7ec; border-radius: 16px; padding: 24px; background: #fafafa; color: #101828; box-shadow: 0 24px 64px rgb(16 24 40 / 22%); font-family: var(--font-noto-sans-gujarati), sans-serif; }
+.banner { display: flex; align-items: center; gap: 8px; margin-bottom: 18px; padding: 10px 14px; border: 1px solid #bfdbfe; border-radius: 10px; background: #eff6ff; color: #1e40af; font-size: 13px; }
+.crumb { margin: 0 0 6px; color: #667085; font-size: 13px; }
+.title { margin: 0 0 20px; font-size: 23px; font-weight: 650; }
+.card { margin-bottom: 14px; padding: 18px; background: #fff; border: 1px solid #e4e7ec; border-radius: 12px; }
+.card h3 { margin: 0 0 12px; font-size: 16px; font-weight: 650; }
+.card p { margin: 8px 0; font-size: 14px; line-height: 1.7; }
+.row { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 10px 0; border-bottom: 1px solid #f2f4f7; font-size: 14px; }
+.row:last-child { border-bottom: 0; }
+.row > span:first-child { color: #475467; }
+.row strong { overflow-wrap: anywhere; text-align: right; }
+.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.field { display: flex; flex-direction: column; gap: 6px; min-width: 0; margin-bottom: 14px; font-size: 13px; }
+.field input { width: 100%; padding: 10px 12px; border: 1px solid #d0d5dd; border-radius: 7px; background: #fff; color: #101828; font: inherit; }
+.field small { color: #667085; line-height: 1.6; }
+.button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 40px; padding: 9px 16px; border: 1px solid #101828; border-radius: 7px; background: #101828; color: #fff; font: inherit; font-size: 13px; }
+.outline { background: #fff; color: #344054; border-color: #d0d5dd; }
+.danger { background: #b42318; border-color: #b42318; }
+.actions { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; margin-top: 14px; }
+.badge { display: inline-flex; padding: 4px 10px; border-radius: 999px; background: #ecfdf3; color: #027a48; font-size: 12px; font-weight: 600; }
+.waiting { background: #fffaeb; color: #b54708; }
+.tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid #e4e7ec; }
+.tabs span { padding: 8px 12px; border-radius: 7px; font-size: 13px; }
+.selected { background: #101828; color: #fff; }
+.switch { display: inline-flex; flex: 0 0 auto; width: 38px; height: 22px; padding: 3px; border-radius: 999px; background: #101828; }
+.switch::after { content: ''; margin-left: auto; width: 16px; height: 16px; background: #fff; border-radius: 50%; }
+.off { background: #d0d5dd; }
+.off::after { margin-left: 0; }
+.check { display: inline-flex; align-items: center; gap: 9px; margin: 8px 0; font-size: 14px; }
+.check input { accent-color: #101828; width: 17px; height: 17px; }
+.amount { font-size: 30px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.hint { color: #667085; font-size: 13px; line-height: 1.7; }
+.success { display: flex; align-items: flex-start; gap: 10px; padding: 16px; border-radius: 10px; background: #ecfdf3; color: #027a48; }
+.phone { max-width: 350px; margin: 0 auto; padding: 18px; border: 5px solid #101828; border-radius: 28px; background: #fff; }
+.scratch { display: grid; place-items: center; min-height: 150px; padding: 22px; border: 1px dashed #b692f6; border-radius: 16px; background: linear-gradient(135deg, #f4ebff, #fff6ed); text-align: center; }
+.scratch strong { display: block; font-size: 28px; color: #6941c6; }
+.code { display: block; margin-top: 12px; padding: 8px 16px; border: 1px dashed #a4bcfd; border-radius: 8px; background: #fff; font-family: monospace; letter-spacing: 2px; }
+.stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.stats > div { padding: 18px; background: #fff; border: 1px solid #e4e7ec; border-radius: 12px; text-align: center; }
+.stats strong { display: block; margin-top: 8px; font-size: 30px; }
+@media (max-width: 640px) { .panel { top: 92px; bottom: 108px; padding: 14px; width: calc(100vw - 20px); } .grid { grid-template-columns: 1fr; } .row { align-items: flex-start; gap: 12px; } .title { font-size: 20px; } .stats { gap: 6px; } .stats > div { padding: 10px 5px; font-size: 12px; } }

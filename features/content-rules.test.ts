@@ -68,7 +68,8 @@ describe('app settings form checks', () => {
   const valid = {
     supportPhone: '', supportEmail: '', supportWhatsApp: '', callEnabled: false, chatEnabled: false, whatsappEnabled: false,
     supportHoursEn: '', supportHoursGu: '', afterHoursMessageEn: '', afterHoursMessageGu: '', deliveryPromiseEn: '', deliveryPromiseGu: '',
-    minimumAppVersion: '1.0.0', maintenanceMode: false, maintenanceMessageEn: '', maintenanceMessageGu: '', showMaintenanceContact: false,
+    minimumAppVersion: '1.0.0', latestAppVersion: '1.0.0', rewardsEnabled: false, rewardsMinOrderPaise: 0, rewardsExpiryDays: 30,
+    maintenanceMode: false, maintenanceMessageEn: '', maintenanceMessageGu: '', showMaintenanceContact: false,
     flags: { showTrials: true, showSubscriptions: true, showOffers: true, showQualityReports: true, showSeasonalBanner: true },
   }
   const problems = (change: object) => {

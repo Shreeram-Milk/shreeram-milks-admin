@@ -1,0 +1,131 @@
+{
+  "title": "સ્ક્રેચ કાર્ડ: સેટિંગ્સથી કોડ વપરાય ત્યાં સુધી",
+  "voice": {
+    "pace": 1.0,
+    "temperature": 0.7
+  },
+  "leave": {
+    "page": "/content/app-settings"
+  },
+  "steps": [
+    {
+      "id": "settings",
+      "target": "css:[data-demo=\"scratch-tab\"]",
+      "text": "ચાલો, સ્ક્રેચ કાર્ડનું આખું કામ જોઈએ. પહેલાં ફોન ઍપ વિભાગમાં ઍપ સેટિંગ્સ ખોલી સ્ક્રેચ કાર્ડ પસંદ કરો. આ ફક્ત ઉદાહરણ છે. અહીં કોઈ સાચી સેટિંગ બદલાતી નથી.",
+      "page": "/content/app-settings",
+      "demo": "scratch-settings"
+    },
+    {
+      "id": "enable",
+      "target": "css:[data-demo=\"scratch-enabled\"]",
+      "text": "સ્ક્રેચ કાર્ડ આપો ચાલુ કરવાનું. આથી યોગ્ય ઓર્ડર ડિલિવર થયા પછી ગ્રાહકને મફત કાર્ડ આપી શકાય. કાર્ડ માટે ગ્રાહક પાસેથી અલગ પૈસા લેવાતા નથી.",
+      "page": "/content/app-settings",
+      "demo": "scratch-enable"
+    },
+    {
+      "id": "threshold",
+      "target": "css:[data-demo=\"scratch-threshold\"]",
+      "text": "ઓછામાં ઓછો કેટલાનો ઓર્ડર હોય તો કાર્ડ આપવું તે લખો. ઉદાહરણમાં પાંચસો રૂપિયા છે. એટલે પાંચસો કે વધુનો એક વારનો ઓર્ડર યોગ્ય ગણાય. શૂન્ય રાખો તો આવી દરેક ડિલિવરી યોગ્ય ગણાય.",
+      "page": "/content/app-settings",
+      "demo": "scratch-threshold"
+    },
+    {
+      "id": "expiry",
+      "target": "css:[data-demo=\"scratch-expiry\"]",
+      "text": "કાર્ડ કેટલા દિવસમાં વાપરવું તે લખો. અહીં ત્રીસ દિવસ છે. આ દિવસો કાર્ડ મળ્યાના દિવસથી ગણાય છે.",
+      "page": "/content/app-settings",
+      "demo": "scratch-expiry"
+    },
+    {
+      "id": "settings-save",
+      "target": "css:[data-demo=\"scratch-settings-save\"]",
+      "text": "સાચું કામ કરતી વખતે હવે સેટિંગ્સ સાચવો દબાવવાનું. પરંતુ કાર્ડમાં કઈ છૂટ આપવી એ હજી નક્કી કર્યું નથી. એ માટે હવે ઑફરમાં જઈશું.",
+      "page": "/content/app-settings",
+      "demo": "scratch-settings-save"
+    },
+    {
+      "id": "offers",
+      "target": "css:[data-demo=\"scratch-offer-new\"]",
+      "text": "હવે ઑફર પેજ પર આવ્યા. નવી ઑફર બનાવો, અથવા પોતાની હાલની ઑફર ખોલો. અહીં આપેલી છૂટને સ્ક્રેચ કાર્ડ સાથે જોડવાની છે.",
+      "page": "/content/offers",
+      "demo": "scratch-offers"
+    },
+    {
+      "id": "details",
+      "target": "css:[data-demo=\"scratch-offer-details\"]",
+      "text": "ઉદાહરણમાં આવતા ઓર્ડરમાં પચાસ રૂપિયાની છૂટ આપીશું. પ્રકારમાં ચોક્કસ રકમની છૂટ, રકમમાં પચાસ, અને આવતા ઓર્ડરની ઓછામાં ઓછી રકમ પાંચસો રાખી છે. સ્ક્રેચ કાર્ડમાં પૈસાની છૂટ આપવાની, મફત પ્રોડક્ટવાળી ભેટ નહીં.",
+      "page": "/content/offers/new",
+      "demo": "scratch-offer-details"
+    },
+    {
+      "id": "code",
+      "target": "css:[data-demo=\"scratch-code\"]",
+      "text": "આ ઑફરનો પોતાનો કોડ જરૂરી છે. અહીં મિલ્ક ફિફ્ટી રાખ્યો છે. ઑફર ચાલુ હોવી જોઈએ અને તેની તારીખ પૂરી થયેલી ન હોવી જોઈએ. કોડ વગર કાર્ડમાં ઑફર જોડાશે નહીં.",
+      "page": "/content/offers/new",
+      "demo": "scratch-code"
+    },
+    {
+      "id": "purchases",
+      "target": "css:[data-demo=\"scratch-purchases\"]",
+      "text": "આ કોડ આવતા સામાન્ય એક વારના ઓર્ડર માટે છે. એટલે એક વારનો ઓર્ડર પસંદ રાખો. ટ્રાયલ અને સબ્સ્ક્રિપ્શન પસંદ ના રાખો.",
+      "page": "/content/offers/new",
+      "demo": "scratch-purchases"
+    },
+    {
+      "id": "pool",
+      "target": "css:[data-demo=\"scratch-in-pool\"]",
+      "text": "આ સૌથી જરૂરી જોડાણ છે. આ ઑફર સ્ક્રેચ કાર્ડમાં આપો ચાલુ કરવાનું. આથી ઑફર કાર્ડ માટેની યાદીમાં ઉમેરાય છે. આવી ઘણી ઑફર હોય તો ગ્રાહકને એમાંથી કોઈ એક મળે છે.",
+      "page": "/content/offers/new",
+      "demo": "scratch-pool"
+    },
+    {
+      "id": "owner",
+      "target": "css:[data-demo=\"scratch-owner-only\"]",
+      "text": "ફક્ત સ્ક્રેચ કરનાર ગ્રાહક માટે ચાલુ રાખશો તો આ ઑફર બધાને દેખાતી નથી. કોડ ફક્ત એ કાર્ડ જીતેલા ગ્રાહકને જ ચાલે. એક કાર્ડનો લાભ એક વાર મળે, બીજાને કોડ આપવાથી નહીં.",
+      "page": "/content/offers/new",
+      "demo": "scratch-owner"
+    },
+    {
+      "id": "offer-save",
+      "target": "css:[data-demo=\"scratch-offer-save\"]",
+      "text": "બધી વિગતો તપાસીને સાચા કામમાં ઑફર બનાવો દબાવવાનું. સેટિંગ્સ પણ ચાલુ અને ઓછામાં ઓછી એક ચાલુ ઑફર કાર્ડ સાથે જોડાયેલી હોવી જરૂરી છે. યાદીમાં કોઈ યોગ્ય ઑફર ન હોય તો નવું કાર્ડ મળશે નહીં.",
+      "page": "/content/offers/new",
+      "demo": "scratch-offer-save"
+    },
+    {
+      "id": "delivery",
+      "target": "css:[data-demo=\"scratch-delivery\"]",
+      "text": "હવે ડિલિવરીમાં આવ્યા. અહીં છસો રૂપિયાનો એક વારનો ઓર્ડર ડિલિવર થયો. તે પાંચસોની શરત પૂરી કરે છે, એટલે એક મફત કાર્ડ મળે. એક ઓર્ડર માટે ફરીથી કાર્ડ નથી મળતું. સબ્સ્ક્રિપ્શન અને ટ્રાયલની ડિલિવરીથી કાર્ડ મળતું નથી.",
+      "page": "/deliveries",
+      "demo": "scratch-delivery"
+    },
+    {
+      "id": "card",
+      "target": "css:[data-demo=\"scratch-customer-card\"]",
+      "text": "હવે ગ્રાહકની ઍપનો નમૂનો જુઓ. ગ્રાહકને જાણ થાય અને મારા સ્ક્રેચ કાર્ડમાં નવું કાર્ડ દેખાય. આ સમયે અંદરનો કોડ હજી છુપાયેલો હોય છે.",
+      "page": "/deliveries",
+      "demo": "scratch-card"
+    },
+    {
+      "id": "reveal",
+      "target": "css:[data-demo=\"scratch-reveal\"]",
+      "text": "ગ્રાહક કાર્ડ સ્ક્રેચ કરે ત્યારે તેની ઑફર અને કોડ દેખાય. અહીં પચાસ રૂપિયાની છૂટ મળી. કાર્ડના સમય અને ઑફરની શરતોમાં રહીને કોડ વાપરવાનો. આ રોકડ રૂપિયા ઉપાડવાનું કાર્ડ નથી.",
+      "page": "/deliveries",
+      "demo": "scratch-reveal"
+    },
+    {
+      "id": "checkout",
+      "target": "css:[data-demo=\"scratch-checkout\"]",
+      "text": "પછી ગ્રાહક આવતા યોગ્ય ઓર્ડરમાં આ કોડ લગાવે. અહીં પાંચસો પચાસનો ઓર્ડર છે. પચાસની છૂટ બાદ પાંચસો ચૂકવવાના થાય. ઓર્ડર સફળ થાય પછી કાર્ડ વપરાયેલું ગણાય. ફરી એ જ કાર્ડથી છૂટ નહીં મળે.",
+      "page": "/deliveries",
+      "demo": "scratch-checkout"
+    },
+    {
+      "id": "stats",
+      "target": "css:[data-demo=\"scratch-stats\"]",
+      "text": "હવે પાછા એડમિનની સ્ક્રેચ કાર્ડ સેટિંગ્સમાં આવ્યા. કેટલા કાર્ડ આપ્યા, કેટલા સ્ક્રેચ થયા અને કેટલા વપરાયા તે અહીં જુઓ. સેટિંગ્સ, ઑફર જોડવી, ડિલિવરી, કાર્ડ, કોડ અને હિસાબ, આખું કામ આ રીતે જોડાય છે.",
+      "page": "/content/app-settings",
+      "demo": "scratch-stats"
+    }
+  ]
+}

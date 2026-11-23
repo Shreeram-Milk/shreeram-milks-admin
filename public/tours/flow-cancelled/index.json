@@ -1,8 +1,13 @@
 {
-  "start": "start-31cec701.mp3",
-  "open": "open-9f650aa6.mp3",
-  "cancel": "cancel-f0f406ae.mp3",
-  "money": "money-09bd511f.mp3",
-  "send": "send-5acd4c84.mp3",
-  "record": "record-125af521.mp3"
+  "order": "order-b1ff81e0.mp3",
+  "payment": "payment-27ad5e9f.mp3",
+  "cancel": "cancel-cada18de.mp3",
+  "cancel-check": "cancel-check-77231ffc.mp3",
+  "owed": "owed-f6056589.mp3",
+  "review": "review-760ea1fe.mp3",
+  "password": "password-f2b16008.mp3",
+  "confirm": "confirm-81ed5c81.mp3",
+  "pending": "pending-eedd69b5.mp3",
+  "completed": "completed-c3de25ac.mp3",
+  "ledger": "ledger-1e50e315.mp3"
 }

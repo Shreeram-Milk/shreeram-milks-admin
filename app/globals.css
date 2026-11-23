@@ -1642,19 +1642,19 @@ button.wallet-overview-card { cursor: pointer; }
 .tour-button { display: inline-flex; align-items: center; gap: 6px; }
 .tour-layer { position: fixed; inset: 0; z-index: 80; pointer-events: none; }
 .tour-dim { position: fixed; inset: 0; background: rgba(10,16,28,.45); }
-.tour-spot { position: fixed; border-radius: 12px; box-shadow: 0 0 0 9999px rgba(10,16,28,.45), 0 0 0 3px #ff6700; transition: top .35s ease, left .35s ease, width .35s ease, height .35s ease; }
+.tour-spot { position: fixed; border-radius: 12px; box-shadow: 0 0 0 9999px rgba(10,16,28,.35), 0 0 0 3px #3b82f6; transition: top .35s ease, left .35s ease, width .35s ease, height .35s ease; }
 .tour-card { position: fixed; left: 50%; bottom: 24px; width: min(560px, calc(100vw - 32px)); transform: translateX(-50%); display: flex; flex-direction: column; gap: 10px; padding: 16px 18px; border-radius: 14px; background: #fff; box-shadow: 0 18px 50px rgba(10,16,28,.28); pointer-events: auto; }
 .tour-card-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 12px; font-weight: 600; }
 .tour-card p { margin: 0; font-size: 17px; line-height: 1.6; color: #0a0a0a; }
 .tour-icon { display: grid; place-items: center; width: 30px; height: 30px; border: 0; border-radius: 8px; background: #f3f4f6; color: #374151; cursor: pointer; }
 .tour-progress { display: flex; gap: 4px; }
 .tour-progress i { flex: 1; height: 4px; border-radius: 4px; background: #e5e7eb; }
-.tour-progress i.is-done { background: #ff6700; }
+.tour-progress i.is-done { background: #2563eb; }
 .tour-actions { display: flex; justify-content: flex-end; gap: 8px; }
 .tour-actions button { display: inline-flex; align-items: center; gap: 6px; }
 @media (prefers-reduced-motion: reduce) { .tour-spot { transition: none; } }
-.tour-example { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 10px; background: #fff4ec; border: 1px solid #ffd2b3; }
-.tour-example span { color: #a14200; font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.tour-example { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 10px; background: #eff6ff; border: 1px solid #bfdbfe; }
+.tour-example span { color: #1d4ed8; font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
 .tour-example strong { font-size: 20px; color: #0a0a0a; }
 a.tour-button { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
 
@@ -1669,25 +1669,27 @@ a.tour-button { display: inline-flex; align-items: center; gap: 6px; text-decora
 /* The guide: a white pill at the top with a speaking orb and the words appearing one by one, out of the way of the page. */
 .tour-pill-wrap { position: fixed; left: 50%; top: 14px; z-index: 81; display: flex; flex-direction: column; align-items: center; gap: 8px; width: min(640px, calc(100vw - 24px)); transform: translateX(-50%); pointer-events: none; transition: top .3s ease, bottom .3s ease; }
 .tour-pill-wrap.at-bottom { top: auto; bottom: 18px; flex-direction: column-reverse; }
-.tour-pill { display: flex; align-items: center; gap: 14px; width: 100%; min-height: 64px; padding: 8px 10px 8px 8px; border-radius: 999px; background: #fff; box-shadow: 0 18px 50px rgba(120, 90, 240, .18), 0 6px 18px rgba(255, 103, 0, .12), 0 1px 2px rgba(10, 10, 20, .08); pointer-events: auto; animation: tour-pill-in .4s cubic-bezier(.2, .9, .3, 1.15); }
+.tour-pill { display: flex; align-items: center; gap: 14px; width: 100%; min-height: 64px; padding: 8px 10px 8px 8px; border: 1px solid #dbeafe; border-radius: 999px; background: #fff; box-shadow: 0 18px 50px rgba(59, 130, 246, .16), 0 6px 18px rgba(6, 182, 212, .10), 0 1px 2px rgba(10, 10, 20, .06); pointer-events: auto; animation: tour-pill-in .4s cubic-bezier(.2, .9, .3, 1.15); }
 @keyframes tour-pill-in { from { opacity: 0; transform: translateY(-8px) scale(.95); } to { opacity: 1; transform: none; } }
-.tour-orb { flex: 0 0 auto; display: flex; align-items: center; justify-content: center; gap: 3px; width: 48px; height: 48px; border-radius: 50%; background: #16161a; }
-.tour-orb i { display: block; width: 4px; height: 22px; border-radius: 4px; background: linear-gradient(180deg, #ffb45e, #ff6700 55%, #c93800); animation: tour-bar 1s ease-in-out infinite; }
+.tour-orb { position: relative; isolation: isolate; overflow: hidden; flex: 0 0 auto; display: flex; align-items: center; justify-content: center; gap: 3px; width: 48px; height: 48px; border: 1px solid #dbeafe; border-radius: 50%; background: #fff; }
+.tour-orb::before { content: ''; position: absolute; z-index: -1; inset: -35%; background: conic-gradient(from 45deg, #fff 0deg, #dbeafe 80deg, #67e8f9 145deg, #60a5fa 210deg, #e0e7ff 280deg, #fff 360deg); filter: blur(8px); opacity: .8; animation: tour-glow 5s ease-in-out infinite alternate; }
+.tour-orb i { display: block; width: 4px; height: 22px; border-radius: 4px; background: linear-gradient(180deg, #67e8f9, #3b82f6 55%, #4338ca); box-shadow: 0 0 7px rgba(59,130,246,.2); animation: tour-bar 1s ease-in-out infinite; }
 .tour-orb i:nth-child(1), .tour-orb i:nth-child(5) { height: 12px; }
 .tour-orb i:nth-child(2), .tour-orb i:nth-child(4) { height: 17px; animation-delay: -.25s; }
 .tour-orb i:nth-child(3) { animation-delay: -.5s; }
 @keyframes tour-bar { 0%, 100% { transform: scaleY(.45); } 50% { transform: scaleY(1); } }
-.tour-pill.is-paused .tour-orb i { animation-play-state: paused; opacity: .55; }
+@keyframes tour-glow { from { transform: rotate(-25deg) scale(.85); } to { transform: rotate(115deg) scale(1.15); } }
+.tour-pill.is-paused .tour-orb i, .tour-pill.is-paused .tour-orb::before { animation-play-state: paused; opacity: .55; }
 .tour-caption { flex: 1; min-width: 0; margin: 0; color: #141418; font-size: 19px; font-weight: 500; line-height: 1.35; letter-spacing: -.01em; }
 .tour-caption span { opacity: 0; transition: opacity .22s ease; }
 .tour-caption span.is-said { opacity: 1; }
 .tour-count { flex: 0 0 auto; color: #9a9aa5; font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; }
 .tour-pill-actions { flex: 0 0 auto; display: flex; gap: 4px; }
-.tour-round { display: grid; place-items: center; width: 34px; height: 34px; border: 0; border-radius: 50%; background: #f2f2f5; color: #3a3a44; cursor: pointer; }
-.tour-round:hover { background: #e7e7ee; }
-.tour-round.is-main { background: #16161a; color: #fff; }
-.tour-round:focus-visible { outline: 2px solid #ff6700; outline-offset: 2px; }
+.tour-round { display: grid; place-items: center; width: 34px; height: 34px; border: 0; border-radius: 50%; background: #eff6ff; color: #1e40af; cursor: pointer; }
+.tour-round:hover { background: #dbeafe; }
+.tour-round.is-main { background: linear-gradient(135deg, #2563eb, #4f46e5); color: #fff; }
+.tour-round:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
 .tour-chip { display: inline-flex; align-items: baseline; gap: 8px; padding: 6px 14px; border-radius: 999px; background: #fff; color: #141418; font-size: 15px; font-weight: 700; box-shadow: 0 8px 24px rgba(10, 10, 20, .12); pointer-events: auto; }
-.tour-chip b { color: #ff6700; font-size: 10px; letter-spacing: .06em; text-transform: uppercase; }
+.tour-chip b { color: #2563eb; font-size: 10px; letter-spacing: .06em; text-transform: uppercase; }
 @media (max-width: 640px) { .tour-pill { gap: 10px; min-height: 56px; } .tour-orb { width: 40px; height: 40px; } .tour-caption { font-size: 16px; } .tour-count { display: none; } .tour-round { width: 30px; height: 30px; } }
-@media (prefers-reduced-motion: reduce) { .tour-pill, .tour-orb i { animation: none; } .tour-caption span { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .tour-pill, .tour-orb i, .tour-orb::before { animation: none; } .tour-caption span { transition: none; } }

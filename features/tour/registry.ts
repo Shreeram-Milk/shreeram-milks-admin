@@ -15,6 +15,7 @@ import deliverySlots from './tours/delivery-slots.json'
 import deliverySlotsAdd from './tours/delivery-slots-add.json'
 import faqs from './tours/faqs.json'
 import flowCancelled from './tours/flow-cancelled.json'
+import flowScratchCards from './tours/flow-scratch-cards.json'
 import flowCredit from './tours/flow-credit.json'
 import flowMorning from './tours/flow-morning.json'
 import flowNewProduct from './tours/flow-new-product.json'
@@ -68,6 +69,7 @@ export const TOURS = {
   'delivery-slots-add': deliverySlotsAdd as Tour,
   'faqs': faqs as Tour,
   'flow-cancelled': flowCancelled as Tour,
+  'flow-scratch-cards': flowScratchCards as Tour,
   'flow-credit': flowCredit as Tour,
   'flow-morning': flowMorning as Tour,
   'flow-new-product': flowNewProduct as Tour,

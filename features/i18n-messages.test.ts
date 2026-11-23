@@ -15,6 +15,7 @@ import { dashboardMessages } from './dashboard/messages'
 import { deliveryMessages } from './delivery-admin/messages'
 import { faqMessages } from './faqs/messages'
 import { moneyMessages } from './money/messages'
+import { refundMessages } from './refund-admin/messages'
 import { notificationMessages } from './notifications/messages'
 import { offerMessages } from './offers/messages'
 import { onboardingMessages } from './onboarding/messages'
@@ -26,9 +27,10 @@ import { productMessages } from './products/messages'
 import { subscriptionMessages } from './subscription-admin/messages'
 import { supportMessages } from './support-tickets/messages'
 import { websiteMessages } from './website/messages'
+import { tourMessages } from './tour/messages'
 
 const lists: Array<[string, Messages<string>]> = Object.entries({
-  commonMessages, layoutMessages, adjustmentMessages, appSettingsMessages, authMessages, bannerMessages, categoryMessages, configMessages, creditMessages,
+  commonMessages, tourMessages, refundMessages, layoutMessages, adjustmentMessages, appSettingsMessages, authMessages, bannerMessages, categoryMessages, configMessages, creditMessages,
   customerMessages, dashboardMessages, deliveryMessages, faqMessages, moneyMessages, notificationMessages, offerMessages, onboardingMessages, orderMessages,
   paymentMessages, policyMessages, productionMessages, productMessages, subscriptionMessages, supportMessages, websiteMessages,
 })

@@ -2,6 +2,11 @@ import { defineMessages, translator } from './core'
 
 /** Words used all over the admin: buttons, days, states, page numbers, uploads and server errors. */
 export const commonMessages = defineMessages({
+  REFUND_PASSWORD_INVALID: 'The admin password is not correct.',
+  REFUNDS_NOT_CONFIGURED: 'PhonePe refunds are not configured on the server yet.',
+  REFUND_REVIEW_EXPIRED: 'This review expired. Close the window and review the refund again.',
+  REFUND_REVIEW_CHANGED: 'The refundable amount changed. Close the window and review it again.',
+  REFUND_NOT_FOUND: 'No refund was found. Close the window and refresh the list.',
   loading: 'Loading…',
   save: 'Save',
   saving: 'Saving…',
@@ -179,6 +184,11 @@ export const commonMessages = defineMessages({
   fileEmpty: 'આ ફાઇલ ખાલી છે.',
   photoTooBig: '15 MB થી નાનો ફોટો પસંદ કરો.',
   somethingWrong: 'કંઈક ખોટું થયું. ફરી પ્રયાસ કરો.',
+  REFUND_PASSWORD_INVALID: 'એડમિન પાસવર્ડ ખોટો છે.',
+  REFUNDS_NOT_CONFIGURED: 'સર્વર પર PhonePe રિફંડ હજી સેટ થયાં નથી.',
+  REFUND_REVIEW_EXPIRED: 'આ તપાસનો સમય પૂરો થયો. બારી બંધ કરીને રિફંડ ફરી તપાસો.',
+  REFUND_REVIEW_CHANGED: 'રિફંડની રકમ બદલાઈ છે. બારી બંધ કરીને ફરી તપાસો.',
+  REFUND_NOT_FOUND: 'રિફંડ મળ્યું નહીં. બારી બંધ કરીને યાદી ફરી લાવો.',
   INVALID_CREDENTIALS: 'ઈમેલ કે પાસવર્ડ ખોટો છે.',
   INVALID_CODE: 'આ કોડ ખોટો છે અથવા તેનો સમય પૂરો થયો છે. નવો કોડ મેળવવા ફરી સાઇન ઇન કરો.',
   ACCOUNT_LOCKED: 'ઘણી વાર ખોટો પ્રયાસ થયો. 15 મિનિટ રાહ જોઈને ફરી પ્રયાસ કરો.',

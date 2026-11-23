@@ -20,6 +20,8 @@ Status: ✅ done · 🟡 planned/partly · ❌ missing · 📝 needs a decision 
 | A6 | Production API must use **HTTPS** | Live at `https://api.shreerammilk.com` (health check passes). Release builds must set `EXPO_PUBLIC_API_URL` to it. | ✅ |
 | A7 | Google Play — **target API level** | From **31 Aug 2026**, new apps and updates must target **Android 16 (API 36)** or higher. Expo SDK 57 builds with target and compile SDK 36. | ✅ |
 
+Admin training examples (23 Nov 2026): the refund and scratch-card workflows use labelled, isolated example scenes over the relevant admin routes. They never send payments, change settings, create offers, deliver orders or issue/redeem real cards. Public customer screens do not show these examples. Gujarati voice clips are generated ahead of time; the Sarvam API key is not shipped to browsers.
+
 ## B. Payments
 
 | Rule | What it means for us | Status |
@@ -28,7 +30,7 @@ Status: ✅ done · 🟡 planned/partly · ❌ missing · 📝 needs a decision 
 | Google Play payments policy | Play Billing is only for digital goods. Physical goods use any gateway. | ✅ by design |
 | Apple 3.1.2 | Applies only to digital subscriptions. **Our "subscriptions" are delivery plans for physical goods**, not digital features. Never describe them as app features or unlocks. | ✅ by wording rule |
 | Apple 4.9 (recurring charges, if Apple Pay is used) | Show amount, what is provided, how often, and **how to cancel** before the customer pays. Our pause/cancel flow must be clear. | 🟡 |
-| Money safety | Totals and payments verified on the server; webhooks verified and idempotent (`AGENTS.md` 22–24). | 🟡 (when payments are built) |
+| Money safety | Server-calculated payments, provider status verification, authenticated webhooks and duplicate protection are implemented. Admin refunds require review, password verification and explicit acknowledgement; durable reservations, status reconciliation and audit records protect retries. The owner reports migration 0043 committed and production credentials accepted (23 Nov 2026). Deployment and a live payment/refund check remain required. | 🟡 code tested; production verification pending |
 
 ## C. Privacy and data
 

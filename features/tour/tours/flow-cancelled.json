@@ -1,45 +1,89 @@
 {
-  "title": "ઓર્ડર કેન્સલ અને રિફંડ",
+  "title": "વેચાણથી રિફંડ પૂરું થાય ત્યાં સુધી",
   "voice": {
     "pace": 1.0,
     "temperature": 0.7
   },
+  "leave": {
+    "page": "/prepaid-adjustments"
+  },
   "steps": [
     {
-      "id": "start",
-      "target": "css:.page-header",
-      "text": "કસ્ટમરે ઓનલાઇન પૈસા ભર્યા અને પછી ઓર્ડર કેન્સલ થયો, તો પૈસા કેવી રીતે પાછા આપવા એ જોઈએ.",
-      "page": "/orders"
+      "id": "order",
+      "target": "css:[data-demo=\"refund-order\"]",
+      "text": "ચાલો, પૈસા ભરેલા ઓર્ડરથી રિફંડ પૂરું થાય ત્યાં સુધી આખું કામ જોઈએ. આ ફક્ત શીખવા માટેનું ઉદાહરણ છે. સાચા ઓર્ડર કે પૈસામાં કોઈ ફેરફાર થતો નથી.",
+      "page": "/orders",
+      "demo": "refund-order"
     },
     {
-      "id": "open",
-      "target": "css:.table-card",
-      "text": "ઓર્ડરમાં કસ્ટમરના નામ પર ક્લિક કરીને ઓર્ડર ખોલો.",
-      "page": "/orders"
+      "id": "payment",
+      "target": "css:[data-demo=\"refund-payment\"]",
+      "text": "પહેલાં ગ્રાહક, ઓર્ડર અને મળેલા પૈસા તપાસો. અહીં કિરણભાઈએ ફોનપેથી એકસો પચીસ રૂપિયા પચાસ પૈસા ભર્યા છે. રિફંડ હંમેશાં આ જ મૂળ પેમેન્ટ સામે જશે.",
+      "page": "/orders",
+      "demo": "refund-payment"
     },
     {
       "id": "cancel",
-      "target": "css:.page-header .header-actions",
-      "text": "ઉપર ઓર્ડર રદ કરો બટન છે. ઓનલાઇન પૈસા ભરેલો ઓર્ડર રદ કરો એટલે રિફંડ આપવાનું પૈસાના વિભાગમાં આપોઆપ લખાઈ જાય. આ તો ખાલી શીખવા માટે છે, એટલે સેવ ના કરતા.",
-      "open": "css:.table-card tbody a.product-name-link, .table-card tbody .table-link"
+      "target": "css:[data-demo=\"refund-cancel\"]",
+      "text": "ગ્રાહકને ઓર્ડર હવે ન જોઈએ, તો ઓર્ડર રદ કરો દબાવવાનું. કોઈ ડિલિવર થયેલો ઓર્ડર પાછો લેવો હોય, તો એનું પૈસા પરત આપવાનું કામ પસંદ કરવાનું.",
+      "page": "/orders",
+      "demo": "refund-cancel"
     },
     {
-      "id": "money",
-      "target": "css:.money-todo",
-      "text": "હવે પૈસાનો વિભાગ. ઉપર ફોનપેથી મોકલવાના રિફંડની સંખ્યા દેખાય.",
-      "page": "/prepaid-adjustments"
+      "id": "cancel-check",
+      "target": "css:[data-demo=\"refund-cancelled\"]",
+      "text": "કારણ લખીને ઓર્ડર રદ કરવાની ખાતરી આપવાની. આથી રિફંડ આપવાનું નોંધાય છે. આ પગલે ગ્રાહકને પૈસા મોકલાતા નથી.",
+      "page": "/orders",
+      "demo": "refund-cancelled"
     },
     {
-      "id": "send",
-      "target": "css:.table-card, .product-state",
-      "text": "લિસ્ટમાં એ રિફંડ દેખાશે. પહેલાં ફોનપે ડેશબોર્ડ ખોલો, એ પેમેન્ટ શોધો અને એટલા પૈસા રિફંડ કરો.",
-      "page": "/prepaid-adjustments"
+      "id": "owed",
+      "target": "css:[data-demo=\"refund-owed\"]",
+      "text": "હવે પૈસા વિભાગમાં ગ્રાહકોને આપવાના પેજ પર આવ્યા. એ જ ગ્રાહક, ઓર્ડર અને પાછા આપવાની રકમ અહીં દેખાય. રિફંડ તપાસો દબાવવાનું.",
+      "page": "/prepaid-adjustments",
+      "demo": "refund-owed"
     },
     {
-      "id": "record",
-      "target": "css:.table-card, .product-state",
-      "text": "પછી અહીં રિફંડ નોંધો દબાવો અને ફોનપેનો રિફંડ નંબર લખો. ઉધારવાળા કસ્ટમરનો ઓર્ડર રદ થાય તો કંઈ કરવાનું નથી, એના હિસાબમાંથી જાતે ઓછા થઈ જાય.",
-      "page": "/prepaid-adjustments"
+      "id": "review",
+      "target": "css:[data-demo=\"refund-review\"]",
+      "text": "આ પહેલું પગલું છે. ગ્રાહક, રકમ અને મૂળ પેમેન્ટ ફરી જુઓ. બધું સાચું હોય તો ખાતરીના પગલાં પર જાઓ. ખાલી આ બારી ખોલવાથી રિફંડ મોકલાતું નથી.",
+      "page": "/prepaid-adjustments",
+      "demo": "refund-review"
+    },
+    {
+      "id": "password",
+      "target": "css:[data-demo=\"refund-verification\"]",
+      "text": "આ બીજું પગલું છે. તમારો એડમિનમાં પ્રવેશવાનો પાસવર્ડ લખવાનો. પછી ગ્રાહક અને રકમ તપાસ્યાં છે તેની ટિક કરવાની. આ ઉદાહરણમાં સાચો પાસવર્ડ લખવાની જરૂર નથી.",
+      "page": "/prepaid-adjustments",
+      "demo": "refund-verify"
+    },
+    {
+      "id": "confirm",
+      "target": "css:[data-demo=\"refund-confirm\"]",
+      "text": "હવે છેલ્લું બટન જુઓ. કેટલી રકમ મોકલાશે તે બટન પર પણ લખ્યું છે. સાચા કામમાં આ બટન દબાવો ત્યારે જ રિફંડ મોકલવાનું શરૂ થાય. આ ડેમોમાં કોઈ પૈસા મોકલાતા નથી.",
+      "page": "/prepaid-adjustments",
+      "demo": "refund-confirm"
+    },
+    {
+      "id": "pending",
+      "target": "css:[data-demo=\"refund-result\"]",
+      "text": "પ્રક્રિયા ચાલુ દેખાય તો રાહ જોવાની. સ્થિતિ તપાસો દબાવી શકો. એથી ફરી પૈસા મોકલાતા નથી. ફોનપેનો જવાબ મોડો આવે તો પણ અલગ રિફંડ મોકલશો નહીં. નિષ્ફળ થયાની ખાતરી મળે તો ફક્ત બાકી રકમ ફરી તપાસીને મંજૂર કરવી.",
+      "page": "/prepaid-adjustments",
+      "demo": "refund-pending"
+    },
+    {
+      "id": "completed",
+      "target": "css:[data-demo=\"refund-result\"]",
+      "text": "ફોનપે રિફંડ પૂરું થયાની ખાતરી આપે પછી જ અહીં પૂર્ણ દેખાય. ગ્રાહકને જાણ થાય અને રિફંડ નંબર નોંધાય. ગ્રાહકની બેંકમાં દેખાવાનો સમય થોડો અલગ હોઈ શકે.",
+      "page": "/prepaid-adjustments",
+      "demo": "refund-completed"
+    },
+    {
+      "id": "ledger",
+      "target": "css:[data-demo=\"refund-ledger\"]",
+      "text": "છેલ્લે ઓનલાઇન ચુકવણીમાં હિસાબ જુઓ. કેટલા પૈસા મળ્યા, કેટલા પાછા ગયા અને કેટલા બાકી છે તે સ્પષ્ટ દેખાય. અહીં આખી રકમ પાછી ગઈ, એટલે બાકી શૂન્ય. પૈસા આપવાનું કામ પણ પૂરું થાય. આ રીતે બધું એડમિનમાંથી જ થાય.",
+      "page": "/online-payments",
+      "demo": "refund-ledger"
     }
   ]
 }

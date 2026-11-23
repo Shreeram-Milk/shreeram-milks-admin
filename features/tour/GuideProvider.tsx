@@ -1,11 +1,14 @@
 'use client'
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { createContext, lazy, Suspense, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { usePathname, useRouter } from 'next/navigation'
 import { Pause, Play, SkipForward, X } from 'lucide-react'
 import { t } from './messages'
 import { TOURS, type TourName } from './registry'
+import type { DemoStage } from './workflow-demo/model'
+
+const WorkflowDemo = lazy(() => import('./workflow-demo/WorkflowDemo'))
 
 /** What a step does to its part of the page while the voice explains it. It never presses Save. */
 export type TourFill = {
@@ -33,6 +36,8 @@ export type TourStep = {
   fill?: TourFill
   /** Close an open pop-up first (the Escape key), for example after a size was filled in. */
   closeFirst?: boolean
+  /** Isolated example scene on the real route, for workflows that must show saving or money movement without doing either. */
+  demo?: DemoStage
 }
 /** `leave`: where to go when the guide ends, so a form it filled is thrown away and never saved. `escape` closes a pop-up. */
 export type Tour = { title: string; steps: TourStep[]; leave?: { page?: string; escape?: boolean } }
@@ -123,6 +128,7 @@ export function GuideProvider({ children }: { children: ReactNode }) {
   const [clips, setClips] = useState<Record<string, string> | null>(null)
   const [spot, setSpot] = useState<Spot>(null)
   const [paused, setPaused] = useState(false)
+  const pausedRef = useRef(false)
   const [failed, setFailed] = useState(false)
   // How much of the step's clip has been heard (0 to 1): the caption shows the words up to there, like live subtitles.
   const [heard, setHeard] = useState(0)
@@ -135,6 +141,7 @@ export function GuideProvider({ children }: { children: ReactNode }) {
   const finish = useCallback(() => {
     audio.current?.pause(); audio.current = null
     const leave = name ? TOURS[name].leave : undefined
+    pausedRef.current = false
     setName(null); setIndex(0); setSpot(null); setPaused(false); setClips(null)
     if (leave?.escape) document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
     if (leave?.page && pathRef.current !== leave.page.split('?')[0]) router.push(leave.page)
@@ -150,6 +157,7 @@ export function GuideProvider({ children }: { children: ReactNode }) {
     void fetch(`/tours/${wanted}/index.json`, { cache: 'no-cache' }).then(async response => {
       if (!response.ok) throw new Error(String(response.status))
       setClips(await response.json() as Record<string, string>)
+      pausedRef.current = false
       setPaused(false); setIndex(0); setName(wanted)
     }).catch(() => setFailed(true))
   }, [])
@@ -168,8 +176,10 @@ export function GuideProvider({ children }: { children: ReactNode }) {
       if (step.closeFirst) { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); await wait(300) }
       if (step.page && pathRef.current !== step.page.split('?')[0]) { router.push(step.page); await wait(400) }
       let element = await waitFor(step.target, step.page ? 6000 : step.open ? 400 : 3000)
+      if (!alive) return
       if (step.open) {
         const opener = await waitFor(step.open, 3000)
+        if (!alive) return
         const folded = opener?.getAttribute('aria-expanded') === 'false'
         if (opener && (!visible(element) || folded)) { press(opener); element = await waitFor(step.target, 5000) }
       }
@@ -190,7 +200,7 @@ export function GuideProvider({ children }: { children: ReactNode }) {
         sound.onended = () => { setHeard(1); after = window.setTimeout(next, 500) }
         sound.onerror = () => { setHeard(1); after = window.setTimeout(next, 5000) }
         // A browser that will not play sound before a click: show the whole sentence instead of waiting for the voice.
-        void sound.play().catch(() => { setPaused(true); setHeard(1) })
+        if (!pausedRef.current) void sound.play().catch(() => { if (alive) { pausedRef.current = true; setPaused(true); setHeard(1) } })
       } else { setHeard(1); after = window.setTimeout(next, 5000) }
       if (step.fill && element) { await wait(900); if (alive) { await doFill(element, step.fill, () => alive); place() } }
     })()
@@ -215,7 +225,10 @@ export function GuideProvider({ children }: { children: ReactNode }) {
   const togglePause = () => {
     const sound = audio.current
     if (!sound) return
-    if (sound.paused) { void sound.play(); setPaused(false) } else { sound.pause(); setPaused(true) }
+    if (sound.paused) {
+      pausedRef.current = false; setPaused(false)
+      void sound.play().catch(() => { pausedRef.current = true; setPaused(true) })
+    } else { sound.pause(); pausedRef.current = true; setPaused(true) }
   }
 
   const value = useMemo<Guide>(() => ({ play, playing: name }), [play, name])
@@ -233,7 +246,8 @@ export function GuideProvider({ children }: { children: ReactNode }) {
   const filled = phrases.filter(phrase => phrase.length > 0)
   const current = filled.find(phrase => phrase.some(position => position >= Math.max(0, said - 1))) ?? filled[filled.length - 1] ?? []
   return <GuideContext.Provider value={value}>
-    {children}
+    <div style={{ display: 'contents' }} inert={Boolean(step?.demo)}>{children}</div>
+    {step?.demo ? <Suspense fallback={null}><WorkflowDemo stage={step.demo} /></Suspense> : null}
     {failed ? <div className="tour-failed" role="alert" data-tour-ui="">{t('notReady')}</div> : null}
     {step && tour && typeof document !== 'undefined' ? createPortal(<div className="tour-layer" data-tour-ui="" role="dialog" aria-modal="false" aria-label={tour.title}>
       {spot ? <div className="tour-spot" style={{ top: spot.top, left: spot.left, width: spot.width, height: spot.height }} aria-hidden="true" /> : <div className="tour-dim" aria-hidden="true" />}

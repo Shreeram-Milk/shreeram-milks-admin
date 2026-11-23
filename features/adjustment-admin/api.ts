@@ -27,7 +27,7 @@ export const adjustmentAdminApi = {
   async create(body: { customerId: string; type: 'account_credit' | 'refund_pending' | 'manual_adjustment'; amountPaise: number; reason: string }): Promise<Adjustment> {
     return (await apiRequest<{ adjustment: Adjustment }>('/admin/prepaid-adjustments', { method: 'POST', body })).adjustment
   },
-  /** Marks it done. For a refund of a paid order, the reference is the one PhonePe showed when the refund was sent there. */
+  /** Marks non-refund adjustments done. Refunds use the verified refund API. */
   async apply(id: string, body: { providerReference: string; note: string }): Promise<Adjustment> {
     return (await apiRequest<{ adjustment: Adjustment }>(`/admin/prepaid-adjustments/${encodeURIComponent(id)}/apply`, { method: 'POST', body })).adjustment
   },

@@ -18,6 +18,7 @@ const FLOWS: Array<{ name: TourName; label: TourKey }> = [
   { name: 'flow-new-product', label: 'flowProduct' },
   { name: 'flow-credit', label: 'flowCredit' },
   { name: 'flow-cancelled', label: 'flowCancelled' },
+  { name: 'flow-scratch-cards', label: 'flowScratchCards' },
   { name: 'flow-subscription', label: 'flowSubscription' },
   ...(WALLET_ON ? [{ name: 'flow-wallet' as const, label: 'flowWallet' as const }] : []),
 ]

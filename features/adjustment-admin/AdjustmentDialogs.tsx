@@ -13,6 +13,7 @@ import { customerRecordApi, type CustomerRecord } from '../customers/api'
 import { adjustmentAdminApi, TYPE_LABELS, type Adjustment } from './api'
 import { tc } from '@/lib/i18n/common'
 import { t } from './messages'
+import { SecureRefundDialog } from '../refund-admin/RefundDialog'
 
 const SEARCH_DELAY_MS = 250
 
@@ -81,15 +82,18 @@ export function NewAdjustmentDialog({ onClose, onDone }: { onClose: () => void; 
 }
 
 export function ApplyDialog({ adjustment, onClose, onDone }: { adjustment: Adjustment; onClose: () => void; onDone: () => void }) {
-  const [reference, setReference] = useState('')
+  if (adjustment.type === 'refund_pending') return <SecureRefundDialog source={{ kind: 'adjustment', id: adjustment.id }} onClose={onClose} onDone={onDone} />
+  return <ApplyNonRefundDialog adjustment={adjustment} onClose={onClose} onDone={onDone} />
+}
+
+function ApplyNonRefundDialog({ adjustment, onClose, onDone }: { adjustment: Adjustment; onClose: () => void; onDone: () => void }) {
   const [note, setNote] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
-  const isRefund = adjustment.type === 'refund_pending'
   const submit = async () => {
     setSaving(true); setError('')
     try {
-      await adjustmentAdminApi.apply(adjustment.id, { providerReference: reference.trim(), note: note.trim() })
+      await adjustmentAdminApi.apply(adjustment.id, { providerReference: '', note: note.trim() })
       toast.success(t('markedDone')); onDone()
     } catch (failure) { setError(describeApiError(failure)) }
     setSaving(false)
@@ -97,16 +101,13 @@ export function ApplyDialog({ adjustment, onClose, onDone }: { adjustment: Adjus
   return <Dialog open onOpenChange={open => { if (!open && !saving) onClose() }}>
     <DialogContent className="record-editor-dialog">
       <form onSubmit={event => { event.preventDefault(); void submit() }} noValidate>
-        <DialogHeader><DialogTitle>{isRefund ? t('recordTitle') : t('doneTitle')}</DialogTitle>
-          <DialogDescription>{isRefund
-            ? t('refundBody', { amount: adjustment.amountPaise === null ? t('theRefund') : formatINR(adjustment.amountPaise), name: adjustment.customerName.trim() || t('theCustomer') })
-            : t('doneBody', { type: TYPE_LABELS[adjustment.type], name: adjustment.customerName.trim() || t('theCustomer'), amount: adjustment.amountPaise === null ? '' : `: ${formatINR(adjustment.amountPaise)}` })}</DialogDescription></DialogHeader>
+        <DialogHeader><DialogTitle>{t('doneTitle')}</DialogTitle>
+          <DialogDescription>{t('doneBody', { type: TYPE_LABELS[adjustment.type], name: adjustment.customerName.trim() || t('theCustomer'), amount: adjustment.amountPaise === null ? '' : `: ${formatINR(adjustment.amountPaise)}` })}</DialogDescription></DialogHeader>
         <div className="record-editor-fields one-column">
-          {isRefund && <FormField label={t('phonePeReference')} helper={t('referenceHelper')}><Input maxLength={100} value={reference} onChange={event => setReference(event.target.value)} autoFocus /></FormField>}
           <FormField label={t('note')}><Input maxLength={300} value={note} onChange={event => setNote(event.target.value)} /></FormField>
         </div>
         {error && <p className="field-error" role="alert">{error}</p>}
-        <DialogFooter className="dialog-actions"><Button type="button" variant="outline" className="secondary-button" disabled={saving} onClick={onClose}>{t('notYet')}</Button><Button type="submit" className="primary-button" disabled={saving}>{saving ? t('saving') : isRefund ? t('recordRefund') : t('markDone')}</Button></DialogFooter>
+        <DialogFooter className="dialog-actions"><Button type="button" variant="outline" className="secondary-button" disabled={saving} onClick={onClose}>{t('notYet')}</Button><Button type="submit" className="primary-button" disabled={saving}>{saving ? t('saving') : t('markDone')}</Button></DialogFooter>
       </form>
     </DialogContent>
   </Dialog>

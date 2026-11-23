@@ -3,7 +3,7 @@ import { liveLabels } from '@/lib/i18n/core'
 import { t, type WalletKey } from './messages'
 
 export type RefundStatus = 'requested' | 'sent' | 'cancelled'
-/** What staff see: "sent" becomes "In their bank" once PhonePe confirms the money arrived (live keys only). */
+/** Provider-confirmed completion is separate from a historical manually recorded refund. */
 export type RefundStage = RefundStatus | 'completed'
 export const stageOf = (refund: { status: RefundStatus; completedAt: string | null }): RefundStage => (refund.status === 'sent' && refund.completedAt ? 'completed' : refund.status)
 
@@ -42,10 +42,6 @@ export const walletAdminApi = {
   },
   async refund(refundId: string): Promise<RefundDetail> {
     return (await apiRequest<{ request: RefundDetail }>(`/admin/wallet/refund-requests/${id(refundId)}`)).request
-  },
-  /** Only after each refund was sent in the PhonePe dashboard. */
-  async markSent(refundId: string, body: { parts: Array<{ paymentId: string; amountPaise: number; providerReference: string }>; note: string }): Promise<WalletRefund> {
-    return (await apiRequest<{ request: WalletRefund }>(`/admin/wallet/refund-requests/${id(refundId)}/sent`, { method: 'POST', body })).request
   },
   async cancel(refundId: string, body: { note: string }): Promise<WalletRefund> {
     return (await apiRequest<{ request: WalletRefund }>(`/admin/wallet/refund-requests/${id(refundId)}/cancel`, { method: 'POST', body })).request
