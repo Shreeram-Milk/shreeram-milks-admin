@@ -35,7 +35,6 @@ const peopleItems: NavEntry[] = [
 const setupItems: NavEntry[] = [
   { label: 'categories', href: '/configuration/categories', icon: Tags, help: 'categories' },
   { label: 'deliverySlots', href: '/operations/delivery-slots', icon: Truck, help: 'deliverySlots' },
-  { label: 'deliveryPlaces', href: '/operations/delivery-places', icon: MapPin },
   { label: 'deliveryAreas', href: '/operations/service-areas', icon: MapPin, help: 'deliveryAreas' },
   { label: 'orderByTimes', href: '/operations/cutoff-rules', icon: Timer, help: 'orderByTimes' },
   { label: 'trialPlans', href: '/configuration/trial-plans', icon: Package, help: 'trialPlans' },
