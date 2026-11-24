@@ -1,3 +1,4 @@
+import type { DeliveryDetails } from '@/lib/delivery-details'
 import { apiRequest } from '@/lib/api-client'
 import type { ListResult } from '../configuration/api'
 
@@ -11,9 +12,11 @@ export type CustomerRecord = {
   lastSignInAt: string | null; createdAt: string; updatedAt: string
 }
 
-/** One address the customer saved in the app. Staff can read these but not change them. */
+/** One address the customer saved in the app. Staff can assign a reviewed delivery group without changing the written address. */
 export type CustomerRecordAddress = {
   id: string; label: 'home' | 'work' | 'other'; recipientName: string; recipientPhone: string
+  deliveryDetails?: DeliveryDetails; deliveryDetailsConfirmed?: boolean
+  addressKind?: 'society' | 'independent' | 'unspecified'; deliveryPlaceId?: string | null; deliveryPlaceName?: string; locality?: string
   line1: string; line2: string; landmark: string; city: string; pinCode: string; isDefault: boolean
 }
 export type CustomerRecordInstructions = {
@@ -37,5 +40,6 @@ export const customerRecordApi = {
   },
   async get(id: string): Promise<CustomerRecord> { return (await apiRequest<{ customer: CustomerRecord }>(`/admin/customers/${encodeURIComponent(id)}`)).customer },
   addresses(id: string): Promise<CustomerRecordAddresses> { return apiRequest<CustomerRecordAddresses>(`/admin/customers/${encodeURIComponent(id)}/addresses`) },
+  assignDeliveryPlace: (customerId: string, addressId: string, deliveryPlaceId: string | null) => apiRequest(`/admin/customers/${encodeURIComponent(customerId)}/addresses/${encodeURIComponent(addressId)}/delivery-place`, { method: 'PATCH', body: { deliveryPlaceId } }),
   async update(id: string, payload: CustomerRecordPayload): Promise<CustomerRecord> { return (await apiRequest<{ customer: CustomerRecord }>(`/admin/customers/${encodeURIComponent(id)}`, { method: 'PUT', body: payload })).customer },
 }

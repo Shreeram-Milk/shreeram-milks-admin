@@ -115,14 +115,14 @@ export function OrderList() {
       {total === 0
         ? <div className="product-state"><strong>{searching ? t('noSearchMatch') : narrowed ? t('noFilterMatch') : day === today ? t('noOrdersToday') : t('noOrdersOn', { day: formatWeekdayDate(day) })}</strong><span>{searching || narrowed ? t('tryFewerFilters') : t('ordersAppear')}</span>{searching || narrowed ? <Button className="secondary-button" variant="outline" onClick={clear}>{t('clear')}</Button> : null}</div>
         : <>
-          <div className="table-card product-list-table-card"><Table className="config-table order-table">
+          <div className="table-card product-list-table-card"><Table className="config-table order-table mobile-record-table">
             <TableHeader><TableRow><TableHead>{t('customer')}</TableHead><TableHead>{t('what')}</TableHead><TableHead>{searching ? t('delivery') : t('window')}</TableHead><TableHead>{t('type')}</TableHead><TableHead>{t('status')}</TableHead></TableRow></TableHeader>
             <TableBody>{rows.map(order => <TableRow key={order.id}>
-              <TableCell><Link className="product-name-link" href={`/orders/${order.id}`}>{order.customerName.trim() || order.recipientName || t('noName')}</Link><br /><small>{order.orderNumber} · {t('pin', { pin: order.pinCode })}</small></TableCell>
-              <TableCell>{order.items.map(item => `${item.productName} ${item.variantName} × ${item.quantity}`).join(', ')}</TableCell>
-              <TableCell>{searching ? deliveryText(order) : windowText(order)}</TableCell>
-              <TableCell><OrderTypeTag type={orderType(order)} /></TableCell>
-              <TableCell><StatusBadge status={ORDER_STATUS_TONE[order.status]}>{ORDER_STATUS_LABELS[order.status]}</StatusBadge></TableCell>
+              <TableCell data-label={t('customer')}><Link className="product-name-link" href={`/orders/${order.id}`}>{order.customerName.trim() || order.recipientName || t('noName')}</Link><br /><small>{order.orderNumber} · {t('pin', { pin: order.pinCode })}</small></TableCell>
+              <TableCell data-label={t('what')}>{order.items.map(item => `${item.productName} ${item.variantName} × ${item.quantity}`).join(', ')}</TableCell>
+              <TableCell data-label={searching ? t('delivery') : t('window')}>{searching ? deliveryText(order) : windowText(order)}</TableCell>
+              <TableCell data-label={t('type')}><OrderTypeTag type={orderType(order)} /></TableCell>
+              <TableCell data-label={t('status')}><StatusBadge status={ORDER_STATUS_TONE[order.status]}>{ORDER_STATUS_LABELS[order.status]}</StatusBadge></TableCell>
             </TableRow>)}</TableBody>
           </Table></div>
           <div className="product-pagination"><span>{t(total === 1 ? 'orderCountOne' : 'orderCountMany', { count: total })}{pageCount > 1 ? t('pageOf', { page, count: pageCount }) : ''}</span>{pageCount > 1 ? <TablePagination page={Math.min(page, pageCount)} pageCount={pageCount} onPageChange={next => update({ page: next })} /> : null}</div>

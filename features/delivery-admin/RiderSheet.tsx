@@ -18,6 +18,7 @@ import { BUSINESS_TIMEZONE, addDays, formatTime12h, formatTimestamp, formatWeekd
 import { configApi, type DeliverySlot } from '../configuration/api'
 import { riderSheetApi, sumLoad, type RiderSheet as Sheet } from '../production-admin/api'
 import { warningText } from '../production-admin/messages'
+import { needsDeliveryClarification } from './rider-stop-groups'
 import { downloadRiderSheetPdf, riderSheetFileName, type RiderPart } from './rider-sheet-pdf'
 import { t } from './messages'
 
@@ -125,7 +126,8 @@ export function RiderSheet() {
     const name = riderSheetFileName(sheet, chosen.length === 1 ? parts[0].riderName : '')
     setDownloading(true)
     try {
-      const { unsupported } = await downloadRiderSheetPdf(sheet, parts, name)
+      const { unsupported, printPreview } = await downloadRiderSheetPdf(sheet, parts, name)
+      if (printPreview) toast.success(t('unicodePrint'))
       if (unsupported > 0) toast.warning(t('pdfUnsupported'))
     } catch (failure) {
       toast.error(t('pdfFailed'), { description: failure instanceof Error ? failure.message : undefined })
@@ -157,6 +159,7 @@ export function RiderSheet() {
       {typeof state === 'object' && state.status === 'error' && <div className="product-state" role="alert"><strong>{t('sheetFailed')}</strong><span>{state.message}</span><Button className="secondary-button" variant="outline" onClick={() => setReloadKey(count => count + 1)}>{tc('tryAgain')}</Button></div>}
 
       {sheet && <>
+        {sheet.areas.some(area => area.stops.some(needsDeliveryClarification)) && <div className="setup-note attention" role="status"><div>{t('detailsClarification', { count: sheet.areas.flatMap(area => area.stops).filter(needsDeliveryClarification).length })}</div></div>}
         {sheet.status === 'final'
           ? <div className="setup-note success" role="status"><div><strong>{t('finalTitle')}</strong>{t('finalDetail', { window: sheet.slot.name, day: formatWeekdayDate(sheet.date) })}</div></div>
           : <div className="setup-note attention" role="status"><div><strong>{t('draftTitle')}</strong>{t('draftDetail', { until: sheet.closesAt ? t('until', { time: formatTimestamp(sheet.closesAt) }) : '' })}</div></div>}

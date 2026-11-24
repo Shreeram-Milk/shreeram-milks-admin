@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState, type ReactNode } from 'react'
-import { ChevronDown, ChevronLeft, ChevronRight, Database, Factory, Wallet, MapPin, Package, PackageCheck, Repeat, Settings, ShoppingBag, Tags, Timer, Truck, Users, LayoutDashboard, LogOut, Bell, CircleHelp, GalleryHorizontal, Image, LifeBuoy, Megaphone, Scale, Percent, SlidersHorizontal, Smartphone, Globe } from 'lucide-react'
+import { X, ChevronDown, ChevronLeft, ChevronRight, Database, Factory, Wallet, MapPin, Package, PackageCheck, Repeat, Settings, ShoppingBag, Tags, Timer, Truck, Users, LayoutDashboard, LogOut, Bell, CircleHelp, GalleryHorizontal, Image, LifeBuoy, Megaphone, Scale, Percent, SlidersHorizontal, Smartphone, Globe } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { Button as AdminButton } from '@/components/ui/button'
 import { InfoTip } from '@/components/shared/InfoTip'
@@ -35,6 +35,7 @@ const peopleItems: NavEntry[] = [
 const setupItems: NavEntry[] = [
   { label: 'categories', href: '/configuration/categories', icon: Tags, help: 'categories' },
   { label: 'deliverySlots', href: '/operations/delivery-slots', icon: Truck, help: 'deliverySlots' },
+  { label: 'deliveryPlaces', href: '/operations/delivery-places', icon: MapPin },
   { label: 'deliveryAreas', href: '/operations/service-areas', icon: MapPin, help: 'deliveryAreas' },
   { label: 'orderByTimes', href: '/operations/cutoff-rules', icon: Timer, help: 'orderByTimes' },
   { label: 'trialPlans', href: '/configuration/trial-plans', icon: Package, help: 'trialPlans' },
@@ -58,9 +59,10 @@ const websiteItems: NavEntry[] = [
 
 const isOn = (pathname: string, item: NavEntry) => [item.href, ...(item.also ?? [])].some(href => pathname.startsWith(href))
 
-export function AdminSidebar({ collapsed, mobileOpen, onToggleCollapse, onCloseMobile }: {
+export function AdminSidebar({ collapsed, mobileOpen, mobileNavigation = false, onToggleCollapse, onCloseMobile }: {
   collapsed: boolean
   mobileOpen: boolean
+  mobileNavigation?: boolean
   onToggleCollapse: () => void
   onCloseMobile: () => void
 }) {
@@ -81,7 +83,7 @@ export function AdminSidebar({ collapsed, mobileOpen, onToggleCollapse, onCloseM
     return <div className="nav-row">{link}<InfoTip label={label} text={setupHelp(item.help)} className="nav-info-tip" /></div>
   }
   return <aside className={`sidebar ${collapsed ? 'collapsed' : ''} ${mobileOpen ? 'mobile-open' : ''}`}>
-    <div className="brand-block"><div className="brand-mark">SR</div><div className="brand-copy"><p className="brand-name">ShreeRam Milks</p><p className="brand-subtitle">{t('adminPanel')}</p></div><AdminButton className="brand-collapse" aria-label={collapsed ? t('expandSidebar') : t('collapseSidebar')} onClick={onToggleCollapse}>{collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}</AdminButton></div>
+    <div className="brand-block"><div className="brand-mark">SR</div><div className="brand-copy"><p className="brand-name">ShreeRam Milks</p><p className="brand-subtitle">{t('adminPanel')}</p></div><AdminButton className="brand-collapse" aria-label={mobileNavigation ? t('closeNavigation') : collapsed ? t('expandSidebar') : t('collapseSidebar')} onClick={onToggleCollapse}>{mobileNavigation ? <X size={18} /> : collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}</AdminButton></div>
     <nav className="sidebar-nav" aria-label={t('mainNavigation')} data-tour="nav-main">
       <Link className={`nav-item ${pathname === '/' ? 'active' : ''}`} href="/" onClick={onCloseMobile} aria-current={pathname === '/' ? 'page' : undefined}><LayoutDashboard size={17} /><span>{t('dashboard')}</span></Link>
       <p className="nav-label">{t('everyDay')}</p>

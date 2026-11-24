@@ -75,16 +75,16 @@ function AdjustmentTable() {
       {state.total === 0
         ? <div className="product-state"><strong>{hasActiveFilters ? t('nothingMatches') : tab === 'pending' ? t('nothingToDo') : t('nothingYet')}</strong><span>{hasActiveFilters ? t('tryChanging') : t('appearOnOwn')}</span>{hasActiveFilters && <Button className="secondary-button" variant="outline" onClick={clear}>{tc('clearFilters')}</Button>}</div>
         : <>
-          <div className="table-card product-list-table-card"><Table className="config-table">
+          <div className="table-card product-list-table-card"><Table className="config-table mobile-record-table">
             <TableHeader><TableRow><TableHead>{t('customer')}</TableHead><TableHead>{t('what')}</TableHead><TableHead>{t('amount')}</TableHead><TableHead>{t('why')}</TableHead><TableHead>{t('date')}</TableHead><TableHead>{t('status')}</TableHead><TableHead>{t('actions')}</TableHead></TableRow></TableHeader>
             <TableBody>{state.rows.map(row => <TableRow key={row.id}>
-              <TableCell>{row.customerName.trim() || t('noName')}<br /><small>{row.customerPhone}</small></TableCell>
-              <TableCell>{TYPE_LABELS[row.type]}{row.orderNumber ? <><br /><small>{t('order', { number: row.orderNumber })}</small></> : null}</TableCell>
-              <TableCell>{row.amountPaise === null ? (row.quantity ? `${row.quantity} × ${row.productName ?? ''} (${row.variantName ?? ''})` : '—') : formatINR(row.amountPaise)}</TableCell>
-              <TableCell>{row.reason}</TableCell>
-              <TableCell>{formatDisplayDate(row.effectiveDate)}</TableCell>
-              <TableCell><StatusBadge status={STATUS_TONE[row.status]}>{STATUS_LABELS[row.status]}</StatusBadge></TableCell>
-              <TableCell>{row.status === 'pending' && <div className="row-actions product-row-actions"><Button variant="outline" className="secondary-button" onClick={() => setApplying(row)}>{row.type === 'refund_pending' ? t('recordRefund') : t('markDone')}</Button><Button variant="ghost" className="text-button" onClick={() => setCancelling(row)}>{t('cancel')}</Button></div>}</TableCell>
+              <TableCell data-label={t('customer')}>{row.customerName.trim() || t('noName')}<br /><small>{row.customerPhone}</small></TableCell>
+              <TableCell data-label={t('what')}>{TYPE_LABELS[row.type]}{row.orderNumber ? <><br /><small>{t('order', { number: row.orderNumber })}</small></> : null}</TableCell>
+              <TableCell data-label={t('amount')}>{row.amountPaise === null ? (row.quantity ? `${row.quantity} × ${row.productName ?? ''} (${row.variantName ?? ''})` : '—') : formatINR(row.amountPaise)}</TableCell>
+              <TableCell data-label={t('why')}>{row.reason}</TableCell>
+              <TableCell data-label={t('date')}>{formatDisplayDate(row.effectiveDate)}</TableCell>
+              <TableCell data-label={t('status')}><StatusBadge status={STATUS_TONE[row.status]}>{STATUS_LABELS[row.status]}</StatusBadge></TableCell>
+              <TableCell data-label={t('actions')}>{row.status === 'pending' && <div className="row-actions product-row-actions"><Button variant="outline" className="secondary-button" onClick={() => setApplying(row)}>{row.type === 'refund_pending' ? t('recordRefund') : t('markDone')}</Button><Button variant="ghost" className="text-button" onClick={() => setCancelling(row)}>{t('cancel')}</Button></div>}</TableCell>
             </TableRow>)}</TableBody>
           </Table></div>
           <div className="product-pagination"><span>{t(state.total === 1 ? 'itemOne' : 'itemMany', { count: state.total })}{t('pageOf', { page, count: pageCount })}</span><TablePagination page={Math.min(page, pageCount)} pageCount={pageCount} onPageChange={next => update({ page: next })} /></div>

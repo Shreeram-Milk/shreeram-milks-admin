@@ -1,5 +1,9 @@
 'use client'
 
+import { useState } from 'react'
+import { AddressPlaceDialog } from '@/features/delivery-places/AddressPlaceDialog'
+import { t as tp } from '@/features/delivery-places/messages'
+import type { CustomerRecordAddress } from '../api'
 import { Button } from '@/components/ui/button'
 import { DetailRows } from '@/components/shared/DetailRows'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -9,8 +13,9 @@ import { ADDRESS_LABELS, DROP_LOCATION_LABELS, HANDOFF_LABELS, formatCustomerPho
 import { tc } from '@/lib/i18n/common'
 import { t } from '../messages'
 
-/** Where the customer lives and how they want deliveries handled. Read-only for staff: the customer edits these in the app. */
+/** Where the customer lives and how they want deliveries handled. Street details stay customer-owned; staff may assign a reviewed delivery group. */
 export function CustomerAddressesCard({ customerId }: { customerId: string }) {
+  const [assigning, setAssigning] = useState<CustomerRecordAddress | null>(null)
   const { state, reload } = useLoaded(() => customerRecordApi.addresses(customerId), customerId)
   return <section className="form-card" aria-labelledby="customer-addresses-title">
     <div className="form-section-header"><div className="form-section-heading"><div><h2 id="customer-addresses-title">{t('addressesTitle')}</h2><p>{t('addressesIntro')}</p></div></div></div>
@@ -24,8 +29,13 @@ export function CustomerAddressesCard({ customerId }: { customerId: string }) {
           <DetailRows rows={[
             { label: t('receiver'), value: `${address.recipientName} · ${formatCustomerPhone(address.recipientPhone)}` },
             { label: t('address'), value: [address.line1, address.line2, address.landmark].filter(Boolean).join(', ') },
+            { label: tp('deliveryDetails'), value: address.deliveryDetailsConfirmed ? tp('detailsConfirmed') : tp('needsClarification') },
+            ...(['building', 'towerWing', 'floor', 'unit', 'lane'] as const).map(field => ({ label: tp(field), value: address.deliveryDetails?.[field] || tp('notProvided') })),
+            { label: tp('currentGroup'), value: address.deliveryPlaceName || tp('clear') },
             { label: t('cityPin'), value: [address.city, address.pinCode].filter(Boolean).join(' · ') },
           ]} />
+          {!address.deliveryDetailsConfirmed && <p className="help-text">{tp('clarificationHint')}</p>}
+          <Button type="button" variant="outline" className="secondary-button" onClick={() => setAssigning(address)}>{tp('assign')}</Button>
         </div>)}
       <h3>{t('deliveryNotes')}</h3>
       <DetailRows rows={[
@@ -37,5 +47,6 @@ export function CustomerAddressesCard({ customerId }: { customerId: string }) {
         { label: t('extraNote'), value: state.data.instructions.additionalInstructions || '—' },
       ]} />
     </>}
+    {assigning && <AddressPlaceDialog customerId={customerId} address={assigning} onClose={() => setAssigning(null)} onSaved={() => { setAssigning(null); reload() }} />}
   </section>
 }

@@ -92,6 +92,7 @@ export function GuideMenu() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild><Button variant="outline" className="secondary-button tour-button" data-tour="guide-menu"><GraduationCap size={16} aria-hidden="true" />{t('guides')}</Button></DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="guide-menu">
+        {here ? <DropdownMenuItem className="mobile-guide-page" disabled={playing === here} onSelect={() => play(here)}><Play size={15} />{t('thisPage')}</DropdownMenuItem> : null}
         <DropdownMenuLabel>{t('guidesHint')}</DropdownMenuLabel>
         <DropdownMenuSeparator />
         {FLOWS.filter(flow => flow.name in TOURS).map((flow, index) => <DropdownMenuItem key={flow.name} onSelect={() => play(flow.name)}><span className="guide-menu-number">{index + 1}</span>{t(flow.label)}</DropdownMenuItem>)}

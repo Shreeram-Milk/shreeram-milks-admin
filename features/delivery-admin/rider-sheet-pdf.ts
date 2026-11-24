@@ -1,5 +1,9 @@
 import type { jsPDF as JsPdf } from 'jspdf'
 import type { Cell, CellInput, RowInput } from 'jspdf-autotable'
+import { printUnicodeRiderSheet } from './rider-sheet-print'
+import { riderDeliverySections, riderStopAddress, riderLoadText, type RiderSection } from './rider-stop-groups'
+import type { RiderStop } from '../production-admin/api'
+
 import { formatTime12h } from '@/lib/business-time'
 import type { RiderArea, RiderItem, RiderSheet } from '../production-admin/api'
 
@@ -89,7 +93,12 @@ export function riderSheetFileName(sheet: RiderSheet, riderName: string): string
  * so a row only carries numbers; each PIN code is a tinted divider row with its own totals. Long addresses wrap and the row grows.
  * Returns how many characters could not be shown.
  */
-export async function downloadRiderSheetPdf(sheet: RiderSheet, parts: RiderPart[], fileName: string): Promise<{ unsupported: number }> {
+export async function downloadRiderSheetPdf(sheet: RiderSheet, parts: RiderPart[], fileName: string): Promise<{ unsupported: number; printPreview?: boolean }> {
+  // Browser shaping is required for Gujarati; never replace a customer's address with question marks.
+  if (/[^\x20-\x7e\u00a0-\u00ff\n\r\t‘’“”‐-―…]/u.test(JSON.stringify({ sheet, parts }))) {
+    printUnicodeRiderSheet(sheet, parts, fileName)
+    return { unsupported: 0, printPreview: true }
+  }
   // Loaded only when someone downloads, so the page itself stays light.
   const [{ jsPDF }, { autoTable }] = await Promise.all([import('jspdf'), import('jspdf-autotable')])
   const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true })
@@ -130,19 +139,32 @@ export async function downloadRiderSheetPdf(sheet: RiderSheet, parts: RiderPart[
           : [{ content: text(area.load.map(item => `${item.quantity} x ${item.productName} ${item.variantName}`).join(',  ')), styles: band }]),
         { content: '', styles: band },
       ])
-      for (const stop of area.stops) {
+      const addStop = (stop: RiderStop) => {
         const give: CellInput[] = asColumns
           ? products.map(product => ({ content: String(countOf(stop.items, product.key) || ''), styles: { halign: 'center' as const, valign: 'middle' as const, fontSize: 11, fontStyle: 'bold' as const, textColor: INK } }))
           : [{ content: text(stop.items.map(item => `${item.quantity} x ${item.productName} ${item.variantName}`).join('\n')), styles: { fontStyle: 'bold' as const, textColor: INK } }]
         body.push([
           { content: String(number), styles: { halign: 'center', textColor: MUTED } },
-          { content: text(`${stop.recipientName}${stop.recipientPhone ? `\n${stop.recipientPhone}` : ''}${stop.kind === 'trial' ? '\nTrial' : ''}`), styles: { fontStyle: 'bold', textColor: INK } },
-          { content: text([stop.addressLine1, stop.addressLine2, stop.landmark].filter(Boolean).join(', ')) },
+          { content: text(`${stop.recipientName}${stop.recipientPhone ? `\n${stop.recipientPhone}` : ''}${stop.kind === 'trial' ? '\nTrial' : ''}${!stop.deliveryDetailsConfirmed ? '\nDetails need confirmation' : ''}`), styles: { fontStyle: 'bold', textColor: INK } },
+          { content: text(riderStopAddress(stop)) },
           ...give,
           '',
         ])
         number += 1
       }
+      const addSection = (section: RiderSection) => {
+        if (section.label) {
+          const style = { fillColor: section.level === 'place' ? SOFT : WHITE, textColor: INK, fontStyle: 'bold' as const, fontSize: section.level === 'place' ? 8.5 : 7.5, cellPadding: 2.5 }
+          body.push([
+            { content: text(`${section.label} - ${plural(section.stops.length, 'delivery', 'deliveries')}`), colSpan: 3, styles: style },
+            ...(asColumns ? products.map(product => ({ content: String(countOf(section.load, product.key) || ''), styles: { ...style, halign: 'center' as const } })) : [{ content: text(riderLoadText(section.load)), styles: style }]),
+            { content: '', styles: style },
+          ])
+        }
+        if (section.children.length) section.children.forEach(addSection)
+        else section.stops.forEach(addStop)
+      }
+      riderDeliverySections(area.stops).forEach(addSection)
     }
 
     autoTable(doc, {
@@ -164,7 +186,7 @@ export async function downloadRiderSheetPdf(sheet: RiderSheet, parts: RiderPart[
         [doneColumn]: { cellWidth: 13 },
       },
       didDrawCell: data => {
-        if (data.section !== 'body' || isBand(data.cell)) return
+        if (data.section !== 'body' || isBand(data.cell) || isBand(data.row.cells[0])) return
         // The phone and any trial mark under a name are smaller and grey, so the name stands out.
         if (data.column.index === 1) quietLines(doc, font, data.cell, 1, MUTED)
         if (data.column.index === doneColumn) {
@@ -234,7 +256,7 @@ function drawLoad(doc: JsPdf, font: string, y: number, load: string, note: strin
 }
 
 /** PIN code divider rows are the ones painted mint. */
-const isBand = (cell: Cell) => Array.isArray(cell.styles.fillColor) && cell.styles.fillColor.every((value, index) => value === MINT[index])
+const isBand = (cell: Cell | undefined) => Boolean(cell && (cell.colSpan > 1 || Array.isArray(cell.styles.fillColor) && cell.styles.fillColor.every((value, index) => value === MINT[index])))
 
 /**
  * autoTable draws a cell in one colour. The lines from `from` on are painted over smaller and in a quieter colour, at the place

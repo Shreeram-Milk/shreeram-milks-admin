@@ -13,6 +13,7 @@ import { creditMessages } from './credit-admin/messages'
 import { customerMessages } from './customers/messages'
 import { dashboardMessages } from './dashboard/messages'
 import { deliveryMessages } from './delivery-admin/messages'
+import { messages as deliveryPlaceMessages } from './delivery-places/messages'
 import { faqMessages } from './faqs/messages'
 import { moneyMessages } from './money/messages'
 import { refundMessages } from './refund-admin/messages'
@@ -31,7 +32,7 @@ import { tourMessages } from './tour/messages'
 
 const lists: Array<[string, Messages<string>]> = Object.entries({
   commonMessages, tourMessages, refundMessages, layoutMessages, adjustmentMessages, appSettingsMessages, authMessages, bannerMessages, categoryMessages, configMessages, creditMessages,
-  customerMessages, dashboardMessages, deliveryMessages, faqMessages, moneyMessages, notificationMessages, offerMessages, onboardingMessages, orderMessages,
+  customerMessages, dashboardMessages, deliveryMessages, deliveryPlaceMessages, faqMessages, moneyMessages, notificationMessages, offerMessages, onboardingMessages, orderMessages,
   paymentMessages, policyMessages, productionMessages, productMessages, subscriptionMessages, supportMessages, websiteMessages,
 })
 

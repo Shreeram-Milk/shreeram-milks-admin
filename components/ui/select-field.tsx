@@ -3,7 +3,7 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 export type SelectFieldOption = { value: string; label: string; disabled?: boolean }
-export function SelectField({ value, onChange, options, placeholder, label, className = '', id }: {
+export function SelectField({ value, onChange, options, placeholder, label, className = '', id, disabled = false }: {
   value: string
   onChange: (value: string) => void
   options: SelectFieldOption[]
@@ -11,8 +11,9 @@ export function SelectField({ value, onChange, options, placeholder, label, clas
   label: string
   className?: string
   id?: string
+  disabled?: boolean
 }) {
-  return <Select value={value || undefined} onValueChange={onChange}>
+  return <Select disabled={disabled} value={value || undefined} onValueChange={onChange}>
     <SelectTrigger id={id} className={className || 'w-full'} aria-label={label}>
       <SelectValue placeholder={placeholder} />
     </SelectTrigger>

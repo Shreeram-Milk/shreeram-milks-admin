@@ -49,7 +49,10 @@ const GuideContext = createContext<Guide>({ play: () => undefined, playing: null
 export const useGuide = () => useContext(GuideContext)
 
 const wait = (ms: number) => new Promise(resolve => window.setTimeout(resolve, ms))
-const find = (target: string): HTMLElement | null => target.startsWith('css:') ? document.querySelector<HTMLElement>(target.slice(4)) : document.querySelector<HTMLElement>(`[data-tour="${target}"]`)
+const find = (target: string): HTMLElement | null => {
+  const selector = target.startsWith('css:') ? target.slice(4) : `[data-tour="${target}"]`
+  return [...document.querySelectorAll<HTMLElement>(selector)].find(element => element.getClientRects().length > 0) ?? null
+}
 const visible = (element: HTMLElement | null) => Boolean(element && (element.offsetWidth > 0 || element.offsetHeight > 0))
 async function waitFor(target: string, ms = 6000): Promise<HTMLElement | null> {
   for (let spent = 0; spent < ms; spent += 120) {
@@ -140,6 +143,7 @@ export function GuideProvider({ children }: { children: ReactNode }) {
 
   const finish = useCallback(() => {
     audio.current?.pause(); audio.current = null
+    window.dispatchEvent(new CustomEvent('admin:guide-navigation', { detail: false }))
     const leave = name ? TOURS[name].leave : undefined
     pausedRef.current = false
     setName(null); setIndex(0); setSpot(null); setPaused(false); setClips(null)
@@ -175,6 +179,8 @@ export function GuideProvider({ children }: { children: ReactNode }) {
       setHeard(0)
       if (step.closeFirst) { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); await wait(300) }
       if (step.page && pathRef.current !== step.page.split('?')[0]) { router.push(step.page); await wait(400) }
+      // Navigation lives in a modal drawer on phones; open it only while a menu step is being explained.
+      window.dispatchEvent(new CustomEvent('admin:guide-navigation', { detail: step.target.startsWith('nav-') || Boolean(step.open?.startsWith('nav-')) }))
       let element = await waitFor(step.target, step.page ? 6000 : step.open ? 400 : 3000)
       if (!alive) return
       if (step.open) {

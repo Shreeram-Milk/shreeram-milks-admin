@@ -1,3 +1,4 @@
+import type { DeliveryDetails } from '@/lib/delivery-details'
 import { apiRequest } from '@/lib/api-client'
 import { t } from './messages'
 
@@ -66,6 +67,9 @@ export type RiderStop = {
   orderId: string; orderNumber: string; recipientName: string; recipientPhone: string
   addressLine1: string; addressLine2: string; landmark: string; city: string; pinCode: string; doorstepNote: string
   kind: 'one_time' | 'subscription' | 'trial'; items: RiderItem[]
+  deliveryDetails?: DeliveryDetails; deliveryDetailsConfirmed?: boolean
+  addressKind?: 'society' | 'independent' | 'unspecified'; deliveryPlaceId?: string | null; deliveryPlaceName?: string; locality?: string
+  deliveryPlaceGroupId?: string | null; deliveryPlaceGroupName?: string
 }
 /** One PIN code: its houses in visiting order and what to load for them. */
 export type RiderArea = { pinCode: string; city: string; stops: RiderStop[]; load: RiderItem[] }
