@@ -1,7 +1,7 @@
 import type { jsPDF as JsPdf } from 'jspdf'
 import type { Cell, CellInput, RowInput } from 'jspdf-autotable'
 import { printUnicodeRiderSheet } from './rider-sheet-print'
-import { riderDeliverySections, riderStopAddress, riderLoadText, type RiderSection } from './rider-stop-groups'
+import { riderDeliverySections, riderStopAddress, type RiderSection } from './rider-stop-groups'
 import type { RiderStop } from '../production-admin/api'
 
 import { formatTime12h } from '@/lib/business-time'
@@ -11,20 +11,18 @@ import type { RiderArea, RiderItem, RiderSheet } from '../production-admin/api'
 export type RiderPart = { riderName: string; areas: RiderArea[]; load: RiderItem[] }
 
 type Rgb = [number, number, number]
-const BRAND: Rgb = [240, 120, 17]
+const BRAND: Rgb = [36, 91, 175]
 const INK: Rgb = [17, 24, 39]
 const BODY: Rgb = [55, 65, 81]
 const MUTED: Rgb = [107, 114, 128]
 const GRID: Rgb = [218, 222, 228]
-const MINT: Rgb = [236, 248, 243]
-const MINT_INK: Rgb = [8, 80, 65]
+const MINT: Rgb = [237, 244, 255]
+const MINT_INK: Rgb = [28, 71, 127]
 const AMBER: Rgb = [146, 64, 14]
 const AMBER_BG: Rgb = [254, 243, 199]
 const SOFT: Rgb = [247, 248, 250]
 const WHITE: Rgb = [255, 255, 255]
 const MARGIN = 14
-/** Up to this many product sizes each get their own number column; more than that are written out in one "Give" column. */
-const MAX_PRODUCT_COLUMNS = 3
 
 /** The admin's own font (Plus Jakarta Sans), served from /public and fetched only when someone downloads a sheet. */
 const FONT = 'PlusJakarta'
@@ -78,8 +76,7 @@ function plainText(value: string, unsupported: { count: number }): string {
 /** "Thu, 29 Oct 2026" in English, whatever the admin language, because the PDF font has no Gujarati letters. */
 const englishDate = (date: string) => new Intl.DateTimeFormat('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${date}T00:00:00Z`))
 const plural = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`
-const keyOf = (item: Pick<RiderItem, 'productId' | 'variantId'>) => `${item.productId}|${item.variantId}`
-const countOf = (items: RiderItem[], key: string) => items.filter(item => keyOf(item) === key).reduce((sum, item) => sum + item.quantity, 0)
+const loadText = (items: RiderItem[]) => items.map(item => `${item.productName} | Size: ${item.variantName || '-'} | Qty: ${item.quantity}`).join('\n')
 
 /** File name the browser saves: "Rider sheet - Evening - 29 Oct 2026 - Ramesh.pdf". Characters Windows refuses are removed. */
 export function riderSheetFileName(sheet: RiderSheet, riderName: string): string {
@@ -89,14 +86,14 @@ export function riderSheetFileName(sheet: RiderSheet, riderName: string): string
 
 /**
  * Builds the rider sheet PDF in the browser (nothing runs on the server) and saves it. Each rider starts on a new page: a short
- * header, one line saying what to load, then one table of houses in visiting order. Each product size is named once, as a column,
- * so a row only carries numbers; each PIN code is a tinted divider row with its own totals. Long addresses wrap and the row grows.
+ * header, a load summary, then houses in visiting order. Product, size and quantity have separate columns;
+ * multiple products share one customer's identity and address. Long addresses wrap and the row grows.
  * Returns how many characters could not be shown.
  */
 export async function downloadRiderSheetPdf(sheet: RiderSheet, parts: RiderPart[], fileName: string): Promise<{ unsupported: number; printPreview?: boolean }> {
   // Browser shaping is required for Gujarati; never replace a customer's address with question marks.
   if (/[^\x20-\x7e\u00a0-\u00ff\n\r\t‘’“”‐-―…]/u.test(JSON.stringify({ sheet, parts }))) {
-    printUnicodeRiderSheet(sheet, parts, fileName)
+    await printUnicodeRiderSheet(sheet, parts, fileName)
     return { unsupported: 0, printPreview: true }
   }
   // Loaded only when someone downloads, so the page itself stays light.
@@ -112,19 +109,15 @@ export async function downloadRiderSheetPdf(sheet: RiderSheet, parts: RiderPart[
     if (partIndex > 0) doc.addPage()
     const houses = part.areas.reduce((sum, area) => sum + area.stops.length, 0)
     let y = drawHeader(doc, font, { title: text(part.riderName) || windowLabel, subtitle: part.riderName ? `${windowLabel}  ·  ${date}` : date, isFinal: sheet.status === 'final' })
-    y = drawLoad(doc, font, y, text(part.load.map(item => `${item.quantity} x ${item.productName} ${item.variantName}`).join('    ·    ')), `${plural(part.areas.length, 'area', 'areas')}  ·  ${plural(houses, 'house', 'houses')}`)
+    y = drawLoad(doc, font, y, text(loadText(part.load)), `${plural(part.areas.length, 'area', 'areas')}  ·  ${plural(houses, 'house', 'houses')}`)
 
-    // Product sizes this rider carries, in load order. With few of them each gets a number column; otherwise one text column.
-    const products = part.load.map(item => ({ key: keyOf(item), label: text(`${item.productName} ${item.variantName}`) }))
-    const asColumns = products.length <= MAX_PRODUCT_COLUMNS
-    const giveColumns = asColumns ? products.length : 1
-    const doneColumn = 3 + giveColumns
+    const doneColumn = 6
 
     const head: RowInput = [
       { content: '#', styles: { halign: 'center' } },
       'Customer',
       'Address',
-      ...(asColumns ? products.map(product => ({ content: product.label, styles: { halign: 'center' as const } })) : ['Give']),
+      'Product', 'Size / Variant', 'Qty',
       { content: 'Done', styles: { halign: 'center' } },
     ]
 
@@ -133,32 +126,30 @@ export async function downloadRiderSheetPdf(sheet: RiderSheet, parts: RiderPart[
     for (const area of part.areas) {
       const band = { fillColor: MINT, textColor: MINT_INK, fontStyle: 'bold' as const, fontSize: 8.5, valign: 'middle' as const, cellPadding: { top: 2, bottom: 2, left: 2.5, right: 2.5 } }
       body.push([
-        { content: text(`PIN ${area.pinCode}${area.city ? `  ·  ${area.city}` : ''}  ·  ${plural(area.stops.length, 'house', 'houses')}`), colSpan: 3, styles: band },
-        ...(asColumns
-          ? products.map(product => ({ content: String(countOf(area.load, product.key) || ''), styles: { ...band, halign: 'center' as const } }))
-          : [{ content: text(area.load.map(item => `${item.quantity} x ${item.productName} ${item.variantName}`).join(',  ')), styles: band }]),
-        { content: '', styles: band },
+        { content: text(`PIN ${area.pinCode}${area.city ? `  ·  ${area.city}` : ''}  ·  ${plural(area.stops.length, 'house', 'houses')}`), colSpan: 7, styles: band },
       ])
       const addStop = (stop: RiderStop) => {
-        const give: CellInput[] = asColumns
-          ? products.map(product => ({ content: String(countOf(stop.items, product.key) || ''), styles: { halign: 'center' as const, valign: 'middle' as const, fontSize: 11, fontStyle: 'bold' as const, textColor: INK } }))
-          : [{ content: text(stop.items.map(item => `${item.quantity} x ${item.productName} ${item.variantName}`).join('\n')), styles: { fontStyle: 'bold' as const, textColor: INK } }]
-        body.push([
-          { content: String(number), styles: { halign: 'center', textColor: MUTED } },
-          { content: text(`${stop.recipientName}${stop.recipientPhone ? `\n${stop.recipientPhone}` : ''}${stop.kind === 'trial' ? '\nTrial' : ''}${!stop.deliveryDetailsConfirmed ? '\nDetails need confirmation' : ''}`), styles: { fontStyle: 'bold', textColor: INK } },
-          { content: text(riderStopAddress(stop)) },
-          ...give,
-          '',
-        ])
+        const span = Math.max(1, stop.items.length)
+        const identity: CellInput[] = [
+          { content: String(number), rowSpan: span, styles: { halign: 'center', textColor: MUTED } },
+          { content: text(`${stop.recipientName}${stop.recipientPhone ? `\n${stop.recipientPhone}` : ''}${stop.kind === 'trial' ? '\nTrial' : ''}${!stop.deliveryDetailsConfirmed ? '\nDetails need confirmation' : ''}`), rowSpan: span, styles: { fontStyle: 'bold', textColor: INK } },
+          { content: text(riderStopAddress(stop)), rowSpan: span },
+        ]
+        if (!stop.items.length) body.push([...identity, '-', '-', '-', ''])
+        stop.items.forEach((item, index) => body.push([
+          ...(index === 0 ? identity : []),
+          { content: text(item.productName), styles: { fontStyle: 'bold', textColor: INK } },
+          { content: text(item.variantName || '-'), styles: { halign: 'center' } },
+          { content: String(item.quantity), styles: { halign: 'center', fontStyle: 'bold', fontSize: 12, textColor: INK } },
+          ...(index === 0 ? [{ content: '', rowSpan: span }] : []),
+        ]))
         number += 1
       }
       const addSection = (section: RiderSection) => {
         if (section.label) {
           const style = { fillColor: section.level === 'place' ? SOFT : WHITE, textColor: INK, fontStyle: 'bold' as const, fontSize: section.level === 'place' ? 8.5 : 7.5, cellPadding: 2.5 }
           body.push([
-            { content: text(`${section.label} - ${plural(section.stops.length, 'delivery', 'deliveries')}`), colSpan: 3, styles: style },
-            ...(asColumns ? products.map(product => ({ content: String(countOf(section.load, product.key) || ''), styles: { ...style, halign: 'center' as const } })) : [{ content: text(riderLoadText(section.load)), styles: style }]),
-            { content: '', styles: style },
+            { content: text(`${section.label} - ${plural(section.stops.length, 'delivery', 'deliveries')}`), colSpan: 7, styles: style },
           ])
         }
         if (section.children.length) section.children.forEach(addSection)
@@ -180,9 +171,11 @@ export async function downloadRiderSheetPdf(sheet: RiderSheet, parts: RiderPart[
       bodyStyles: { fillColor: WHITE },
       columnStyles: {
         0: { cellWidth: 8 },
-        1: { cellWidth: 40 },
+        1: { cellWidth: 32 },
         2: { cellWidth: 'auto' },
-        ...Object.fromEntries(Array.from({ length: giveColumns }, (_, index) => [3 + index, { cellWidth: asColumns ? 22 : 50 }])),
+        3: { cellWidth: 32 },
+        4: { cellWidth: 18 },
+        5: { cellWidth: 12 },
         [doneColumn]: { cellWidth: 13 },
       },
       didDrawCell: data => {

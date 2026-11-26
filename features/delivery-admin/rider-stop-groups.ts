@@ -2,7 +2,7 @@ import { sumLoad, type RiderItem } from '../production-admin/api'
 import type { DeliveryDetails } from '@/lib/delivery-details'
 import type { RiderStop } from '../production-admin/api'
 
-export type RiderStopGroup = { key: string; name: string; source: 'saved' | 'exact-address'; stops: RiderStop[] }
+export type RiderStopGroup = { key: string; name: string; source: 'saved' | 'exact-address' | 'ai' | 'ai-review'; stops: RiderStop[] }
 /** Formatting differences only. Never remove flat numbers, punctuation, landmarks or words to guess a building. */
 const normalize = (value: string) => value.normalize('NFC').trim().replace(/\s+/g, ' ').toLocaleLowerCase('en-IN')
 
@@ -10,6 +10,13 @@ const normalize = (value: string) => value.normalize('NFC').trim().replace(/\s+/
 export function groupRiderStops(stops: RiderStop[]): RiderStopGroup[] {
   const groups = new Map<string, RiderStopGroup>()
   stops.forEach((stop, index) => {
+    if (stop.deliveryRouting) {
+      const route = stop.deliveryRouting
+      const key = route.needsReview ? `${route.groupKey}:${index}` : route.groupKey
+      const name = route.needsReview ? 'Address needs clarification' : [route.place, route.locality].filter(Boolean).join(' · ')
+      const group = groups.get(key) ?? { key, name, source: route.needsReview ? 'ai-review' : 'ai', stops: [] }
+      group.stops.push(stop); groups.set(key, group); return
+    }
     const placeId = stop.deliveryPlaceGroupId || stop.deliveryPlaceId
     const saved = Boolean(placeId && (stop.addressKind === 'society' || stop.addressKind === 'independent'))
     const written = [stop.addressLine1, stop.addressLine2, stop.city].map(normalize)
@@ -35,7 +42,9 @@ export function riderStopAddress(stop: RiderStop): string {
 
 export type RiderSection = { key: string; label: string; level: 'place' | 'lane' | 'building' | 'floor'; stops: RiderStop[]; load: RiderItem[]; children: RiderSection[] }
 const collator = new Intl.Collator('en-IN', { numeric: true, sensitivity: 'base' })
-const confirmed = (stop: RiderStop): DeliveryDetails => stop.deliveryDetailsConfirmed ? stop.deliveryDetails ?? {} : {}
+const confirmed = (stop: RiderStop): DeliveryDetails => stop.deliveryRouting && !stop.deliveryRouting.needsReview
+  ? { ...stop.deliveryDetails, building: stop.deliveryRouting.building, towerWing: stop.deliveryRouting.towerWing, floor: stop.deliveryRouting.floor, lane: stop.deliveryRouting.lane }
+  : stop.deliveryDetailsConfirmed ? stop.deliveryDetails ?? {} : {}
 const compareWritten = (left: string, right: string) => !left && right ? 1 : left && !right ? -1 : collator.compare(left, right)
 /** Exact identities only; natural ordering changes visit order, never the address or product quantities. */
 function partition(stops: RiderStop[], fields: Array<keyof DeliveryDetails>, level: RiderSection['level'], label: (values: string[]) => string): RiderSection[] {
@@ -51,7 +60,7 @@ function partition(stops: RiderStop[], fields: Array<keyof DeliveryDetails>, lev
       const order = compareWritten(a.values[index], b.values[index]); if (order) return order
     }
     return 0
-  }).map(([key, bucket]) => ({ key: `${level}:${key}`, label: label(bucket.values), level, stops: bucket.stops, load: sumLoad(bucket.stops.map(stop => stop.items)), children: [] }))
+  }).map(([key, bucket]) => ({ key: `${level}:${key}`, label: buckets.size === 1 && bucket.values.every(value => !value) ? '' : label(bucket.values), level, stops: bucket.stops, load: sumLoad(bucket.stops.map(stop => stop.items)), children: [] }))
 }
 function byFloor(stops: RiderStop[]): RiderSection[] {
   return partition(stops, ['floor'], 'floor', ([floor]) => floor ? `Floor: ${floor}` : 'Floor not provided').map(section => ({ ...section, stops: section.stops.map((stop, index) => ({ stop, index })).sort((a, b) => compareWritten(confirmed(a.stop).unit ?? '', confirmed(b.stop).unit ?? '') || a.index - b.index).map(({ stop }) => stop) }))
@@ -62,15 +71,17 @@ function byBuilding(stops: RiderStop[], requiresTower = true): RiderSection[] {
 /** One hierarchy consumed by both PDF renderers. Legacy addresses never acquire guessed structured groups. */
 export function riderDeliverySections(stops: RiderStop[]): RiderSection[] {
   return groupRiderStops(stops).map(group => {
-    const label = group.source === 'saved' ? group.name || 'Saved delivery place' : group.stops.length > 1 ? 'Same written address (unverified)' : ''
+    const label = group.source === 'saved' || group.source === 'ai' || group.source === 'ai-review' ? group.name || 'Delivery area' : group.stops.length > 1 ? 'Same written address (unverified)' : ''
     const section: RiderSection = { key: group.key, label, level: 'place', stops: group.stops, load: sumLoad(group.stops.map(stop => stop.items)), children: [] }
-    if (group.source !== 'saved') return section
-    section.children = group.stops[0].addressKind === 'independent'
+    if (group.source !== 'saved' && group.source !== 'ai') return section
+    section.children = (group.stops[0].deliveryRouting?.kind ?? group.stops[0].addressKind) === 'independent'
       ? partition(group.stops, ['lane'], 'lane', ([lane]) => lane ? `Lane: ${lane}` : 'Lane not provided').map(lane => ({ ...lane, children: byBuilding(lane.stops, false) }))
-      : byBuilding(group.stops)
+      : byBuilding(group.stops, group.stops.some(stop => Boolean(confirmed(stop).towerWing)))
     return section
   })
 }
 export function sectionStops(section: RiderSection): RiderStop[] { return section.children.length ? section.children.flatMap(sectionStops) : section.stops }
 export const riderLoadText = (items: RiderItem[]): string => items.map(item => `${item.quantity} x ${item.productName} ${item.variantName}`).join(' · ')
-export const needsDeliveryClarification = (stop: RiderStop): boolean => !stop.deliveryDetailsConfirmed || (stop.addressKind === 'society' && !stop.deliveryDetails?.towerWing?.trim())
+export const needsDeliveryClarification = (stop: RiderStop): boolean => stop.deliveryRouting
+  ? stop.deliveryRouting.needsReview || (stop.deliveryRouting.kind === 'society' && !stop.deliveryRouting.towerWing.trim())
+  : !stop.deliveryDetailsConfirmed || (stop.addressKind === 'society' && !stop.deliveryDetails?.towerWing?.trim())

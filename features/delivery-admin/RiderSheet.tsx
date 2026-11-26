@@ -92,6 +92,11 @@ export function RiderSheet() {
 
   const state = !slotId ? 'idle' : loaded?.key === loadKey ? loaded : 'loading'
   const sheet = typeof state === 'object' && state.status === 'ready' ? state.sheet : null
+  useEffect(() => {
+    if (sheet?.routingStatus !== 'processing') return
+    const timer = window.setTimeout(() => setReloadKey(value => value + 1), 10000)
+    return () => window.clearTimeout(timer)
+  }, [sheet])
   const perRider = useMemo(() => {
     if (!sheet) return []
     const byPin = new Map(sheet.areas.map(area => [area.pinCode, area]))
@@ -119,7 +124,7 @@ export function RiderSheet() {
   const withHouses = perRider.filter(rider => rider.areas.length > 0)
 
   const download = async (target: number | 'all') => {
-    if (!sheet || downloading) return
+    if (!sheet || downloading || sheet.routingStatus === 'processing') return
     const chosen = withHouses.filter(rider => target === 'all' || rider.index === target)
     if (chosen.length === 0) return
     const parts: RiderPart[] = chosen.map(rider => ({ riderName: printedName(riders, rider.index), areas: rider.areas, load: rider.load }))
@@ -198,14 +203,14 @@ export function RiderSheet() {
                   <label className="rider-name"><span>{t('riderNumber', { number: index + 1 })}</span><Input value={name} maxLength={40} placeholder={t('nameOptional')} onChange={event => setRiders(current => current.map((value, position) => (position === index ? event.target.value : value)))} /></label>
                   <p>{mine && mine.areas.length > 0 ? `${t(mine.areas.length === 1 ? 'areaOne' : 'areaMany', { count: mine.areas.length })} · ${t(houses === 1 ? 'houseOne' : 'houseMany', { count: houses })}` : t('noPinsYet')}</p>
                   <div className="rider-card-actions">
-                    <Button className="secondary-button" variant="outline" disabled={!mine || mine.areas.length === 0 || downloading} onClick={() => void download(index)}><Download size={14} /> {t('downloadPdf')}</Button>
+                    <Button className="secondary-button" variant="outline" disabled={!mine || mine.areas.length === 0 || downloading || sheet.routingStatus === 'processing'} onClick={() => void download(index)}><Download size={14} /> {t('downloadPdf')}</Button>
                     {riders.length > 1 ? <Button variant="outline" size="icon" className="icon-button" aria-label={t('removeRider', { name: riderLabel(riders, index) })} onClick={() => removeRider(index)}><Trash2 size={14} /></Button> : null}
                   </div>
                 </div>
               })}
               <div className="rider-card-actions">
                 <Button className="secondary-button" variant="outline" disabled={riders.length >= MAX_RIDERS} onClick={() => setRiders(current => [...current, ''])}>{t('addRider')}</Button>
-                <Button className="primary-button" disabled={downloading} onClick={() => void download('all')}><Download size={14} /> {downloading ? t('preparingPdf') : withHouses.length > 1 ? t('downloadAll', { count: withHouses.length }) : t('downloadSheet')}</Button>
+                <Button className="primary-button" disabled={downloading || sheet.routingStatus === 'processing'} onClick={() => void download('all')}><Download size={14} /> {downloading || sheet.routingStatus === 'processing' ? t('preparingPdf') : withHouses.length > 1 ? t('downloadAll', { count: withHouses.length }) : t('downloadSheet')}</Button>
               </div>
             </div>
           </div>}

@@ -73,6 +73,9 @@ export const productionMessages = defineMessages({
   csvStatus: 'Status',
   csvUnit: 'Unit',
   csvOrders: 'Orders',
+  warnGrouping: 'Organising delivery addresses. Please wait a moment before downloading.',
+  warnGroupingReview: 'Some delivery addresses need clarification. Their original addresses and quantities are kept on the sheet.',
+  warnGroupingUnavailable: 'Automatic grouping is unavailable. You can download the original addresses with all delivery quantities.',
   warnNotReady: 'Subscription deliveries for this day are not created yet, so the amounts below are missing every subscription. Do not produce from this.',
   warnStale: 'The job that creates subscription orders has not run for a while. Subscription amounts may be missing.',
   warnFailing: 'The job that creates subscription orders failed for some subscriptions in its last run. Some subscription amounts may be missing.',
@@ -148,6 +151,9 @@ export const productionMessages = defineMessages({
   csvStatus: 'સ્થિતિ',
   csvUnit: 'એકમ',
   csvOrders: 'ઓર્ડર',
+  warnGrouping: 'ડિલિવરીનાં સરનામાં ગોઠવાઈ રહ્યાં છે. ડાઉનલોડ કરવા થોડી વાર રાહ જુઓ.',
+  warnGroupingReview: 'થોડાં સરનામાંની ખાતરી કરવી જરૂરી છે. અસલ સરનામાં અને ડિલિવરીની સંખ્યા યાદીમાં છે.',
+  warnGroupingUnavailable: 'હાલ આપમેળે ગોઠવણી થઈ શકતી નથી. અસલ સરનામાં અને બધી ડિલિવરી સાથે યાદી ડાઉનલોડ કરી શકો છો.',
   warnNotReady: 'આ દિવસની સબ્સ્ક્રિપ્શન ડિલિવરી હજી બની નથી, એટલે નીચેના આંકડામાં એક પણ સબ્સ્ક્રિપ્શન નથી. આના પરથી ઉત્પાદન ન કરો.',
   warnStale: 'સબ્સ્ક્રિપ્શનના ઓર્ડર બનાવતું કામ થોડા સમયથી ચાલ્યું નથી. સબ્સ્ક્રિપ્શનના આંકડા ખૂટતા હોઈ શકે.',
   warnFailing: 'સબ્સ્ક્રિપ્શનના ઓર્ડર બનાવતું કામ છેલ્લી વાર થોડા સબ્સ્ક્રિપ્શન માટે નિષ્ફળ ગયું. થોડા સબ્સ્ક્રિપ્શનના આંકડા ખૂટતા હોઈ શકે.',
@@ -155,7 +161,7 @@ export const productionMessages = defineMessages({
 
 export const t = translator(productionMessages)
 
-const WARNING_KEYS: Record<string, keyof typeof productionMessages.en> = { SUBSCRIPTIONS_NOT_READY: 'warnNotReady', SUBSCRIPTION_JOB_STALE: 'warnStale', SUBSCRIPTION_JOB_FAILING: 'warnFailing' }
+const WARNING_KEYS: Record<string, keyof typeof productionMessages.en> = { ADDRESS_GROUPING_PROCESSING: 'warnGrouping', ADDRESS_GROUPING_REVIEW: 'warnGroupingReview', ADDRESS_GROUPING_UNAVAILABLE: 'warnGroupingUnavailable', SUBSCRIPTIONS_NOT_READY: 'warnNotReady', SUBSCRIPTION_JOB_STALE: 'warnStale', SUBSCRIPTION_JOB_FAILING: 'warnFailing' }
 
 /** A plan warning in the admin's language. The server's English sentence carries exact numbers, so English keeps it. */
 export function warningText(warning: { code: string; message: string }): string {

@@ -70,6 +70,7 @@ export type RiderStop = {
   deliveryDetails?: DeliveryDetails; deliveryDetailsConfirmed?: boolean
   addressKind?: 'society' | 'independent' | 'unspecified'; deliveryPlaceId?: string | null; deliveryPlaceName?: string; locality?: string
   deliveryPlaceGroupId?: string | null; deliveryPlaceGroupName?: string
+  deliveryRouting?: { source: 'ai'; kind: 'society' | 'independent' | 'unknown'; locality: string; place: string; lane: string; building: string; towerWing: string; floor: string; certainty: 'clear' | 'uncertain'; groupKey: string; needsReview: boolean }
 }
 /** One PIN code: its houses in visiting order and what to load for them. */
 export type RiderArea = { pinCode: string; city: string; stops: RiderStop[]; load: RiderItem[] }
@@ -78,6 +79,7 @@ export type RiderSheet = {
   date: string; slot: { slotId: string; name: string; startTime: string; endTime: string }
   status: 'open' | 'final'; closesAt: string | null
   areas: RiderArea[]; load: RiderItem[]; stopCount: number; truncated: boolean; warnings: PlanWarning[]
+  routingStatus?: 'processing' | 'ready' | 'partial' | 'unavailable'
 }
 
 export const riderSheetApi = {
